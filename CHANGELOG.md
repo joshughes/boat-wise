@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0
+
+- Added NWS Surf Zone Forecast auto parsing for rip current risk, surf height, and water temperature where available.
+- Added `auto_surf_forecast` and optional `nws_office` configuration.
+- Improved water temperature fallback priority across manual entities, NOAA CO-OPS observations, and NWS surf forecasts.
+
 ## 0.3.0
 
 - Added `auto_sources` for direct NOAA/NWS fallback data.

@@ -33,7 +33,7 @@ type: module
 For quick testing before installing locally, add this Lovelace resource:
 
 ```yaml
-url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.3.0/tidewise-card.js
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.4.0/tidewise-card.js
 type: module
 ```
 
@@ -65,6 +65,7 @@ station: "8661070"
 units: english
 mode: general
 auto_sources: true
+auto_surf_forecast: true
 grid_options:
   rows: full
   columns: 18
@@ -91,6 +92,7 @@ station: "8661070"
 units: english
 mode: inlet
 auto_sources: true
+auto_surf_forecast: true
 weather_entity: weather.nws_33_8552645_78_6761264_kmyr
 water_temp_entity: sensor.noaa_surf_water_temperature
 wave_height_entity: sensor.noaa_surf_surf_height
@@ -141,10 +143,13 @@ TideWise can fetch extra public NOAA/NWS data directly from the browser when `au
 
 - NOAA CO-OPS latest water temperature, wind, and air pressure where the selected station supports those products.
 - NWS hourly forecast weather and wind from latitude/longitude.
+- NWS Surf Zone Forecast text for surf height, rip current risk, and water temperature where the local forecast office issues an SRF product.
 
 Manual Home Assistant entities still take priority. If a manual entity is configured, TideWise uses it instead of the auto-fetched value.
 
-Some data is not yet reliably available everywhere from direct browser fetches, especially surf height, rip current risk, and local rainfall totals. Those still work best through manual Home Assistant entities or integrations such as NOAA IT ALL.
+Surf Zone Forecasts are text products and vary by NWS office. TideWise parses the common formats, but some locations may still show unknown surf or rip data. Manual entities or integrations such as NOAA IT ALL remain the most reliable override.
+
+Recent rainfall totals are not yet reliably auto-filled. They still work best through a local rain sensor or Home Assistant weather integration.
 
 ## Configuration
 
@@ -157,6 +162,8 @@ Some data is not yet reliably available everywhere from direct browser fetches, 
 | `mode` | No | `general` | Fishing score mode: `general`, `surf`, `inlet`, `flounder`, `trout_redfish`, or `sheepshead`. |
 | `show_fishing_score` | No | `true` | Set to `false` for a tide-only card. |
 | `auto_sources` | No | `true` | Fetch public NOAA/NWS weather and marine observations directly where available. |
+| `auto_surf_forecast` | No | `true` | Try to parse NWS Surf Zone Forecast text for surf height, rip current risk, and water temperature. |
+| `nws_office` | No | Auto from NWS point metadata | Optional NWS office code such as `ILM`, `CHS`, or `SGX` for Surf Zone Forecast products. |
 | `latitude` | No | Home Assistant home latitude, then Cherry Grove fallback | Latitude for moon/solunar scoring. |
 | `longitude` | No | Home Assistant home longitude, then Cherry Grove fallback | Longitude for moon/solunar scoring. |
 | `weather_entity` | No | First available weather entity | Weather condition source. |
