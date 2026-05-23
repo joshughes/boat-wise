@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Added a TideWise wave icon for the README/HACS details view.
+
+### Changed
+
+- Clarified the current release candidate near the top of the README.
+- Added troubleshooting guidance for HACS commit-hash version labels before a full GitHub Release is published.
+
 ## 0.4.3
 
 ### Added

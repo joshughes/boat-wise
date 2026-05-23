@@ -1,8 +1,16 @@
 # TideWise
 
+<p align="center">
+  <img src="tidewise-icon.svg" alt="TideWise wave icon" width="96">
+</p>
+
 [![GitHub release](https://img.shields.io/github/v/release/TheWillMiller/tide-wise)](https://github.com/TheWillMiller/tide-wise/releases)
 [![Validate](https://github.com/TheWillMiller/tide-wise/actions/workflows/validate.yml/badge.svg)](https://github.com/TheWillMiller/tide-wise/actions/workflows/validate.yml)
 [![GitHub stars](https://img.shields.io/github/stars/TheWillMiller/tide-wise?style=social)](https://github.com/TheWillMiller/tide-wise/stargazers)
+
+**Current release candidate:** `v0.4.3`
+
+TideWise is a Home Assistant dashboard (Lovelace) custom card for NOAA tide predictions, current tide height, next high/low tides, and optional fishing bite-window scoring.
 
 ## Screenshots
 
@@ -17,7 +25,6 @@
 ### Visual Editor
 
 ![TideWise visual editor configuration screen](Visual%20Editor.png)
-TideWise is a Home Assistant dashboard (Lovelace) custom card for NOAA tide predictions, current tide height, next high/low tides, and optional fishing bite-window scoring.
 
 It combines NOAA tide data with local Home Assistant entities such as weather, wind, water temperature, surf height, pressure, rain, and rip current risk. Missing optional entities are allowed; TideWise falls back to neutral scoring where possible.
 
@@ -311,6 +318,8 @@ Try:
 6. Hard-refresh your browser.
 
 If HACS still shows an old README, the installed card file may still be current while the HACS display cache is stale.
+
+If HACS shows a short value like `214b6c2` instead of `v0.4.3`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
 
 ### Card does not show up
 
