@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1
+
+- Updated HACS custom repository instructions to use the Dashboard category.
+
 ## 0.4.0
 
 - Added NWS Surf Zone Forecast auto parsing for rip current risk, surf height, and water temperature where available.

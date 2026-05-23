@@ -33,7 +33,7 @@ type: module
 For quick testing before installing locally, add this Lovelace resource:
 
 ```yaml
-url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.4.0/tidewise-card.js
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.4.1/tidewise-card.js
 type: module
 ```
 
@@ -52,7 +52,7 @@ TideWise can be installed through HACS as a custom frontend repository.
 https://github.com/TheWillMiller/tide-wise
 ```
 
-5. Select category **Lovelace** or **Plugin**.
+5. Select category **Dashboard**.
 6. Install TideWise.
 7. Reload Home Assistant frontend or hard-refresh your browser.
 
