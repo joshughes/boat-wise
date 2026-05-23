@@ -1,7 +1,7 @@
 # TideWise
 
 <p align="center">
-  <img src="tidewise-icon.png" alt="TideWise wave icon" width="96">
+  <img src="https://raw.githubusercontent.com/TheWillMiller/tide-wise/main/tidewise-icon.png" alt="TideWise wave icon" width="96">
 </p>
 
 [![GitHub release](https://img.shields.io/github/v/release/TheWillMiller/tide-wise)](https://github.com/TheWillMiller/tide-wise/releases)
@@ -16,15 +16,15 @@ TideWise is a Home Assistant dashboard (Lovelace) custom card for NOAA tide pred
 
 ### Main TideWise Card
 
-<img src="TIDE_CARD.png" alt="TideWise card showing current tide, tide chart, moon phase, and fishing window" width="720">
+<img src="https://raw.githubusercontent.com/TheWillMiller/tide-wise/main/TIDE_CARD.png" alt="TideWise card showing current tide, tide chart, moon phase, and fishing window" width="720">
 
 ### NOAA Station Picker
 
-<img src="TideStations.png" alt="TideWise NOAA station picker in the visual editor" width="720">
+<img src="https://raw.githubusercontent.com/TheWillMiller/tide-wise/main/TideStations.png" alt="TideWise NOAA station picker in the visual editor" width="720">
 
 ### Visual Editor
 
-<img src="Visual%20Editor.png" alt="TideWise visual editor configuration screen" width="720">
+<img src="https://raw.githubusercontent.com/TheWillMiller/tide-wise/main/Visual%20Editor.png" alt="TideWise visual editor configuration screen" width="720">
 
 It combines NOAA tide data with local Home Assistant entities such as weather, wind, water temperature, surf height, pressure, rain, and rip current risk. Missing optional entities are allowed; TideWise falls back to neutral scoring where possible.
 
