@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.4.7
+ * TideWise Card v0.4.8
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.4.7";
+const CARD_VERSION = "0.4.8";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const STATION_PRESETS = [
   { station: "8410140", name: "Eastport, ME", lat: 44.9046, lon: -66.9829 },

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.4.8
+
 ### Added
 
 - Added frontend syntax-check GitHub Actions workflow.
@@ -9,10 +11,16 @@
 - Added HACS default submission prep notes.
 - Added README roadmap and contribution guidance.
 
+### Fixed
+
+- Switched README icon and screenshots to absolute raw GitHub URLs so HACS can render them from the release details view.
+- Added a PNG icon fallback for HACS README rendering.
+
 ### Changed
 
 - Updated issue template placeholders to the current release.
 - Expanded package keywords for HACS/Home Assistant discoverability.
+- Updated release references to `v0.4.8`.
 
 ## 0.4.7
 
