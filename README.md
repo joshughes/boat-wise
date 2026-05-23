@@ -8,7 +8,7 @@
 [![Validate](https://github.com/TheWillMiller/tide-wise/actions/workflows/validate.yml/badge.svg)](https://github.com/TheWillMiller/tide-wise/actions/workflows/validate.yml)
 [![GitHub stars](https://img.shields.io/github/stars/TheWillMiller/tide-wise?style=social)](https://github.com/TheWillMiller/tide-wise/stargazers)
 
-**Current release candidate:** `v0.4.7`
+**Latest release:** `v0.4.7`
 
 TideWise is a Home Assistant dashboard (Lovelace) custom card for NOAA tide predictions, current tide height, next high/low tides, and optional fishing bite-window scoring.
 
@@ -418,3 +418,31 @@ tidewise-card.js
 ```
 
 For HACS default repository submission, TideWise is a dashboard/custom card. HACS validation/submission uses the `plugin` category internally for dashboard plugins.
+
+Run the local syntax check before opening a pull request:
+
+```bash
+npm run check
+```
+
+## Roadmap
+
+Planned areas for future releases:
+
+- Map-based fishing/forecast coordinate picker
+- More station presets and station discovery improvements
+- International tide-provider research for non-NOAA regions
+- Further fishing outlook calibration based on tester feedback
+- Additional mobile layout polish
+
+## Contributing
+
+Bug reports, confirmed-station reports, and focused feature requests are welcome through GitHub Issues.
+
+For code changes:
+
+1. Keep TideWise as a dashboard/custom card, not an integration.
+2. Preserve existing HACS custom repository install behavior.
+3. Keep changes scoped and update `CHANGELOG.md` when behavior changes.
+4. Run `npm run check`.
+5. Include screenshots for visible UI changes when practical.

@@ -15,10 +15,15 @@
   },
   "keywords": [
     "home-assistant",
+    "hacs",
+    "dashboard",
     "lovelace",
+    "custom-card",
     "noaa",
+    "tide",
     "tides",
-    "fishing"
+    "fishing",
+    "weather"
   ],
   "license": "PolyForm-Noncommercial-1.0.0",
   "private": false

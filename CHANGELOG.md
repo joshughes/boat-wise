@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Added frontend syntax-check GitHub Actions workflow.
+- Added feature request issue template.
+- Added HACS default submission prep notes.
+- Added README roadmap and contribution guidance.
+
+### Changed
+
+- Updated issue template placeholders to the current release.
+- Expanded package keywords for HACS/Home Assistant discoverability.
+
 ## 0.4.7
 
 ### Added
