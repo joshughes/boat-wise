@@ -33,7 +33,7 @@ type: module
 For quick testing before installing locally, add this Lovelace resource:
 
 ```yaml
-url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.4.1/tidewise-card.js
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.4.2/tidewise-card.js
 type: module
 ```
 
@@ -147,7 +147,7 @@ TideWise can fetch extra public NOAA/NWS data directly from the browser when `au
 
 Manual Home Assistant entities still take priority. If a manual entity is configured, TideWise uses it instead of the auto-fetched value.
 
-Surf Zone Forecasts are text products and vary by NWS office. TideWise parses the common formats, but some locations may still show unknown surf or rip data. Manual entities or integrations such as NOAA IT ALL remain the most reliable override.
+Surf Zone Forecasts are text products and vary by NWS office. TideWise uses the same NWS SRF product route used by NOAA IT ALL, then parses common formats such as `high rip current risk`, `surf height 2 to 4 feet`, and `water temperature in the mid 80s`. Some locations may still show unknown surf or rip data. Manual entities or integrations such as NOAA IT ALL remain the most reliable override.
 
 Recent rainfall totals are not yet reliably auto-filled. They still work best through a local rain sensor or Home Assistant weather integration.
 

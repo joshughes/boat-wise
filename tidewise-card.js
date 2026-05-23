@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.4.1
+ * TideWise Card v0.4.2
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.4.1";
+const CARD_VERSION = "0.4.2";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const STATION_PRESETS = [
   { station: "8661070", name: "Cherry Grove, SC", lat: 33.688, lon: -78.886 },
@@ -245,6 +245,8 @@ class TideWiseCard extends HTMLElement {
   async _fetchNwsSurfForecast(nwsData) {
     const office = this._config.nws_office || String(nwsData?.point?.cwa || "").toUpperCase();
     if (!office) return {};
+    const productText = await this._fetchLegacyNwsSurfProduct(office);
+    if (productText) return this._parseSurfForecastText(productText, office);
     const headers = { Accept: "application/geo+json" };
     const listRes = await fetch(`https://api.weather.gov/products/types/SRF/locations/${office}`, { headers });
     if (!listRes.ok) return {};
@@ -257,6 +259,13 @@ class TideWiseCard extends HTMLElement {
     const product = await productRes.json();
     const text = product?.productText || product?.properties?.productText || "";
     return this._parseSurfForecastText(text, office);
+  }
+
+  async _fetchLegacyNwsSurfProduct(office) {
+    const url = `https://forecast.weather.gov/product.php?site=${office}&issuedby=${office}&product=SRF&format=TXT`;
+    const res = await fetch(url);
+    if (!res.ok) return "";
+    return res.text();
   }
 
   _parseSurfForecastText(text, office) {
@@ -273,36 +282,44 @@ class TideWiseCard extends HTMLElement {
   }
 
   _parseSurfRipRisk(text) {
-    const patterns = [
-      /rip current risk\.*\s*([a-z ]+)/i,
-      /rip current risk:\s*([a-z ]+)/i,
-      /\b(low|moderate|high)\s+rip current risk\b/i
-    ];
-    for (const pattern of patterns) {
-      const match = text.match(pattern);
-      if (match) {
-        const value = String(match[1] || match[0]).toLowerCase();
-        if (value.includes("high")) return "high";
-        if (value.includes("moderate")) return "moderate";
-        if (value.includes("low")) return "low";
-      }
-    }
+    const lower = text.toLowerCase();
+    if (/(high\s+rip\s+current\s+risk|dangerous\s+rip\s+currents|high\s+surf\s+and\s+dangerous\s+rip\s+currents|rip\s+current\s+risk\s+is\s+high|rip\s+current\s+risk\.*\s*high)/i.test(lower)) return "high";
+    if (/(moderate\s+rip\s+current\s+risk|rip\s+current\s+risk\s+is\s+moderate|moderate\s+surf\s+and\s+rip\s+currents|rip\s+current\s+risk\.*\s*moderate)/i.test(lower)) return "moderate";
+    if (/(low\s+rip\s+current\s+risk|rip\s+current\s+risk\s+is\s+low|rip\s+current\s+risk\.*\s*low)/i.test(lower)) return "low";
     return null;
   }
 
   _parseSurfHeightFt(text) {
     const patterns = [
-      /surf height\.*\s*([0-9]+)(?:\s*(?:to|-)\s*([0-9]+))?\s*feet/i,
-      /surf height:\s*([0-9]+)(?:\s*(?:to|-)\s*([0-9]+))?\s*ft/i,
-      /surf\.*\s*([0-9]+)(?:\s*(?:to|-)\s*([0-9]+))?\s*feet/i
+      /surf\s+height\.+\s*([0-9]+)\s+to\s+([0-9]+)\s+feet/i,
+      /surf\s+height\s+([0-9]+)\s+to\s+([0-9]+)\s+feet/i,
+      /surf\s+height\.+\s*([0-9]+)\s+feet/i,
+      /surf\s+height\s+([0-9]+)\s+feet/i,
+      /surf\s+([0-9]+)\s+to\s+([0-9]+)\s+feet/i,
+      /surf\s+height:\s*([0-9]+)(?:\s*(?:to|-)\s*([0-9]+))?\s*ft/i
     ];
     return this._firstRangeAverage(text, patterns);
   }
 
   _parseSurfWaterTempF(text) {
+    const qualitative = text.match(/water\s+temperature\.*\s*in\s+the\s+(upper|mid|lower)\s+([0-9]+)s/i)
+      || text.match(/water\s+temperature\s+in\s+the\s+(upper|mid|lower)\s+([0-9]+)s/i);
+    if (qualitative) {
+      const band = qualitative[1].toLowerCase();
+      const base = Number(qualitative[2]);
+      if (Number.isFinite(base)) {
+        if (band === "upper") return (base + 5 + base + 9) / 2;
+        if (band === "mid") return (base + 3 + base + 7) / 2;
+        if (band === "lower") return (base + base + 4) / 2;
+      }
+    }
     const patterns = [
-      /water temperature\.*\s*([0-9]+)(?:\s*(?:to|-)\s*([0-9]+))?/i,
-      /water temp\.*\s*([0-9]+)(?:\s*(?:to|-)\s*([0-9]+))?/i
+      /water\s+temperature\.+\s*around\s+([0-9]+)/i,
+      /water\s+temperature\s+around\s+([0-9]+)/i,
+      /water\s+temperature\.+\s*([0-9]+)\s*(?:degrees?|f)?/i,
+      /water\s+temp\.+\s*([0-9]+)\s*(?:degrees?|f)?/i,
+      /water\s+temperature\.*\s*([0-9]+)(?:\s*(?:to|-)\s*([0-9]+))?/i,
+      /water\s+temp\.*\s*([0-9]+)(?:\s*(?:to|-)\s*([0-9]+))?/i
     ];
     return this._firstRangeAverage(text, patterns);
   }

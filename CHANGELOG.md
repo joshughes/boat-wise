@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.2
+
+- Matched NWS Surf Zone Forecast fetching more closely to NOAA IT ALL by trying the forecast.weather.gov SRF text product first.
+- Improved rip current parsing for dangerous rip current wording.
+- Improved surf height range parsing.
+- Improved water temperature parsing for lower/mid/upper temperature bands.
+
 ## 0.4.1
 
 - Updated HACS custom repository instructions to use the Dashboard category.
