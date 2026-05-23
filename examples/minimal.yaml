@@ -1,0 +1,5 @@
+type: custom:tidewise-card
+title: Local Tides
+station: "8661070"
+units: english
+mode: general

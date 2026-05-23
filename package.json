@@ -1,0 +1,25 @@
+{
+  "name": "tidewise-card",
+  "version": "0.1.0",
+  "description": "NOAA tides with optional bite-window fishing quality scoring for Home Assistant.",
+  "type": "module",
+  "files": [
+    "tidewise-card.js",
+    "README.md",
+    "info.md",
+    "hacs.json",
+    "examples"
+  ],
+  "scripts": {
+    "check": "node --check tidewise-card.js"
+  },
+  "keywords": [
+    "home-assistant",
+    "lovelace",
+    "noaa",
+    "tides",
+    "fishing"
+  ],
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "private": false
+}
