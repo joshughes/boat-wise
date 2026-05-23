@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.4
 
 ### Added
 
@@ -10,6 +10,7 @@
 
 - Clarified the current release candidate near the top of the README.
 - Added troubleshooting guidance for HACS commit-hash version labels before a full GitHub Release is published.
+- Bumped release references to `v0.4.4`.
 
 ## 0.4.3
 
