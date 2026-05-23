@@ -33,7 +33,7 @@ type: module
 For quick testing before installing locally, add this Lovelace resource:
 
 ```yaml
-url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.1.1/tidewise-card.js
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.1.2/tidewise-card.js
 type: module
 ```
 
@@ -64,6 +64,9 @@ title: Local Tides
 station: "8661070"
 units: english
 mode: general
+grid_options:
+  rows: full
+  columns: 18
 ```
 
 TideWise is not yet listed as a default/searchable HACS repository. Until it is accepted into the default HACS store, users should add it as a custom repository.
@@ -94,6 +97,9 @@ wind_speed_entity: sensor.noaa_weather_wind_speed
 wind_direction_entity: sensor.noaa_weather_wind_direction
 pressure_entity: sensor.noaa_weather_barometric_pressure
 rain_today_entity: sensor.rain_sensor_rain_last_24h
+grid_options:
+  rows: full
+  columns: 18
 ```
 
 ## Tide-Only Config
@@ -104,7 +110,22 @@ title: Local Tides
 station: "8661070"
 units: english
 show_fishing_score: false
+grid_options:
+  rows: full
+  columns: 18
 ```
+
+## Dashboard Size
+
+TideWise is a dense chart card. In Home Assistant's section/grid dashboards, give it enough horizontal space:
+
+```yaml
+grid_options:
+  rows: full
+  columns: 18
+```
+
+On narrower dashboards, use `columns: full`.
 
 ## Configuration
 

@@ -3,3 +3,6 @@ title: Local Tides
 station: "8661070"
 units: english
 mode: general
+grid_options:
+  rows: full
+  columns: 18

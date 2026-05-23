@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.1.1
+ * TideWise Card v0.1.2
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.1.1";
+const CARD_VERSION = "0.1.2";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 
 const STYLES = `

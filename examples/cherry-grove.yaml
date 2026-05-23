@@ -11,3 +11,6 @@ wind_direction_entity: sensor.noaa_weather_wind_direction
 pressure_entity: sensor.noaa_weather_barometric_pressure
 rain_today_entity: sensor.rain_sensor_rain_last_24h
 mode: inlet
+grid_options:
+  rows: full
+  columns: 18

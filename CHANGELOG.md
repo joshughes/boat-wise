@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- Added recommended Home Assistant grid sizing to README and examples.
+
 ## 0.1.1
 
 - Documented HACS custom repository installation.
