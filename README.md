@@ -1,8 +1,10 @@
 # TideWise
 
-TideWise is a Home Assistant Lovelace card for NOAA tide predictions, current tide height, next high/low tides, and optional fishing bite-window scoring.
+TideWise is a Home Assistant dashboard (Lovelace) custom card for NOAA tide predictions, current tide height, next high/low tides, and optional fishing bite-window scoring.
 
-It combines NOAA tide data with local Home Assistant entities such as weather, wind, water temperature, surf height, pressure, rain, and rip current risk. Missing entities are allowed; TideWise falls back to neutral scoring where possible.
+It combines NOAA tide data with local Home Assistant entities such as weather, wind, water temperature, surf height, pressure, rain, and rip current risk. Missing optional entities are allowed; TideWise falls back to neutral scoring where possible.
+
+> **Beta notice:** TideWise is still early beta software. Please expect occasional layout issues, missing-data fallbacks, and station-specific quirks while testing.
 
 ## Features
 
@@ -10,27 +12,67 @@ It combines NOAA tide data with local Home Assistant entities such as weather, w
 - Current interpolated tide height
 - Next high and low tide
 - 24-hour tide chart
+- Visual editor support
+- Preset station picker plus custom NOAA station ID
 - Optional fishing bite-window score
 - Fishing modes for general, surf, inlet, flounder, trout/redfish, and sheepshead use
+- Optional NOAA/NWS public data fetching
+- Optional Home Assistant entity overrides for weather, wind, water temperature, surf height, pressure, rain, and rip current risk
 - Legacy support for `custom:cherry-grove-tides-card`
 
 ## Installation
 
-### Manual
+### Recommended: HACS Custom Repository
 
-1. Copy `tidewise-card.js` to your Home Assistant `www` directory.
-2. Add it as a Lovelace resource:
+TideWise is not yet listed in the default/searchable HACS store. Until it is accepted into the default HACS list, install it as a custom HACS repository.
+
+1. Open **HACS** in Home Assistant.
+2. Open the three-dot menu in the top right.
+3. Choose **Custom repositories**.
+4. Add this repository URL:
+
+```text
+https://github.com/TheWillMiller/tide-wise
+```
+
+5. For category, choose **Dashboard**.
+
+   If your HACS version uses older wording, choose the dashboard/card/frontend/plugin-style option.
+
+6. Install **TideWise**.
+7. Refresh Home Assistant.
+
+A hard browser refresh is recommended after installing or updating:
+
+- Windows/Linux: `Ctrl + F5`
+- Mac: `Cmd + Shift + R`
+
+Then add the card from your dashboard editor:
+
+1. Edit your dashboard.
+2. Add a new card.
+3. Search for **TideWise**.
+4. Open the visual editor.
+5. Select a NOAA station or enter a custom station ID.
+6. Save.
+
+### Manual Install
+
+1. Download or copy `tidewise-card.js`.
+2. Place it in your Home Assistant `www` directory.
+3. Add it as a dashboard resource:
 
 ```yaml
 url: /local/tidewise-card.js
 type: module
 ```
 
-3. Add the card to a dashboard.
+4. Refresh Home Assistant and hard-refresh your browser.
+5. Add the card to a dashboard.
 
-### Test From GitHub
+### Test From GitHub CDN
 
-For quick testing before installing locally, add this Lovelace resource:
+For quick testing before installing locally, you can add this dashboard resource:
 
 ```yaml
 url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.4.2/tidewise-card.js
@@ -39,24 +81,9 @@ type: module
 
 After changing resources, refresh Home Assistant and hard-refresh the browser tab.
 
-### HACS
+> CDN testing is not the preferred long-term install method. HACS is recommended for normal use.
 
-TideWise can be installed through HACS as a custom frontend repository.
-
-1. Open HACS in Home Assistant.
-2. Go to **Frontend**.
-3. Open the three-dot menu and choose **Custom repositories**.
-4. Add this repository URL:
-
-```text
-https://github.com/TheWillMiller/tide-wise
-```
-
-5. Select category **Dashboard**.
-6. Install TideWise.
-7. Reload Home Assistant frontend or hard-refresh your browser.
-
-Then add the card:
+## Quick Start
 
 ```yaml
 type: custom:tidewise-card
@@ -70,8 +97,6 @@ grid_options:
   rows: full
   columns: 18
 ```
-
-TideWise is not yet listed as a default/searchable HACS repository. Until it is accepted into the default HACS store, users should add it as a custom repository.
 
 ## Minimal Config
 
@@ -121,7 +146,7 @@ grid_options:
 
 ## Dashboard Size
 
-TideWise is a dense chart card. In Home Assistant's section/grid dashboards, give it enough horizontal space:
+TideWise is a dense chart card. In Home Assistant section/grid dashboards, give it enough horizontal space:
 
 ```yaml
 grid_options:
@@ -129,11 +154,28 @@ grid_options:
   columns: 18
 ```
 
-On narrower dashboards, use `columns: full`.
+On narrower dashboards, use:
+
+```yaml
+grid_options:
+  rows: full
+  columns: full
+```
 
 ## Visual Editor
 
-TideWise includes a Home Assistant visual editor. When adding the card from the dashboard editor, you can choose common NOAA tide stations from a dropdown, enter a custom NOAA station ID, select units and fishing mode, use your Home Assistant home latitude/longitude, and set the recommended dashboard size.
+TideWise includes a Home Assistant visual editor. When adding the card from the dashboard editor, you can:
+
+- Choose common NOAA tide stations from a dropdown
+- Enter a custom NOAA station ID
+- Set latitude and longitude
+- Use your Home Assistant home latitude/longitude
+- Select English or metric units
+- Select fishing mode
+- Enable or disable fishing score
+- Enable or disable public NOAA/NWS auto sources
+- Enable or disable NWS surf/rip forecast parsing
+- Set the recommended dashboard size
 
 The station dropdown is a starter list, not a complete NOAA station database. If your station is not listed, choose **Custom station ID** and paste the NOAA CO-OPS station ID.
 
@@ -141,15 +183,45 @@ The station dropdown is a starter list, not a complete NOAA station database. If
 
 TideWise can fetch extra public NOAA/NWS data directly from the browser when `auto_sources` is enabled:
 
-- NOAA CO-OPS latest water temperature, wind, and air pressure where the selected station supports those products.
-- NWS hourly forecast weather and wind from latitude/longitude.
-- NWS Surf Zone Forecast text for surf height, rip current risk, and water temperature where the local forecast office issues an SRF product.
+- NOAA CO-OPS water temperature, wind, and air pressure where the selected station supports those products
+- NWS hourly forecast weather and wind from latitude/longitude
+- NWS Surf Zone Forecast text for surf height, rip current risk, and water temperature where the local forecast office issues an SRF product
 
-Manual Home Assistant entities still take priority. If a manual entity is configured, TideWise uses it instead of the auto-fetched value.
+Manual Home Assistant entities take priority. If a manual entity is configured, TideWise uses it instead of the auto-fetched value.
 
-Surf Zone Forecasts are text products and vary by NWS office. TideWise uses the same NWS SRF product route used by NOAA IT ALL, then parses common formats such as `high rip current risk`, `surf height 2 to 4 feet`, and `water temperature in the mid 80s`. Some locations may still show unknown surf or rip data. Manual entities or integrations such as NOAA IT ALL remain the most reliable override.
+Surf Zone Forecasts are text products and vary by NWS office. TideWise parses common formats such as:
 
-Recent rainfall totals are not yet reliably auto-filled. They still work best through a local rain sensor or Home Assistant weather integration.
+- `high rip current risk`
+- `surf height 2 to 4 feet`
+- `water temperature in the mid 80s`
+
+Some locations may still show unknown surf or rip data. Manual entities or dedicated integrations remain the most reliable override.
+
+Recent rainfall totals are not yet reliably auto-filled. They work best through a local rain sensor or Home Assistant weather integration.
+
+## Fishing Score
+
+The fishing score is advisory only. It is intended to give a quick glance at likely better and worse bite windows.
+
+Depending on available data, TideWise may consider:
+
+- Tide movement
+- Tide direction
+- Time to next high/low tide
+- Current tide height
+- Moon/solunar timing
+- Time of day
+- Weather condition
+- Wind speed
+- Wind direction
+- Water temperature
+- Surf/wave height
+- Rip current risk
+- Pressure
+- Pressure trend
+- Rainfall/runoff
+
+When optional data is missing, TideWise falls back to the data it has available.
 
 ## Configuration
 
@@ -158,7 +230,7 @@ Recent rainfall totals are not yet reliably auto-filled. They still work best th
 | `type` | Yes |  | Use `custom:tidewise-card`. The legacy `custom:cherry-grove-tides-card` alias also works. |
 | `title` | No | `TideWise` | Card title. |
 | `station` | Yes |  | NOAA tides and currents station ID. |
-| `units` | No | `english` | NOAA units, usually `english` or `metric`. |
+| `units` | No | `english` | NOAA units. Usually `english` or `metric`. |
 | `mode` | No | `general` | Fishing score mode: `general`, `surf`, `inlet`, `flounder`, `trout_redfish`, or `sheepshead`. |
 | `show_fishing_score` | No | `true` | Set to `false` for a tide-only card. |
 | `auto_sources` | No | `true` | Fetch public NOAA/NWS weather and marine observations directly where available. |
@@ -177,13 +249,86 @@ Recent rainfall totals are not yet reliably auto-filled. They still work best th
 | `pressure_trend_entity` | No |  | Pressure trend entity. |
 | `rain_today_entity` | No |  | Rainfall in the last 24 hours. Inches and mm are supported. |
 
-## Finding A NOAA Station
+## Finding a NOAA Station
 
 Use a NOAA tides and currents station ID near your location. TideWise uses the NOAA CO-OPS data API, so station IDs must support tide predictions.
 
+If your station does not work, try a nearby NOAA station that supports tide predictions.
+
+## Troubleshooting
+
+### TideWise does not show in the card picker
+
+1. Confirm TideWise is installed in HACS.
+2. Hard-refresh the browser.
+3. Restart Home Assistant if needed.
+4. Check that the card resource exists.
+5. Open the browser console and look for TideWise errors.
+
+### HACS shows an old README or old version
+
+HACS may cache repository metadata.
+
+Try:
+
+1. Open HACS.
+2. Open TideWise.
+3. Open the three-dot menu.
+4. Select **Redownload**.
+5. Choose the latest version.
+6. Hard-refresh your browser.
+
+If HACS still shows an old README, the installed card file may still be current while the HACS display cache is stale.
+
+### Tide data unavailable
+
+1. Verify the NOAA station ID.
+2. Try a known preset station.
+3. Confirm your browser/Home Assistant can reach NOAA.
+4. Open the browser console and check for network or station errors.
+
+### Fishing score looks limited
+
+This usually means optional weather, wind, water temperature, surf, pressure, rain, or rip current data is unavailable.
+
+The card should still work, but the score may be based on fewer inputs.
+
+## Beta Tester Checklist
+
+If you are testing TideWise, please report:
+
+- Home Assistant version
+- HACS version
+- TideWise version
+- Browser/device
+- NOAA station ID used
+- Whether you installed from HACS custom repository, manual resource, or CDN
+- Screenshot of any layout issue
+- Browser console errors, if any
+- Whether the issue happens after a hard refresh
+
+Basic test steps:
+
+1. Install TideWise from HACS custom repository.
+2. Add the card from the dashboard card picker.
+3. Open the visual editor.
+4. Select a preset station.
+5. Save.
+6. Refresh the dashboard.
+7. Confirm the card still loads.
+8. Change fishing mode.
+9. Save and refresh again.
+10. Test on desktop and phone.
+11. Test with missing optional entities.
+12. Screenshot or copy any errors.
+
 ## Safety
 
-TideWise is informational. It is not a marine safety, navigation, emergency, or surf safety tool. Always check official local forecasts, marine advisories, beach warnings, and on-site conditions before entering the water or boating.
+TideWise is informational. It is not a marine safety, navigation, emergency, or surf safety tool.
+
+Always check official local forecasts, marine advisories, beach warnings, and on-site conditions before entering the water or boating.
+
+Do not use TideWise for navigation, hazardous surf decisions, boating safety, swimming safety, or life-safety decisions.
 
 ## License
 
@@ -193,4 +338,10 @@ Commercial use requires separate written permission.
 
 ## Development
 
-The distributable card is `tidewise-card.js`.
+The distributable card is:
+
+```text
+tidewise-card.js
+```
+
+For HACS default repository submission, TideWise is a dashboard/custom card. HACS validation/submission uses the `plugin` category internally for dashboard plugins.
