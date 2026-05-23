@@ -1,7 +1,7 @@
 # TideWise
 
 <p align="center">
-  <img src="tidewise-icon.svg" alt="TideWise wave icon" width="96">
+  <img src="tidewise-icon.png" alt="TideWise wave icon" width="96">
 </p>
 
 [![GitHub release](https://img.shields.io/github/v/release/TheWillMiller/tide-wise)](https://github.com/TheWillMiller/tide-wise/releases)
