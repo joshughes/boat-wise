@@ -78,9 +78,9 @@ const STYLES = `
   }
   ha-card { background: transparent !important; box-shadow: none !important; border-radius: 22px !important; }
   .card-outer::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(42,122,148,0.62), transparent); }
-  .header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 5px; flex-wrap: wrap; }
-  .title { font-size: 28px; font-weight: 800; color: var(--text); white-space: nowrap; letter-spacing: -0.02em; }
-  .subtitle { font-size: 13px; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; font-weight: 650; white-space: nowrap; }
+  .header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 5px; flex-wrap: wrap; }
+  .title { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1.05; letter-spacing: 0; overflow-wrap: anywhere; min-width: 0; max-width: 100%; }
+  .subtitle { font-size: 13px; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; font-weight: 650; white-space: nowrap; padding-top: 8px; }
   .current-row { display: flex; align-items: center; gap: 13px; background: rgba(255,255,255,0.35); border: 1px solid rgba(42,122,148,0.20); border-radius: 14px; padding: 7px 13px; margin-bottom: 6px; }
   .current-icon { font-size: 22px; animation: bob 3s ease-in-out infinite; flex-shrink: 0; }
   @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
@@ -1410,6 +1410,7 @@ class TideWiseCardEditor extends HTMLElement {
         .section { display: grid; gap: 10px; }
         .title { font-size: 14px; font-weight: 700; color: var(--primary-text-color, #1f2933); }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+        .wide { grid-column: 1 / -1; }
         label { display: grid; gap: 5px; font-size: 12px; font-weight: 700; color: var(--secondary-text-color, #536471); }
         input, select {
           box-sizing: border-box;
@@ -1474,7 +1475,7 @@ class TideWiseCardEditor extends HTMLElement {
         <div class="section">
           <div class="title">Card</div>
           <div class="grid">
-            <label>
+            <label class="wide">
               Title
               <input id="title" value="${this._escape(config.title || "")}" placeholder="TideWise">
             </label>

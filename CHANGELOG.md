@@ -8,6 +8,7 @@
 
 ### Changed
 
+- Widened the visual editor title field and improved long-title wrapping on the card.
 - Updated release references to `v0.4.6`.
 
 ## 0.4.5
