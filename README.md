@@ -207,8 +207,9 @@ TideWise includes a Home Assistant visual editor. When adding the card from the 
 
 - Choose 50 common NOAA tide stations from a dropdown
 - Enter a custom NOAA station ID
-- Set latitude and longitude
-- Use your Home Assistant home latitude/longitude
+- Set fishing/forecast latitude and longitude
+- Fill coordinates from the selected NOAA station
+- Use your Home Assistant home latitude/longitude when that matches your fishing area
 - Select English or metric units
 - Select fishing mode
 - Enable or disable fishing score
@@ -217,6 +218,8 @@ TideWise includes a Home Assistant visual editor. When adding the card from the 
 - Set the recommended dashboard size
 
 The station dropdown is a 50-station starter list, not a complete NOAA station database. If your station is not listed, choose **Custom station ID** and paste the NOAA CO-OPS station ID.
+
+Latitude and longitude are used for fishing-score context such as NWS forecast lookup, surf/rip forecast lookup, and moon/solunar timing. For best results, use coordinates near the tide gauge, beach, inlet, or fishing area.
 
 ## Auto Sources
 
@@ -275,8 +278,8 @@ When optional data is missing, TideWise falls back to the data it has available.
 | `auto_sources` | No | `true` | Fetch public NOAA/NWS weather and marine observations directly where available. |
 | `auto_surf_forecast` | No | `true` | Try to parse NWS Surf Zone Forecast text for surf height, rip current risk, and water temperature. |
 | `nws_office` | No | Auto from NWS point metadata | Optional NWS office code such as `ILM`, `CHS`, or `SGX` for Surf Zone Forecast products. |
-| `latitude` | No | Home Assistant home latitude, then Cherry Grove fallback | Latitude for moon/solunar scoring. |
-| `longitude` | No | Home Assistant home longitude, then Cherry Grove fallback | Longitude for moon/solunar scoring. |
+| `latitude` | No | Home Assistant home latitude, then Cherry Grove fallback | Fishing/forecast latitude for NWS lookup and moon/solunar scoring. |
+| `longitude` | No | Home Assistant home longitude, then Cherry Grove fallback | Fishing/forecast longitude for NWS lookup and moon/solunar scoring. |
 | `weather_entity` | No | First available weather entity | Weather condition source. |
 | `water_temp_entity` | No |  | Water temperature sensor. Fahrenheit and Celsius are supported. |
 | `wave_height_entity` | No |  | Wave/surf height sensor. Feet and meters are supported. |

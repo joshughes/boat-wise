@@ -5,10 +5,12 @@
 ### Added
 
 - Added a compact water temperature chip to the tide/fishing header when water temperature data is available.
+- Added a visual editor button to fill fishing/forecast coordinates from the NOAA station location.
 
 ### Changed
 
 - Widened the visual editor title field and improved long-title wrapping on the card.
+- Clarified that latitude/longitude are fishing/forecast coordinates, not necessarily the Home Assistant home location.
 - Updated release references to `v0.4.6`.
 
 ## 0.4.5

@@ -1393,6 +1393,30 @@ class TideWiseCardEditor extends HTMLElement {
     this._emitConfig({ ...this._config, latitude: home.lat, longitude: home.lon });
   }
 
+  async _useNoaaStationLocation() {
+    const station = String(this._config.station || "").trim();
+    if (!station) return;
+    const button = this.shadowRoot.getElementById("stationLocation");
+    if (button) button.disabled = true;
+    try {
+      const res = await fetch(`https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations/${encodeURIComponent(station)}.json`);
+      const json = await res.json();
+      const stationInfo = json?.stations?.[0];
+      const lat = Number(stationInfo?.lat);
+      const lon = Number(stationInfo?.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+      const next = { ...this._config, latitude: lat, longitude: lon };
+      const stationName = String(stationInfo?.name || "").trim();
+      const state = String(stationInfo?.state || "").trim();
+      if (stationName && this._isGeneratedTitle(next.title)) next.title = `${stationName}${state ? ", " + state : ""} Tides`;
+      this._emitConfig(next);
+    } catch (err) {
+      // Keep the editor usable if NOAA metadata is unavailable.
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
   _render() {
     if (!this.shadowRoot) return;
     const config = this._config || {};
@@ -1458,17 +1482,18 @@ class TideWiseCardEditor extends HTMLElement {
           </div>
           <div class="grid">
             <label>
-              Latitude
+              Fishing/forecast latitude
               <input id="latitude" type="number" step="0.000001" value="${config.latitude ?? ""}" placeholder="33.688">
             </label>
             <label>
-              Longitude
+              Fishing/forecast longitude
               <input id="longitude" type="number" step="0.000001" value="${config.longitude ?? ""}" placeholder="-78.886">
             </label>
           </div>
           <div class="row">
-            <button id="homeLocation" type="button" ${home.lat && home.lon ? "" : "disabled"}>Use Home Assistant location</button>
-            <span class="hint">${home.lat && home.lon ? `Home: ${home.lat.toFixed(4)}, ${home.lon.toFixed(4)}` : "Home Assistant location is not available in zone.home."}</span>
+            <button id="stationLocation" type="button">Use NOAA station location</button>
+            <button id="homeLocation" type="button" ${home.lat && home.lon ? "" : "disabled"}>Use HA home location</button>
+            <span class="hint">For best fishing scores, use coordinates near the tide gauge, beach, inlet, or fishing area. ${home.lat && home.lon ? `HA home: ${home.lat.toFixed(4)}, ${home.lon.toFixed(4)}` : "HA home location is not available in zone.home."}</span>
           </div>
         </div>
 
@@ -1534,6 +1559,7 @@ class TideWiseCardEditor extends HTMLElement {
     this.shadowRoot.getElementById("station")?.addEventListener("change", (event) => this._setValue("station", String(event.target.value || "").trim()));
     this.shadowRoot.getElementById("latitude")?.addEventListener("change", (event) => this._setNumber("latitude", event.target.value));
     this.shadowRoot.getElementById("longitude")?.addEventListener("change", (event) => this._setNumber("longitude", event.target.value));
+    this.shadowRoot.getElementById("stationLocation")?.addEventListener("click", () => this._useNoaaStationLocation());
     this.shadowRoot.getElementById("homeLocation")?.addEventListener("click", () => this._useHomeLocation());
     this.shadowRoot.getElementById("title")?.addEventListener("change", (event) => this._setValue("title", event.target.value || "TideWise"));
     this.shadowRoot.getElementById("units")?.addEventListener("change", (event) => this._setValue("units", event.target.value));
