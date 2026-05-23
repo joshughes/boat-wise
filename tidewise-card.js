@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.4.5
+ * TideWise Card v0.4.6
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.4.5";
+const CARD_VERSION = "0.4.6";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const STATION_PRESETS = [
   { station: "8410140", name: "Eastport, ME", lat: 44.9046, lon: -66.9829 },
@@ -100,6 +100,7 @@ const STYLES = `
   .score-good { background: rgba(42,122,148,0.12); color: var(--wave-dark); }
   .score-fair { background: rgba(232,184,75,0.20); color: #8a6a10; }
   .score-slow { background: rgba(192,80,48,0.14); color: #8a3018; }
+  .water-temp-chip { font-size: 13px; color: var(--wave-dark); background: rgba(255,255,255,0.52); border: 1px solid rgba(42,122,148,0.25); border-radius: 99px; padding: 2px 9px; white-space: nowrap; font-weight: 800; }
   .fish-moon { font-size: 13px; color: var(--text-muted); font-weight: 650; white-space: nowrap; }
   .chart-wrap { position: relative; height: 95px; border-radius: 10px; overflow: hidden; }
   canvas { display: block; width: 100%; height: 100%; }
@@ -558,6 +559,12 @@ class TideWiseCard extends HTMLElement {
     return Number.isFinite(surfTemp) ? surfTemp : null;
   }
 
+  _formatWaterTemp(tempF) {
+    if (!Number.isFinite(tempF)) return "";
+    if (this._config.units === "metric") return `${Math.round((tempF - 32) * 5 / 9)}°C`;
+    return `${Math.round(tempF)}°F`;
+  }
+
   _getWaveHeightFt() {
     const e = this._getNumericEntity(this._config.wave_height_entity);
     if (e) {
@@ -1000,6 +1007,12 @@ class TideWiseCard extends HTMLElement {
     const fish = this._config.show_fishing_score ? this._buildFishingScores(chartPredictions) : null;
     const scoreInfo = fish ? this._scoreLabel(fish.currentScore) : null;
     const phaseName = fish ? this._moonPhaseName(fish.age) : "";
+    const waterTempLabel = this._formatWaterTemp(this._getWaterTempF());
+    const headerBadges = [
+      waterTempLabel ? `<span class="water-temp-chip">Water ${waterTempLabel}</span>` : "",
+      fish ? `<span class="fish-moon">${phaseName}</span>` : "",
+      fish ? `<span class="fish-score ${scoreInfo.cls}">${scoreInfo.text}</span>` : ""
+    ].filter(Boolean).join("");
     const root = this.shadowRoot.getElementById("root");
 
     root.innerHTML = `
@@ -1021,7 +1034,7 @@ class TideWiseCard extends HTMLElement {
       <div class="chart-section">
         <div class="chart-header">
           <div class="section-label">${this._config.show_fishing_score ? "&#127907; Tide &amp; Fishing" : "Tide Forecast"}</div>
-          ${fish ? `<div class="fish-badge-row"><span class="fish-moon">${phaseName}</span><span class="fish-score ${scoreInfo.cls}">${scoreInfo.text}</span></div>` : ""}
+          ${headerBadges ? `<div class="fish-badge-row">${headerBadges}</div>` : ""}
         </div>
         <div class="chart-wrap"><canvas id="tideCanvas"></canvas></div>
         ${this._xAxisHtml(chartPredictions)}

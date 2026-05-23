@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.6
+
+### Added
+
+- Added a compact water temperature chip to the tide/fishing header when water temperature data is available.
+
+### Changed
+
+- Updated release references to `v0.4.6`.
+
 ## 0.4.5
 
 ### Changed
