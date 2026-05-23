@@ -212,13 +212,55 @@ class TideWiseCard extends HTMLElement {
       ]);
       const cj = await cr.json();
       const hj = await hr.json();
-      if (cj.error || hj.error) throw new Error(cj.error?.message || hj.error?.message || "NOAA error");
-      this._data = { predictions: cj.predictions || [], hilo: hj.predictions || [] };
+      if (hj.error) throw new Error(this._friendlyNoaaError(hj.error?.message));
+      const hilo = hj.predictions || [];
+      let predictions = cj.predictions || [];
+      if (cj.error && hilo.length >= 2) predictions = this._buildPredictionsFromHilo(hilo);
+      else if (cj.error) throw new Error(this._friendlyNoaaError(cj.error?.message));
+      this._data = { predictions, hilo, intervalFallback: Boolean(cj.error && predictions.length) };
       this._autoData = autoData || {};
       this._renderData();
     } catch (err) {
       this._renderError(err.message);
     }
+  }
+
+  _friendlyNoaaError(message) {
+    const raw = String(message || "").trim();
+    if (raw.toLowerCase().includes("no predictions data")) {
+      return "NOAA did not return tide predictions for this station. Try a nearby NOAA tide station or a known preset.";
+    }
+    return raw || "NOAA error";
+  }
+
+  _buildPredictionsFromHilo(hilo) {
+    const events = (hilo || [])
+      .map((item) => ({ ...item, time: this._parsePredictionTime(item.t), value: parseFloat(item.v) }))
+      .filter((item) => Number.isFinite(item.time.getTime()) && Number.isFinite(item.value))
+      .sort((a, b) => a.time - b.time);
+    if (events.length < 2) return [];
+
+    const stepMs = 6 * 60 * 1000;
+    const predictions = [];
+    for (let i = 0; i < events.length - 1; i++) {
+      const a = events[i];
+      const b = events[i + 1];
+      const spanMs = b.time.getTime() - a.time.getTime();
+      if (spanMs <= 0) continue;
+      for (let tMs = a.time.getTime(); tMs < b.time.getTime(); tMs += stepMs) {
+        const f = (tMs - a.time.getTime()) / spanMs;
+        const eased = (1 - Math.cos(Math.PI * f)) / 2;
+        const value = a.value + (b.value - a.value) * eased;
+        predictions.push({ t: this._formatNoaaTime(new Date(tMs)), v: value.toFixed(3) });
+      }
+    }
+    const last = events[events.length - 1];
+    predictions.push({ t: this._formatNoaaTime(last.time), v: last.value.toFixed(3) });
+    return predictions;
+  }
+
+  _formatNoaaTime(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
   }
 
   _dateStr(offset = 0) {

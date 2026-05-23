@@ -49,6 +49,7 @@ Helpful details include Home Assistant version, HACS version, TideWise version, 
 - Current interpolated tide height
 - Next high and low tide
 - 24-hour tide chart
+- High/low fallback for NOAA stations without full interval predictions
 - Visual editor support
 - 50-station preset picker plus custom NOAA station ID
 - Optional fishing bite-window score
