@@ -28,6 +28,17 @@ type: module
 
 3. Add the card to a dashboard.
 
+### Test From GitHub
+
+For quick testing before installing locally, add this Lovelace resource:
+
+```yaml
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@main/tidewise-card.js
+type: module
+```
+
+After changing resources, refresh Home Assistant and hard-refresh the browser tab.
+
 ### HACS
 
 This repository is structured for HACS custom repository installation as a Lovelace plugin.
