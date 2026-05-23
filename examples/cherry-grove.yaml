@@ -3,6 +3,7 @@ title: Cherry Grove Tides
 station: "8661070"
 units: english
 weather_entity: weather.nws_33_8552645_78_6761264_kmyr
+auto_sources: true
 water_temp_entity: sensor.noaa_surf_water_temperature
 wave_height_entity: sensor.noaa_surf_surf_height
 rip_current_risk_entity: sensor.noaa_surf_rip_current_risk

@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.2.1
+ * TideWise Card v0.3.0
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.2.1";
+const CARD_VERSION = "0.3.0";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const STATION_PRESETS = [
   { station: "8661070", name: "Cherry Grove, SC", lat: 33.688, lon: -78.886 },
@@ -99,6 +99,7 @@ class TideWiseCard extends HTMLElement {
     this._config = {};
     this._hass = null;
     this._data = null;
+    this._autoData = {};
     this._refreshInterval = null;
     this._clockInterval = null;
     this._chartCanvas = null;
@@ -110,7 +111,8 @@ class TideWiseCard extends HTMLElement {
       station: "8661070",
       units: "english",
       mode: "general",
-      show_fishing_score: true
+      show_fishing_score: true,
+      auto_sources: true
     };
   }
 
@@ -140,7 +142,8 @@ class TideWiseCard extends HTMLElement {
       latitude: Number(config.latitude) || 33.688,
       longitude: Number(config.longitude) || -78.886,
       mode: String(config.mode || "general").toLowerCase(),
-      show_fishing_score: config.show_fishing_score !== false
+      show_fishing_score: config.show_fishing_score !== false,
+      auto_sources: config.auto_sources !== false
     };
     this._render();
     this._fetchData();
@@ -163,14 +166,17 @@ class TideWiseCard extends HTMLElement {
     const base = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter";
     const cp = `station=${station}&datum=MLLW&time_zone=lst_ldt&units=${units}&application=tidewise_card&format=json`;
     try {
-      const [cr, hr] = await Promise.all([
+      const autoPromise = this._config.auto_sources ? this._fetchAutoSources().catch((err) => ({ error: err.message })) : Promise.resolve({});
+      const [cr, hr, autoData] = await Promise.all([
         fetch(`${base}?begin_date=${today}&end_date=${tomorrow}&${cp}&product=predictions&interval=6`),
-        fetch(`${base}?begin_date=${today}&end_date=${tomorrow}&${cp}&product=predictions&interval=hilo`)
+        fetch(`${base}?begin_date=${today}&end_date=${tomorrow}&${cp}&product=predictions&interval=hilo`),
+        autoPromise
       ]);
       const cj = await cr.json();
       const hj = await hr.json();
       if (cj.error || hj.error) throw new Error(cj.error?.message || hj.error?.message || "NOAA error");
       this._data = { predictions: cj.predictions || [], hilo: hj.predictions || [] };
+      this._autoData = autoData || {};
       this._renderData();
     } catch (err) {
       this._renderError(err.message);
@@ -181,6 +187,54 @@ class TideWiseCard extends HTMLElement {
     const d = new Date();
     d.setDate(d.getDate() + offset);
     return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  async _fetchAutoSources() {
+    const [coops, nws] = await Promise.all([
+      this._fetchCoopsObservations().catch((err) => ({ error: err.message })),
+      this._fetchNwsForecast().catch((err) => ({ error: err.message }))
+    ]);
+    return {
+      coops: coops || {},
+      nws: nws || {},
+      updated: new Date().toISOString()
+    };
+  }
+
+  async _fetchCoopsObservations() {
+    const { station, units } = this._config;
+    const base = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter";
+    const common = `station=${station}&time_zone=lst_ldt&units=${units}&application=tidewise_card&format=json&date=latest`;
+    const products = [
+      ["water_temperature", "waterTemp"],
+      ["wind", "wind"],
+      ["air_pressure", "pressure"]
+    ];
+    const results = await Promise.all(products.map(async ([product, key]) => {
+      const res = await fetch(`${base}?${common}&product=${product}`);
+      if (!res.ok) return [key, null];
+      const json = await res.json();
+      if (json.error) return [key, null];
+      const item = Array.isArray(json.data) ? json.data[0] : null;
+      return [key, item || null];
+    }));
+    return Object.fromEntries(results.filter(([, value]) => value));
+  }
+
+  async _fetchNwsForecast() {
+    const { lat, lon } = this._getHomeLatLon();
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return {};
+    const headers = { Accept: "application/geo+json" };
+    const pointRes = await fetch(`https://api.weather.gov/points/${lat.toFixed(4)},${lon.toFixed(4)}`, { headers });
+    if (!pointRes.ok) return {};
+    const point = await pointRes.json();
+    const hourlyUrl = point?.properties?.forecastHourly;
+    if (!hourlyUrl) return {};
+    const hourlyRes = await fetch(hourlyUrl, { headers });
+    if (!hourlyRes.ok) return {};
+    const hourly = await hourlyRes.json();
+    const period = hourly?.properties?.periods?.[0] || null;
+    return { point: point.properties || {}, period };
   }
 
   _parsePredictionTime(t) {
@@ -251,12 +305,14 @@ class TideWiseCard extends HTMLElement {
     const states = this._hass?.states || {};
     if (this._config.weather_entity && states[this._config.weather_entity]) return states[this._config.weather_entity];
     const keys = Object.keys(states).filter((k) => k.startsWith("weather."));
-    if (!keys.length) return null;
+    if (!keys.length) return this._getAutoWeatherState();
     const preferred = keys.find((k) => {
       const fn = String(states[k]?.attributes?.friendly_name || "").toLowerCase();
       return fn.includes("home") || fn.includes("weather");
     });
-    return states[preferred || keys[0]] || null;
+    const weather = states[preferred || keys[0]] || null;
+    if (weather) return weather;
+    return this._getAutoWeatherState();
   }
 
   _getHomeLatLon() {
@@ -278,18 +334,23 @@ class TideWiseCard extends HTMLElement {
     }
     const attrs = weather?.attributes || {};
     const raw = Number(attrs.wind_speed);
-    if (!Number.isFinite(raw)) return null;
     const unit = String(attrs.wind_speed_unit || attrs.unit_of_measurement || "").toLowerCase();
-    if (unit.includes("km")) return raw * 0.621371;
-    if (unit.includes("m/s")) return raw * 2.23694;
-    if (unit.includes("kn")) return raw * 1.15078;
-    return raw;
+    if (Number.isFinite(raw) && unit.includes("km")) return raw * 0.621371;
+    if (Number.isFinite(raw) && unit.includes("m/s")) return raw * 2.23694;
+    if (Number.isFinite(raw) && unit.includes("kn")) return raw * 1.15078;
+    if (Number.isFinite(raw)) return raw;
+    const coopsWind = this._parseCoopsWindSpeedMph();
+    if (coopsWind !== null) return coopsWind;
+    return this._parseNwsWindSpeedMph();
   }
 
   _getWindBearing(weather) {
     const d = this._getNumericEntity(this._config.wind_direction_entity);
     if (d) return d.value;
-    return Number(weather?.attributes?.wind_bearing);
+    const bearing = Number(weather?.attributes?.wind_bearing);
+    if (Number.isFinite(bearing)) return bearing;
+    const coopsBearing = Number(this._autoData?.coops?.wind?.d);
+    return Number.isFinite(coopsBearing) ? coopsBearing : this._parseNwsWindDirection();
   }
 
   _getPressureHpa(weather) {
@@ -301,15 +362,75 @@ class TideWiseCard extends HTMLElement {
     }
     const attrs = weather?.attributes || {};
     const raw = Number(attrs.pressure);
-    if (!Number.isFinite(raw)) return null;
     const unit = String(attrs.pressure_unit || attrs.unit_of_measurement || "").toLowerCase();
-    if (unit.includes("inhg") || unit.includes("in hg")) return raw * 33.8639;
-    return raw;
+    if (Number.isFinite(raw)) {
+      if (unit.includes("inhg") || unit.includes("in hg")) return raw * 33.8639;
+      return raw;
+    }
+    const autoPressure = this._parseAutoPressureHpa();
+    return autoPressure;
   }
 
-  _getWaterTempF() { const e = this._getNumericEntity(this._config.water_temp_entity); if (!e) return null; const unit = String(e.unit || "").toLowerCase(); return unit.includes("c") ? e.value * 9 / 5 + 32 : e.value; }
+  _getWaterTempF() { const e = this._getNumericEntity(this._config.water_temp_entity); if (e) { const unit = String(e.unit || "").toLowerCase(); return unit.includes("c") ? e.value * 9 / 5 + 32 : e.value; } return this._parseCoopsWaterTempF(); }
   _getWaveHeightFt() { const e = this._getNumericEntity(this._config.wave_height_entity); if (!e) return null; const unit = String(e.unit || "").toLowerCase(); return unit.includes("m") ? e.value * 3.28084 : e.value; }
   _getRainTodayIn() { const e = this._getNumericEntity(this._config.rain_today_entity); if (!e) return null; const unit = String(e.unit || "").toLowerCase(); return unit.includes("mm") ? e.value / 25.4 : e.value; }
+
+  _getAutoWeatherState() {
+    const period = this._autoData?.nws?.period;
+    if (!period) return null;
+    return {
+      state: this._normalizeNwsShortForecast(period.shortForecast),
+      attributes: {
+        wind_speed: this._parseNwsWindSpeedMph(),
+        wind_bearing: this._parseNwsWindDirection()
+      }
+    };
+  }
+
+  _normalizeNwsShortForecast(shortForecast) {
+    const text = String(shortForecast || "").toLowerCase();
+    if (!text) return "unknown";
+    if (text.includes("thunder")) return "lightning-rainy";
+    if (text.includes("rain") || text.includes("showers")) return "rainy";
+    if (text.includes("fog")) return "fog";
+    if (text.includes("sunny") || text.includes("clear")) return "sunny";
+    if (text.includes("partly")) return "partlycloudy";
+    if (text.includes("cloud")) return "cloudy";
+    return text;
+  }
+
+  _parseCoopsWaterTempF() {
+    const item = this._autoData?.coops?.waterTemp;
+    const val = Number(item?.v);
+    if (!Number.isFinite(val)) return null;
+    return this._config.units === "metric" ? val * 9 / 5 + 32 : val;
+  }
+
+  _parseCoopsWindSpeedMph() {
+    const val = Number(this._autoData?.coops?.wind?.s);
+    if (!Number.isFinite(val)) return null;
+    return this._config.units === "metric" ? val * 2.23694 : val * 1.15078;
+  }
+
+  _parseAutoPressureHpa() {
+    const val = Number(this._autoData?.coops?.pressure?.v);
+    if (!Number.isFinite(val)) return null;
+    return this._config.units === "english" ? val * 33.8639 : val;
+  }
+
+  _parseNwsWindSpeedMph() {
+    const raw = String(this._autoData?.nws?.period?.windSpeed || "");
+    const range = raw.match(/([0-9]+)\s*(?:to|-)\s*([0-9]+)/i);
+    if (range) return (Number(range[1]) + Number(range[2])) / 2;
+    const single = raw.match(/[0-9]+/);
+    return single ? Number(single[0]) : null;
+  }
+
+  _parseNwsWindDirection() {
+    const raw = String(this._autoData?.nws?.period?.windDirection || "").toUpperCase();
+    const map = { N: 0, NNE: 22.5, NE: 45, ENE: 67.5, E: 90, ESE: 112.5, SE: 135, SSE: 157.5, S: 180, SSW: 202.5, SW: 225, WSW: 247.5, W: 270, WNW: 292.5, NW: 315, NNW: 337.5 };
+    return map[raw] ?? NaN;
+  }
 
   _getPressureTrend() {
     const ent = this._getEntity(this._config.pressure_trend_entity);
@@ -655,6 +776,7 @@ class TideWiseCard extends HTMLElement {
     else if (detail.light.score < 0.30) parts.push("poor light window");
     if (detail.solunar >= 0.70) parts.push("moon window");
     if (detail.pressure.score >= 0.72) parts.push(detail.pressure.label);
+    if (this._config.auto_sources && (this._autoData?.coops || this._autoData?.nws)) parts.push("NOAA/NWS inputs");
     if (!parts.length) parts.push("mixed but fishable");
     return parts.slice(0, 3).join(" + ");
   }
@@ -988,6 +1110,7 @@ class TideWiseCardEditor extends HTMLElement {
       units: "english",
       mode: "general",
       show_fishing_score: true,
+      auto_sources: true,
       grid_options: { rows: "full", columns: 18 },
       ...config
     };
@@ -1165,6 +1288,10 @@ class TideWiseCardEditor extends HTMLElement {
             <input id="showFishing" type="checkbox" ${config.show_fishing_score !== false ? "checked" : ""}>
             Show fishing score
           </label>
+          <label class="check">
+            <input id="autoSources" type="checkbox" ${config.auto_sources !== false ? "checked" : ""}>
+            Fetch NOAA/NWS auto sources
+          </label>
         </div>
 
         <div class="section">
@@ -1199,6 +1326,7 @@ class TideWiseCardEditor extends HTMLElement {
     this.shadowRoot.getElementById("units")?.addEventListener("change", (event) => this._setValue("units", event.target.value));
     this.shadowRoot.getElementById("mode")?.addEventListener("change", (event) => this._setValue("mode", event.target.value));
     this.shadowRoot.getElementById("showFishing")?.addEventListener("change", (event) => this._setValue("show_fishing_score", event.target.checked));
+    this.shadowRoot.getElementById("autoSources")?.addEventListener("change", (event) => this._setValue("auto_sources", event.target.checked));
     this.shadowRoot.getElementById("gridRows")?.addEventListener("change", (event) => this._setGridValue("rows", event.target.value));
     this.shadowRoot.getElementById("gridColumns")?.addEventListener("change", (event) => this._setGridValue("columns", event.target.value));
   }

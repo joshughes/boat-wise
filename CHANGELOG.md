@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+- Added `auto_sources` for direct NOAA/NWS fallback data.
+- Added NOAA CO-OPS latest water temperature, wind, and air pressure fallbacks where supported by the selected station.
+- Added NWS hourly forecast weather and wind fallbacks from latitude/longitude.
+- Added visual editor control for enabling or disabling NOAA/NWS auto sources.
+
 ## 0.2.1
 
 - Fixed visual editor station preset title updates after the first station selection.

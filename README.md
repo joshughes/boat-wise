@@ -33,7 +33,7 @@ type: module
 For quick testing before installing locally, add this Lovelace resource:
 
 ```yaml
-url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.2.1/tidewise-card.js
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.3.0/tidewise-card.js
 type: module
 ```
 
@@ -64,6 +64,7 @@ title: Local Tides
 station: "8661070"
 units: english
 mode: general
+auto_sources: true
 grid_options:
   rows: full
   columns: 18
@@ -89,6 +90,7 @@ title: Cherry Grove Tides
 station: "8661070"
 units: english
 mode: inlet
+auto_sources: true
 weather_entity: weather.nws_33_8552645_78_6761264_kmyr
 water_temp_entity: sensor.noaa_surf_water_temperature
 wave_height_entity: sensor.noaa_surf_surf_height
@@ -133,6 +135,17 @@ TideWise includes a Home Assistant visual editor. When adding the card from the 
 
 The station dropdown is a starter list, not a complete NOAA station database. If your station is not listed, choose **Custom station ID** and paste the NOAA CO-OPS station ID.
 
+## Auto Sources
+
+TideWise can fetch extra public NOAA/NWS data directly from the browser when `auto_sources` is enabled:
+
+- NOAA CO-OPS latest water temperature, wind, and air pressure where the selected station supports those products.
+- NWS hourly forecast weather and wind from latitude/longitude.
+
+Manual Home Assistant entities still take priority. If a manual entity is configured, TideWise uses it instead of the auto-fetched value.
+
+Some data is not yet reliably available everywhere from direct browser fetches, especially surf height, rip current risk, and local rainfall totals. Those still work best through manual Home Assistant entities or integrations such as NOAA IT ALL.
+
 ## Configuration
 
 | Option | Required | Default | Description |
@@ -143,6 +156,7 @@ The station dropdown is a starter list, not a complete NOAA station database. If
 | `units` | No | `english` | NOAA units, usually `english` or `metric`. |
 | `mode` | No | `general` | Fishing score mode: `general`, `surf`, `inlet`, `flounder`, `trout_redfish`, or `sheepshead`. |
 | `show_fishing_score` | No | `true` | Set to `false` for a tide-only card. |
+| `auto_sources` | No | `true` | Fetch public NOAA/NWS weather and marine observations directly where available. |
 | `latitude` | No | Home Assistant home latitude, then Cherry Grove fallback | Latitude for moon/solunar scoring. |
 | `longitude` | No | Home Assistant home longitude, then Cherry Grove fallback | Longitude for moon/solunar scoring. |
 | `weather_entity` | No | First available weather entity | Weather condition source. |
