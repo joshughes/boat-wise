@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- Documented HACS custom repository installation.
+- Updated stable CDN install examples to `v0.1.1`.
+
 ## 0.1.0
 
 - Initial TideWise public release scaffold.

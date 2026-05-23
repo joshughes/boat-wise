@@ -33,7 +33,7 @@ type: module
 For quick testing before installing locally, add this Lovelace resource:
 
 ```yaml
-url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.1.0/tidewise-card.js
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.1.1/tidewise-card.js
 type: module
 ```
 
