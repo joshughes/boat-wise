@@ -41,7 +41,32 @@ After changing resources, refresh Home Assistant and hard-refresh the browser ta
 
 ### HACS
 
-This repository is structured for HACS custom repository installation as a Lovelace plugin.
+TideWise can be installed through HACS as a custom frontend repository.
+
+1. Open HACS in Home Assistant.
+2. Go to **Frontend**.
+3. Open the three-dot menu and choose **Custom repositories**.
+4. Add this repository URL:
+
+```text
+https://github.com/TheWillMiller/tide-wise
+```
+
+5. Select category **Lovelace** or **Plugin**.
+6. Install TideWise.
+7. Reload Home Assistant frontend or hard-refresh your browser.
+
+Then add the card:
+
+```yaml
+type: custom:tidewise-card
+title: Local Tides
+station: "8661070"
+units: english
+mode: general
+```
+
+TideWise is not yet listed as a default/searchable HACS repository. Until it is accepted into the default HACS store, users should add it as a custom repository.
 
 ## Minimal Config
 
