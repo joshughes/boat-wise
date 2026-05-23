@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.2.0
+ * TideWise Card v0.2.1
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.2.0";
+const CARD_VERSION = "0.2.1";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const STATION_PRESETS = [
   { station: "8661070", name: "Cherry Grove, SC", lat: 33.688, lon: -78.886 },
@@ -1008,6 +1008,11 @@ class TideWiseCardEditor extends HTMLElement {
     return STATION_PRESETS.find((item) => item.station === String(station));
   }
 
+  _isGeneratedTitle(title) {
+    const value = String(title || "").trim();
+    return value === "" || value === "TideWise" || STATION_PRESETS.some((item) => value === `${item.name} Tides`);
+  }
+
   _emitConfig(nextConfig) {
     this._config = nextConfig;
     const event = new Event("config-changed", { bubbles: true, composed: true });
@@ -1044,7 +1049,7 @@ class TideWiseCardEditor extends HTMLElement {
     const preset = this._presetForStation(station);
     const next = { ...this._config, station: String(station) };
     if (preset) {
-      next.title = next.title && next.title !== "TideWise" ? next.title : `${preset.name} Tides`;
+      if (this._isGeneratedTitle(next.title)) next.title = `${preset.name} Tides`;
       next.latitude = preset.lat;
       next.longitude = preset.lon;
     }

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+- Fixed visual editor station preset title updates after the first station selection.
+
 ## 0.2.0
 
 - Added a Home Assistant visual editor for TideWise card configuration.
