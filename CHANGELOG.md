@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.4.3
+
+### Added
+
+- Added HACS validation workflow using `hacs/action` with category `plugin`.
+- Added Beta Install Report and Works For Me / Confirmed Station issue templates.
+- Added visible beta feedback CTA asking users to star the repo or open a quick report.
+- Added privacy/no-telemetry language.
+- Added project insights/adoption tracking notes.
+- Added standalone beta tester checklist.
+
+### Changed
+
+- Updated `hacs.json` metadata with `country: US`.
+- Updated README install, troubleshooting, and HACS cache guidance.
+- Bumped release references to `v0.4.3`.
+
+### Known Issues
+
+- HACS may cache README metadata after updates; redownload the latest release and hard-refresh if old text appears.
+- Recent rainfall totals still require a local sensor or Home Assistant weather integration.
+
 ## 0.4.2
 
 - Matched NWS Surf Zone Forecast fetching more closely to NOAA IT ALL by trying the forecast.weather.gov SRF text product first.

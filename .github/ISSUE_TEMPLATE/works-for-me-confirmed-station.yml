@@ -1,0 +1,71 @@
+name: Works For Me / Confirmed Station
+description: Confirm a TideWise install and NOAA station that works.
+title: "[Works For Me]: "
+labels:
+  - works-for-me
+  - confirmed-station
+body:
+  - type: input
+    id: tidewise_version
+    attributes:
+      label: TideWise version
+      placeholder: v0.4.3
+    validations:
+      required: true
+  - type: input
+    id: home_assistant_version
+    attributes:
+      label: Home Assistant version
+    validations:
+      required: true
+  - type: input
+    id: hacs_version
+    attributes:
+      label: HACS version
+    validations:
+      required: false
+  - type: input
+    id: station
+    attributes:
+      label: NOAA station ID
+      placeholder: "8661070"
+    validations:
+      required: true
+  - type: input
+    id: area
+    attributes:
+      label: Location/general area
+      placeholder: Cherry Grove, SC / San Diego, CA / etc.
+    validations:
+      required: true
+  - type: input
+    id: browser_device
+    attributes:
+      label: Browser/device
+    validations:
+      required: true
+  - type: dropdown
+    id: install_method
+    attributes:
+      label: Install method
+      options:
+        - HACS custom repository
+        - Manual local resource
+        - CDN test resource
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: optional_entities
+    attributes:
+      label: Optional entities used
+      description: List weather, water temp, surf, rip current, wind, pressure, or rain entities if used. Write "none" if not.
+    validations:
+      required: false
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes or screenshot
+      description: Optional screenshot or notes about what worked.
+    validations:
+      required: false

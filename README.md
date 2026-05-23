@@ -1,4 +1,9 @@
 # TideWise
+
+[![GitHub release](https://img.shields.io/github/v/release/TheWillMiller/tide-wise)](https://github.com/TheWillMiller/tide-wise/releases)
+[![Validate](https://github.com/TheWillMiller/tide-wise/actions/workflows/validate.yml/badge.svg)](https://github.com/TheWillMiller/tide-wise/actions/workflows/validate.yml)
+[![GitHub stars](https://img.shields.io/github/stars/TheWillMiller/tide-wise?style=social)](https://github.com/TheWillMiller/tide-wise/stargazers)
+
 ## Screenshots
 
 ### Main TideWise Card
@@ -17,6 +22,19 @@ TideWise is a Home Assistant dashboard (Lovelace) custom card for NOAA tide pred
 It combines NOAA tide data with local Home Assistant entities such as weather, wind, water temperature, surf height, pressure, rain, and rip current risk. Missing optional entities are allowed; TideWise falls back to neutral scoring where possible.
 
 > **Beta notice:** TideWise is still early beta software. Please expect occasional layout issues, missing-data fallbacks, and station-specific quirks while testing.
+
+## Beta Feedback
+
+TideWise is in beta. If it works for your setup, please consider starring the repo so I can gauge interest and so you can follow development:
+
+[Star TideWise on GitHub](https://github.com/TheWillMiller/tide-wise)
+
+If you run into issues or want to confirm your station works, please open one of these quick reports:
+
+- [Beta Install Report](https://github.com/TheWillMiller/tide-wise/issues/new?template=beta-install-report.yml)
+- [Works For Me / Confirmed Station](https://github.com/TheWillMiller/tide-wise/issues/new?template=works-for-me-confirmed-station.yml)
+
+Helpful details include Home Assistant version, HACS version, TideWise version, browser/device, NOAA station ID, and a screenshot or console error if something broke.
 
 ## Features
 
@@ -87,7 +105,7 @@ type: module
 For quick testing before installing locally, you can add this dashboard resource:
 
 ```yaml
-url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.4.2/tidewise-card.js
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.4.3/tidewise-card.js
 type: module
 ```
 
@@ -269,6 +287,8 @@ If your station does not work, try a nearby NOAA station that supports tide pred
 
 ## Troubleshooting
 
+If TideWise works for you after troubleshooting, please consider starring the repo or opening a Works For Me / Confirmed Station report. If it breaks, a Beta Install Report with your versions and station ID helps a lot.
+
 ### TideWise does not show in the card picker
 
 1. Confirm TideWise is installed in HACS.
@@ -292,6 +312,22 @@ Try:
 
 If HACS still shows an old README, the installed card file may still be current while the HACS display cache is stale.
 
+### Card does not show up
+
+1. Confirm TideWise is installed.
+2. Confirm the dashboard resource exists.
+3. Hard-refresh the browser.
+4. Redownload the latest release in HACS.
+5. Restart Home Assistant if needed.
+6. Check the browser console for `tidewise-card.js` loading errors.
+
+### Visual editor does not show
+
+1. Confirm the latest TideWise JS is loaded.
+2. Hard-refresh the browser.
+3. Redownload the latest HACS release.
+4. Check the browser console for custom element errors.
+
 ### Tide data unavailable
 
 1. Verify the NOAA station ID.
@@ -305,7 +341,17 @@ This usually means optional weather, wind, water temperature, surf, pressure, ra
 
 The card should still work, but the score may be based on fewer inputs.
 
+## Privacy
+
+TideWise does not include telemetry, tracking pixels, external analytics, or phone-home behavior.
+
+When `auto_sources` or `auto_surf_forecast` are enabled, the card fetches the public NOAA/NWS data needed to render the configured dashboard card. Adoption tracking is based only on GitHub-native signals such as stars, issues, release activity, and tester reports.
+
+Maintainer notes for GitHub-native adoption signals are in [PROJECT_INSIGHTS.md](PROJECT_INSIGHTS.md).
+
 ## Beta Tester Checklist
+
+The full checklist is also available in [BETA_TESTER_CHECKLIST.md](BETA_TESTER_CHECKLIST.md).
 
 If you are testing TideWise, please report:
 

@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.4.2
+ * TideWise Card v0.4.3
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.4.2";
+const CARD_VERSION = "0.4.3";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const STATION_PRESETS = [
   { station: "8661070", name: "Cherry Grove, SC", lat: 33.688, lon: -78.886 },
@@ -1484,3 +1484,4 @@ console.info(
   "background:#0d3a5c;color:#7ecbca;font-weight:bold;padding:2px 4px;border-radius:3px 0 0 3px",
   "background:#7ecbca;color:#0d3a5c;font-weight:bold;padding:2px 4px;border-radius:0 3px 3px 0"
 );
+console.info(`TideWise v${CARD_VERSION} loaded`);
