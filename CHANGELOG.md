@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.4.7
+
+### Added
+
+- Added a compact wind chip to the current tide row when wind data is available.
+
+### Fixed
+
+- Stabilized fishing outlook labels with a deadband so tiny score changes do not constantly flip between nearby bands.
+- Smoothed chart score colors with a small rolling average.
+- Fixed fishing/forecast coordinate priority so configured coordinates are used before the Home Assistant home fallback.
+
+### Changed
+
+- Updated release references to `v0.4.7`.
+
 ## 0.4.6
 
 ### Added
