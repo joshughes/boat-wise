@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.5
+
+### Changed
+
+- Expanded the visual editor preset station dropdown from 15 stations to 50 verified NOAA tide prediction stations.
+- Updated release references to `v0.4.5`.
+
 ## 0.4.4
 
 ### Added

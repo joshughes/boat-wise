@@ -1,28 +1,63 @@
 /*
- * TideWise Card v0.4.4
+ * TideWise Card v0.4.5
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.4.4";
+const CARD_VERSION = "0.4.5";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const STATION_PRESETS = [
-  { station: "8661070", name: "Cherry Grove, SC", lat: 33.688, lon: -78.886 },
-  { station: "8665530", name: "Charleston, SC", lat: 32.7808, lon: -79.9236 },
-  { station: "8658120", name: "Wilmington, NC", lat: 34.2275, lon: -77.9536 },
+  { station: "8410140", name: "Eastport, ME", lat: 44.9046, lon: -66.9829 },
+  { station: "8418150", name: "Portland, ME", lat: 43.6581, lon: -70.2442 },
+  { station: "8443970", name: "Boston, MA", lat: 42.3539, lon: -71.0503 },
+  { station: "8452660", name: "Newport, RI", lat: 41.5043, lon: -71.3261 },
+  { station: "8510560", name: "Montauk, NY", lat: 41.0483, lon: -71.9594 },
+  { station: "8518750", name: "New York, NY", lat: 40.7006, lon: -74.0142 },
+  { station: "8531680", name: "Sandy Hook, NJ", lat: 40.4669, lon: -74.0094 },
+  { station: "8534720", name: "Atlantic City, NJ", lat: 39.3567, lon: -74.4181 },
+  { station: "8536110", name: "Cape May, NJ", lat: 38.9683, lon: -74.9600 },
+  { station: "8557380", name: "Lewes, DE", lat: 38.7828, lon: -75.1193 },
+  { station: "8570283", name: "Ocean City, MD", lat: 38.3283, lon: -75.0917 },
+  { station: "8638863", name: "Chesapeake Bay Bridge Tunnel, VA", lat: 36.9667, lon: -76.1133 },
+  { station: "8638610", name: "Hampton Roads, VA", lat: 36.9428, lon: -76.3286 },
+  { station: "8651370", name: "Duck, NC", lat: 36.1833, lon: -75.7467 },
   { station: "8656483", name: "Beaufort, NC", lat: 34.7173, lon: -76.6707 },
+  { station: "8658120", name: "Wilmington, NC", lat: 34.2267, lon: -77.9533 },
+  { station: "8661070", name: "Cherry Grove / Myrtle Beach, SC", lat: 33.6550, lon: -78.9183 },
+  { station: "8665530", name: "Charleston, SC", lat: 32.7808, lon: -79.9236 },
+  { station: "8670870", name: "Fort Pulaski / Savannah, GA", lat: 32.0347, lon: -80.9030 },
   { station: "8720030", name: "Fernandina Beach, FL", lat: 30.6714, lon: -81.4658 },
-  { station: "8723214", name: "Virginia Key, FL", lat: 25.7314, lon: -80.1618 },
+  { station: "8720218", name: "Mayport, FL", lat: 30.3982, lon: -81.4279 },
+  { station: "8723214", name: "Virginia Key / Miami, FL", lat: 25.7314, lon: -80.1618 },
+  { station: "8723970", name: "Vaca Key, FL", lat: 24.7110, lon: -81.1065 },
   { station: "8724580", name: "Key West, FL", lat: 24.5557, lon: -81.8079 },
+  { station: "8725110", name: "Naples, FL", lat: 26.1317, lon: -81.8075 },
   { station: "8726520", name: "St. Petersburg, FL", lat: 27.7606, lon: -82.6269 },
+  { station: "8727520", name: "Cedar Key, FL", lat: 29.1350, lon: -83.0317 },
   { station: "8729840", name: "Pensacola, FL", lat: 30.4044, lon: -87.2112 },
-  { station: "8771450", name: "Galveston Pier 21, TX", lat: 29.3100, lon: -94.7933 },
+  { station: "8735180", name: "Dauphin Island, AL", lat: 30.2500, lon: -88.0750 },
+  { station: "8761724", name: "Grand Isle, LA", lat: 29.2633, lon: -89.9567 },
+  { station: "8761927", name: "New Orleans / Lake Pontchartrain, LA", lat: 30.0272, lon: -90.1133 },
+  { station: "8771450", name: "Galveston, TX", lat: 29.3100, lon: -94.7933 },
+  { station: "8775237", name: "Port Aransas, TX", lat: 27.8397, lon: -97.0725 },
+  { station: "8779770", name: "Port Isabel, TX", lat: 26.0612, lon: -97.2155 },
+  { station: "9410170", name: "San Diego, CA", lat: 32.7156, lon: -117.1767 },
   { station: "9410230", name: "La Jolla, CA", lat: 32.8669, lon: -117.2571 },
-  { station: "9410170", name: "San Diego, CA", lat: 32.7142, lon: -117.1736 },
+  { station: "9410660", name: "Los Angeles, CA", lat: 33.7200, lon: -118.2720 },
+  { station: "9413450", name: "Monterey, CA", lat: 36.6089, lon: -121.8914 },
   { station: "9414290", name: "San Francisco, CA", lat: 37.8063, lon: -122.4659 },
+  { station: "9419750", name: "Crescent City, CA", lat: 41.7456, lon: -124.1844 },
+  { station: "9432780", name: "Charleston, OR", lat: 43.3450, lon: -124.3220 },
+  { station: "9435380", name: "Newport / South Beach, OR", lat: 44.6254, lon: -124.0449 },
+  { station: "9439040", name: "Astoria, OR", lat: 46.2073, lon: -123.7683 },
+  { station: "9440910", name: "Toke Point, WA", lat: 46.7075, lon: -123.9669 },
+  { station: "9444900", name: "Port Townsend, WA", lat: 48.1112, lon: -122.7597 },
   { station: "9447130", name: "Seattle, WA", lat: 47.6026, lon: -122.3393 },
-  { station: "1612340", name: "Honolulu, HI", lat: 21.3067, lon: -157.8670 }
+  { station: "9449880", name: "Friday Harbor, WA", lat: 48.5453, lon: -123.0125 },
+  { station: "1612340", name: "Honolulu, HI", lat: 21.3033, lon: -157.8645 },
+  { station: "9755371", name: "San Juan, PR", lat: 18.4589, lon: -66.1164 },
+  { station: "9751639", name: "Charlotte Amalie, VI", lat: 18.3306, lon: -64.9258 }
 ];
 
 const STYLES = `

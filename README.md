@@ -8,7 +8,7 @@
 [![Validate](https://github.com/TheWillMiller/tide-wise/actions/workflows/validate.yml/badge.svg)](https://github.com/TheWillMiller/tide-wise/actions/workflows/validate.yml)
 [![GitHub stars](https://img.shields.io/github/stars/TheWillMiller/tide-wise?style=social)](https://github.com/TheWillMiller/tide-wise/stargazers)
 
-**Current release candidate:** `v0.4.4`
+**Current release candidate:** `v0.4.5`
 
 TideWise is a Home Assistant dashboard (Lovelace) custom card for NOAA tide predictions, current tide height, next high/low tides, and optional fishing bite-window scoring.
 
@@ -50,7 +50,7 @@ Helpful details include Home Assistant version, HACS version, TideWise version, 
 - Next high and low tide
 - 24-hour tide chart
 - Visual editor support
-- Preset station picker plus custom NOAA station ID
+- 50-station preset picker plus custom NOAA station ID
 - Optional fishing bite-window score
 - Fishing modes for general, surf, inlet, flounder, trout/redfish, and sheepshead use
 - Optional NOAA/NWS public data fetching
@@ -112,7 +112,7 @@ type: module
 For quick testing before installing locally, you can add this dashboard resource:
 
 ```yaml
-url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.4.4/tidewise-card.js
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.4.5/tidewise-card.js
 type: module
 ```
 
@@ -203,7 +203,7 @@ grid_options:
 
 TideWise includes a Home Assistant visual editor. When adding the card from the dashboard editor, you can:
 
-- Choose common NOAA tide stations from a dropdown
+- Choose 50 common NOAA tide stations from a dropdown
 - Enter a custom NOAA station ID
 - Set latitude and longitude
 - Use your Home Assistant home latitude/longitude
@@ -214,7 +214,7 @@ TideWise includes a Home Assistant visual editor. When adding the card from the 
 - Enable or disable NWS surf/rip forecast parsing
 - Set the recommended dashboard size
 
-The station dropdown is a starter list, not a complete NOAA station database. If your station is not listed, choose **Custom station ID** and paste the NOAA CO-OPS station ID.
+The station dropdown is a 50-station starter list, not a complete NOAA station database. If your station is not listed, choose **Custom station ID** and paste the NOAA CO-OPS station ID.
 
 ## Auto Sources
 
@@ -319,7 +319,7 @@ Try:
 
 If HACS still shows an old README, the installed card file may still be current while the HACS display cache is stale.
 
-If HACS shows a short value like `214b6c2` instead of `v0.4.4`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
+If HACS shows a short value like `214b6c2` instead of `v0.4.5`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
 
 ### Card does not show up
 
