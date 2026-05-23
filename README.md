@@ -20,7 +20,7 @@ TideWise is a Home Assistant dashboard (Lovelace) custom card for NOAA tide pred
 
 ### NOAA Station Picker
 
-<img src="TideStations.png" alt="TideWise NOAA station picker in the visual editor" width="520">
+<img src="TideStations.png" alt="TideWise NOAA station picker in the visual editor" width="720">
 
 ### Visual Editor
 
