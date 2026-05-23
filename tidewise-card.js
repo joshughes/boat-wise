@@ -1,12 +1,29 @@
 /*
- * TideWise Card v0.1.2
+ * TideWise Card v0.2.0
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.1.2";
+const CARD_VERSION = "0.2.0";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
+const STATION_PRESETS = [
+  { station: "8661070", name: "Cherry Grove, SC", lat: 33.688, lon: -78.886 },
+  { station: "8665530", name: "Charleston, SC", lat: 32.7808, lon: -79.9236 },
+  { station: "8658120", name: "Wilmington, NC", lat: 34.2275, lon: -77.9536 },
+  { station: "8656483", name: "Beaufort, NC", lat: 34.7173, lon: -76.6707 },
+  { station: "8720030", name: "Fernandina Beach, FL", lat: 30.6714, lon: -81.4658 },
+  { station: "8723214", name: "Virginia Key, FL", lat: 25.7314, lon: -80.1618 },
+  { station: "8724580", name: "Key West, FL", lat: 24.5557, lon: -81.8079 },
+  { station: "8726520", name: "St. Petersburg, FL", lat: 27.7606, lon: -82.6269 },
+  { station: "8729840", name: "Pensacola, FL", lat: 30.4044, lon: -87.2112 },
+  { station: "8771450", name: "Galveston Pier 21, TX", lat: 29.3100, lon: -94.7933 },
+  { station: "9410230", name: "La Jolla, CA", lat: 32.8669, lon: -117.2571 },
+  { station: "9410170", name: "San Diego, CA", lat: 32.7142, lon: -117.1736 },
+  { station: "9414290", name: "San Francisco, CA", lat: 37.8063, lon: -122.4659 },
+  { station: "9447130", name: "Seattle, WA", lat: 47.6026, lon: -122.3393 },
+  { station: "1612340", name: "Honolulu, HI", lat: 21.3067, lon: -157.8670 }
+];
 
 const STYLES = `
   :host {
@@ -93,10 +110,12 @@ class TideWiseCard extends HTMLElement {
       station: "8661070",
       units: "english",
       mode: "general",
-      show_fishing_score: true,
-      latitude: 33.688,
-      longitude: -78.886
+      show_fishing_score: true
     };
+  }
+
+  static getConfigElement() {
+    return document.createElement("tidewise-card-editor");
   }
 
   set hass(hass) { this._hass = hass; }
@@ -946,10 +965,255 @@ class TideWiseCard extends HTMLElement {
   getCardSize() { return 5; }
 }
 
+class TideWiseCardEditor extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+    this._config = {};
+    this._hass = null;
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    const home = this._homeLatLon();
+    if (this._config && this._config.latitude === undefined && home.lat) this._config.latitude = home.lat;
+    if (this._config && this._config.longitude === undefined && home.lon) this._config.longitude = home.lon;
+    this._render();
+  }
+
+  setConfig(config) {
+    this._config = {
+      title: "TideWise",
+      station: "8661070",
+      units: "english",
+      mode: "general",
+      show_fishing_score: true,
+      grid_options: { rows: "full", columns: 18 },
+      ...config
+    };
+    const home = this._homeLatLon();
+    if (this._config.latitude === undefined && home.lat) this._config.latitude = home.lat;
+    if (this._config.longitude === undefined && home.lon) this._config.longitude = home.lon;
+    this._render();
+  }
+
+  _homeLatLon() {
+    const home = this._hass?.states?.["zone.home"];
+    const lat = Number(home?.attributes?.latitude);
+    const lon = Number(home?.attributes?.longitude);
+    return { lat: Number.isFinite(lat) ? lat : null, lon: Number.isFinite(lon) ? lon : null };
+  }
+
+  _presetForStation(station) {
+    return STATION_PRESETS.find((item) => item.station === String(station));
+  }
+
+  _emitConfig(nextConfig) {
+    this._config = nextConfig;
+    const event = new Event("config-changed", { bubbles: true, composed: true });
+    event.detail = { config: nextConfig };
+    this.dispatchEvent(event);
+    this._render();
+  }
+
+  _setValue(key, value) {
+    const next = { ...this._config, [key]: value };
+    this._emitConfig(next);
+  }
+
+  _setNumber(key, value) {
+    const num = Number(value);
+    const next = { ...this._config };
+    if (Number.isFinite(num)) next[key] = num;
+    else delete next[key];
+    this._emitConfig(next);
+  }
+
+  _setGridValue(key, value) {
+    const grid = { ...(this._config.grid_options || {}) };
+    if (key === "columns" && value !== "full") {
+      const num = Number(value);
+      grid.columns = Number.isFinite(num) ? num : 18;
+    } else {
+      grid[key] = value;
+    }
+    this._emitConfig({ ...this._config, grid_options: grid });
+  }
+
+  _applyStation(station) {
+    const preset = this._presetForStation(station);
+    const next = { ...this._config, station: String(station) };
+    if (preset) {
+      next.title = next.title && next.title !== "TideWise" ? next.title : `${preset.name} Tides`;
+      next.latitude = preset.lat;
+      next.longitude = preset.lon;
+    }
+    this._emitConfig(next);
+  }
+
+  _useHomeLocation() {
+    const home = this._homeLatLon();
+    if (!home.lat || !home.lon) return;
+    this._emitConfig({ ...this._config, latitude: home.lat, longitude: home.lon });
+  }
+
+  _render() {
+    if (!this.shadowRoot) return;
+    const config = this._config || {};
+    const selectedPreset = this._presetForStation(config.station) ? String(config.station) : "custom";
+    const home = this._homeLatLon();
+    const grid = config.grid_options || {};
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          display: block;
+          color: var(--primary-text-color, #1f2933);
+          font-family: var(--paper-font-body1_-_font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif);
+        }
+        .wrap { display: grid; gap: 16px; }
+        .section { display: grid; gap: 10px; }
+        .title { font-size: 14px; font-weight: 700; color: var(--primary-text-color, #1f2933); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+        label { display: grid; gap: 5px; font-size: 12px; font-weight: 700; color: var(--secondary-text-color, #536471); }
+        input, select {
+          box-sizing: border-box;
+          width: 100%;
+          min-height: 40px;
+          padding: 8px 10px;
+          border: 1px solid var(--divider-color, #d0d7de);
+          border-radius: 8px;
+          background: var(--card-background-color, #fff);
+          color: var(--primary-text-color, #1f2933);
+          font: inherit;
+        }
+        .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        button {
+          min-height: 36px;
+          padding: 7px 12px;
+          border: 1px solid var(--divider-color, #d0d7de);
+          border-radius: 8px;
+          background: var(--secondary-background-color, #f6f8fa);
+          color: var(--primary-text-color, #1f2933);
+          font: inherit;
+          font-weight: 700;
+          cursor: pointer;
+        }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .check { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--primary-text-color, #1f2933); }
+        .check input { width: auto; min-height: auto; }
+        .hint { font-size: 12px; line-height: 1.35; color: var(--secondary-text-color, #536471); }
+      </style>
+      <div class="wrap">
+        <div class="section">
+          <div class="title">Location</div>
+          <div class="grid">
+            <label>
+              NOAA tide station
+              <select id="stationPreset">
+                ${STATION_PRESETS.map((item) => `<option value="${item.station}" ${selectedPreset === item.station ? "selected" : ""}>${item.name} (${item.station})</option>`).join("")}
+                <option value="custom" ${selectedPreset === "custom" ? "selected" : ""}>Custom station ID</option>
+              </select>
+            </label>
+            <label>
+              Custom NOAA station ID
+              <input id="station" value="${this._escape(config.station || "")}" placeholder="8661070">
+            </label>
+          </div>
+          <div class="grid">
+            <label>
+              Latitude
+              <input id="latitude" type="number" step="0.000001" value="${config.latitude ?? ""}" placeholder="33.688">
+            </label>
+            <label>
+              Longitude
+              <input id="longitude" type="number" step="0.000001" value="${config.longitude ?? ""}" placeholder="-78.886">
+            </label>
+          </div>
+          <div class="row">
+            <button id="homeLocation" type="button" ${home.lat && home.lon ? "" : "disabled"}>Use Home Assistant location</button>
+            <span class="hint">${home.lat && home.lon ? `Home: ${home.lat.toFixed(4)}, ${home.lon.toFixed(4)}` : "Home Assistant location is not available in zone.home."}</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="title">Card</div>
+          <div class="grid">
+            <label>
+              Title
+              <input id="title" value="${this._escape(config.title || "")}" placeholder="TideWise">
+            </label>
+            <label>
+              Units
+              <select id="units">
+                <option value="english" ${config.units !== "metric" ? "selected" : ""}>English (ft)</option>
+                <option value="metric" ${config.units === "metric" ? "selected" : ""}>Metric (m)</option>
+              </select>
+            </label>
+            <label>
+              Fishing mode
+              <select id="mode">
+                ${["general", "surf", "inlet", "flounder", "trout_redfish", "sheepshead"].map((mode) => `<option value="${mode}" ${config.mode === mode ? "selected" : ""}>${mode.replace("_", " / ")}</option>`).join("")}
+              </select>
+            </label>
+          </div>
+          <label class="check">
+            <input id="showFishing" type="checkbox" ${config.show_fishing_score !== false ? "checked" : ""}>
+            Show fishing score
+          </label>
+        </div>
+
+        <div class="section">
+          <div class="title">Dashboard Size</div>
+          <div class="grid">
+            <label>
+              Rows
+              <select id="gridRows">
+                <option value="full" ${grid.rows === "full" ? "selected" : ""}>Full</option>
+                <option value="auto" ${grid.rows === "auto" ? "selected" : ""}>Auto</option>
+              </select>
+            </label>
+            <label>
+              Columns
+              <input id="gridColumns" value="${grid.columns ?? 18}" placeholder="18 or full">
+            </label>
+          </div>
+          <div class="hint">Recommended: rows full, columns 18. Use columns full on narrower dashboards.</div>
+        </div>
+      </div>
+    `;
+
+    this.shadowRoot.getElementById("stationPreset")?.addEventListener("change", (event) => {
+      const value = event.target.value;
+      if (value !== "custom") this._applyStation(value);
+    });
+    this.shadowRoot.getElementById("station")?.addEventListener("change", (event) => this._setValue("station", String(event.target.value || "").trim()));
+    this.shadowRoot.getElementById("latitude")?.addEventListener("change", (event) => this._setNumber("latitude", event.target.value));
+    this.shadowRoot.getElementById("longitude")?.addEventListener("change", (event) => this._setNumber("longitude", event.target.value));
+    this.shadowRoot.getElementById("homeLocation")?.addEventListener("click", () => this._useHomeLocation());
+    this.shadowRoot.getElementById("title")?.addEventListener("change", (event) => this._setValue("title", event.target.value || "TideWise"));
+    this.shadowRoot.getElementById("units")?.addEventListener("change", (event) => this._setValue("units", event.target.value));
+    this.shadowRoot.getElementById("mode")?.addEventListener("change", (event) => this._setValue("mode", event.target.value));
+    this.shadowRoot.getElementById("showFishing")?.addEventListener("change", (event) => this._setValue("show_fishing_score", event.target.checked));
+    this.shadowRoot.getElementById("gridRows")?.addEventListener("change", (event) => this._setGridValue("rows", event.target.value));
+    this.shadowRoot.getElementById("gridColumns")?.addEventListener("change", (event) => this._setGridValue("columns", event.target.value));
+  }
+
+  _escape(value) {
+    return String(value).replace(/[&<>"']/g, (char) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "\"": "&quot;",
+      "'": "&#39;"
+    }[char]));
+  }
+}
+
 class CherryGroveTidesCard extends TideWiseCard {}
 
 if (!customElements.get(CARD_TYPES[0])) customElements.define(CARD_TYPES[0], TideWiseCard);
 if (!customElements.get(CARD_TYPES[1])) customElements.define(CARD_TYPES[1], CherryGroveTidesCard);
+if (!customElements.get("tidewise-card-editor")) customElements.define("tidewise-card-editor", TideWiseCardEditor);
 
 window.customCards = window.customCards || [];
 window.customCards.push({

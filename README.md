@@ -33,7 +33,7 @@ type: module
 For quick testing before installing locally, add this Lovelace resource:
 
 ```yaml
-url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.1.2/tidewise-card.js
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.2.0/tidewise-card.js
 type: module
 ```
 
@@ -126,6 +126,12 @@ grid_options:
 ```
 
 On narrower dashboards, use `columns: full`.
+
+## Visual Editor
+
+TideWise includes a Home Assistant visual editor. When adding the card from the dashboard editor, you can choose common NOAA tide stations from a dropdown, enter a custom NOAA station ID, select units and fishing mode, use your Home Assistant home latitude/longitude, and set the recommended dashboard size.
+
+The station dropdown is a starter list, not a complete NOAA station database. If your station is not listed, choose **Custom station ID** and paste the NOAA CO-OPS station ID.
 
 ## Configuration
 
