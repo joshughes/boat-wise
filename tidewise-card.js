@@ -139,8 +139,8 @@ const STYLES = `
   canvas { display: block; width: 100%; height: 100%; }
   .x-row { display: flex; justify-content: space-between; margin-top: 2px; padding: 0 2px; }
   .x-tick { font-size: 13px; font-weight: 650; color: var(--text-muted); }
-  .fish-footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 2px; margin-bottom: 2px; }
-  .fish-reason { font-size: 12px; color: var(--text-muted); font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .fish-footer { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-top: 2px; margin-bottom: 2px; }
+  .fish-reason { font-size: 12px; color: var(--text-muted); font-weight: 650; line-height: 1.3; max-height: 34px; overflow-y: auto; scrollbar-width: thin; min-width: 0; flex: 1 1 auto; }
   .fish-next { font-size: 12px; color: var(--wave-dark); font-weight: 800; white-space: nowrap; flex-shrink: 0; }
   .fish-legend { display: flex; align-items: center; gap: 12px; margin: 2px 0 6px; padding-left: 2px; min-width: 0; flex-wrap: nowrap; }
   .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--text-muted); font-weight: 750; white-space: nowrap; }
@@ -972,6 +972,17 @@ class TideWiseCard extends HTMLElement {
     });
   }
 
+  _forecastConditionCap(cap, hoursAhead) {
+    const value = Number(cap);
+    if (!Number.isFinite(value) || value >= 1) return 1.0;
+    const hours = Math.max(0, Number(hoursAhead) || 0);
+    if (hours <= 2) return value;
+    const relaxed = Math.max(value, 0.86);
+    if (hours >= 8) return relaxed;
+    const f = (hours - 2) / 6;
+    return value + (relaxed - value) * f;
+  }
+
   _buildFishingScores(predictions) {
     const weights = this._modeWeights();
     const { lat, lon } = this._getHomeLatLon();
@@ -1018,14 +1029,16 @@ class TideWiseCard extends HTMLElement {
       const light = this._lightScore(hour);
       let rawScore = tide.score * weights.tide + wind.score * weights.wind + waterTemp.score * weights.waterTemp + weatherScore.score * weights.weather + clarity.score * weights.clarity + light.score * weights.light + solunar * weights.solunar + pressure.score * weights.pressure;
       rawScore *= moonMult;
-      let cap = 1.0;
-      cap = Math.min(cap, wind.cap, weatherScore.cap, waterTemp.cap, wave.cap, rain.cap, rip.cap, clarity.cap);
+      const hoursAhead = Math.max(0, (tMs - nowMs) / 3600000);
+      const liveConditionCap = Math.min(wind.cap, weatherScore.cap, wave.cap, rain.cap, rip.cap, clarity.cap);
+      const forecastConditionCap = this._forecastConditionCap(liveConditionCap, hoursAhead);
+      let cap = Math.min(waterTemp.cap, forecastConditionCap);
       if (tide.movementScore < 0.10) cap = Math.min(cap, 0.48);
       if (tide.movementScore < 0.20) cap = Math.min(cap, 0.62);
       if (hour >= 10 && hour <= 15) cap = Math.min(cap, 0.78);
       const finalScore = Math.max(0, Math.min(1, Math.min(rawScore, cap)));
       scores.push(finalScore);
-      const detail = { time: t, score: finalScore, tide, wind, weather: weatherScore, waterTemp, wave, rain, rip, clarity, light, solunar, pressure, moonMult, cap };
+      const detail = { time: t, score: finalScore, tide, wind, weather: weatherScore, waterTemp, wave, rain, rip, clarity, light, solunar, pressure, moonMult, cap, liveConditionCap, forecastConditionCap, hoursAhead };
       details.push(detail);
       if (tMs >= nowMs && tMs <= maxFutureMs && finalScore > bestScore) { bestScore = finalScore; bestIdx = i; }
     }
@@ -1066,26 +1079,35 @@ class TideWiseCard extends HTMLElement {
 
   _buildReason(detail) {
     if (!detail) return "Waiting on fishing inputs";
-    const parts = [];
-    if (detail.weather.cap <= 0.25) return "Storms nearby, safety first";
-    if (detail.weather.cap <= 0.45) parts.push(detail.weather.label);
-    if (detail.wind.cap <= 0.42) parts.push("wind is rough");
-    else if (detail.wind.score >= 0.80) parts.push("light wind");
-    else if (detail.wind.score < 0.50) parts.push("wind penalty");
-    if (detail.wave.score < 0.55) parts.push(detail.wave.label);
-    if (detail.rip && detail.rip.score < 0.65) parts.push(detail.rip.label);
-    if (detail.waterTemp.score >= 0.85) parts.push("water temp prime");
-    else if (detail.waterTemp.score < 0.55) parts.push(detail.waterTemp.label);
-    if (detail.clarity.score < 0.60) parts.push(detail.clarity.label);
-    if (detail.tide.movementScore < 0.12) parts.push("near slack tide");
-    else parts.push(detail.tide.label);
-    if (detail.light.score >= 0.80) parts.push(detail.light.label);
-    else if (detail.light.score < 0.30) parts.push("poor light window");
-    if (detail.solunar >= 0.70) parts.push("moon window");
-    if (detail.pressure.score >= 0.72) parts.push(detail.pressure.label);
-    if (this._config.auto_sources && (this._autoData?.coops || this._autoData?.nws)) parts.push("NOAA/NWS inputs");
-    if (!parts.length) parts.push("mixed but fishable");
-    return parts.slice(0, 3).join(" + ");
+    const band = this._scoreBand(detail.score);
+    const label = band.charAt(0).toUpperCase() + band.slice(1);
+    const concerns = [];
+    const helps = [];
+
+    if (detail.weather.cap <= 0.25) concerns.push("storms nearby");
+    else if (detail.weather.cap <= 0.45) concerns.push(detail.weather.label);
+    if (detail.rip && detail.rip.score < 0.65) concerns.push(detail.rip.label);
+    if (detail.wind.cap <= 0.42) concerns.push("rough wind");
+    else if (detail.wind.score < 0.50) concerns.push("wind penalty");
+    if (detail.wave.score < 0.55) concerns.push(detail.wave.label);
+    if (detail.clarity.score < 0.60) concerns.push(detail.clarity.label);
+    if (detail.tide.movementScore < 0.12) concerns.push("near slack tide");
+    else concerns.push(detail.tide.label);
+    if (detail.light.score < 0.30) concerns.push("poor light window");
+
+    if (detail.wind.score >= 0.80) helps.push("light wind");
+    if (detail.waterTemp.score >= 0.85) helps.push("prime water temp");
+    else if (detail.waterTemp.score < 0.55) concerns.push(detail.waterTemp.label);
+    if (detail.light.score >= 0.80) helps.push(detail.light.label);
+    if (detail.solunar >= 0.70) helps.push("moon window");
+    if (detail.pressure.score >= 0.72) helps.push(detail.pressure.label);
+
+    const main = concerns.slice(0, 2).join(" and ") || "mixed signals";
+    const good = helps.length ? ` ${helps.slice(0, 2).join(" and ")} help.` : "";
+    const capNote = detail.liveConditionCap < 0.65
+      ? " Current safety/weather limits ease later unless the forecast still says otherwise."
+      : "";
+    return `${label} now: ${main}.${good}${capNote}`;
   }
 
   _render() {
@@ -1152,7 +1174,7 @@ class TideWiseCard extends HTMLElement {
       </div>
       ${fish ? `
         <div class="fish-footer">
-          <div class="fish-reason">${fish.reason}</div>
+          <div class="fish-reason">${this._escape(fish.reason)}</div>
           <div class="fish-next">${fish.bestWindow ? "Best: " + fish.bestWindow : ""}</div>
         </div>
         <div class="fish-legend">
@@ -1210,6 +1232,8 @@ class TideWiseCard extends HTMLElement {
     const band = score !== null ? this._scoreBand(score, this._fishBand) : "n/a";
     const capItems = detail ? [
       ["overall cap", detail.cap],
+      ["live condition cap", detail.liveConditionCap],
+      ["forecast condition cap", detail.forecastConditionCap],
       ["wind cap", detail.wind.cap],
       ["weather cap", detail.weather.cap],
       ["water cap", detail.waterTemp.cap],
