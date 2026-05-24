@@ -155,6 +155,17 @@ const STYLES = `
   .pill-arrow { font-size: 16px; margin-right: 4px; }
   .pill-arrow.low{color:var(--low-color)} .pill-arrow.high{color:var(--high-color)}
   .pill-ft { font-size: 16px; color: var(--text-muted); font-weight: 650; }
+  .debug-panel { margin-top: 8px; background: rgba(10,30,40,0.06); border: 1px solid rgba(42,122,148,0.24); border-radius: 12px; padding: 8px 10px; color: var(--text); }
+  .debug-title { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--wave-dark); font-weight: 850; margin-bottom: 6px; }
+  .debug-note { font-size: 11px; letter-spacing: 0; text-transform: none; color: var(--text-muted); font-weight: 650; }
+  .debug-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .debug-section { min-width: 0; }
+  .debug-section-title { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 850; margin: 4px 0 3px; }
+  .debug-line { display: flex; justify-content: space-between; gap: 8px; font-family: var(--font-mono); font-size: 10.5px; line-height: 1.35; border-top: 1px solid rgba(42,122,148,0.10); padding: 2px 0; }
+  .debug-key { color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .debug-value { color: var(--text); font-weight: 800; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .debug-warn { color: #a51f1f; font-weight: 900; }
+  @media (max-width: 520px) { .debug-grid { grid-template-columns: 1fr; } }
   .loading,.error { text-align: center; padding: 30px 20px; color: var(--text-muted); font-size: 14px; }
   .error{color:#c04444}
   .spinner { width: 28px; height: 28px; border: 2px solid rgba(255,255,255,0.40); border-top-color: var(--wave); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
@@ -184,7 +195,8 @@ class TideWiseCard extends HTMLElement {
       theme_mode: "tidewise",
       show_fishing_score: true,
       auto_sources: true,
-      auto_surf_forecast: true
+      auto_surf_forecast: true,
+      debug: false
     };
   }
 
@@ -219,7 +231,8 @@ class TideWiseCard extends HTMLElement {
       show_fishing_score: config.show_fishing_score !== false,
       auto_sources: config.auto_sources !== false,
       auto_surf_forecast: config.auto_surf_forecast !== false,
-      nws_office: String(config.nws_office || "").trim().toUpperCase()
+      nws_office: String(config.nws_office || "").trim().toUpperCase(),
+      debug: config.debug === true
     };
     this.setAttribute("theme-mode", this._config.theme_mode);
     if (previousConfig.station !== this._config.station || previousConfig.mode !== this._config.mode) this._fishBand = null;
@@ -1153,6 +1166,7 @@ class TideWiseCard extends HTMLElement {
         ${this._pillHtml("low", nextLow, unitLabel)}
         ${this._pillHtml("high", nextHigh, unitLabel)}
       </div>
+      ${this._config.debug ? this._debugHtml(fish, chartPredictions, cur, rising, unitLabel) : ""}
     `;
 
     requestAnimationFrame(() => {
@@ -1176,6 +1190,153 @@ class TideWiseCard extends HTMLElement {
           <div class="pill-ft">${parseFloat(tide.v).toFixed(1)} ${unitLabel}</div>
         </div>
       </div>`;
+  }
+
+  _debugHtml(fish, predictions, cur, rising, unitLabel) {
+    const detail = fish?.currentDetail;
+    const { lat, lon } = this._getHomeLatLon();
+    const weather = this._getWeatherState();
+    const windMph = this._getWindSpeedMph(weather);
+    const windBearing = this._getWindBearing(weather);
+    const waterTempF = this._getWaterTempF();
+    const waveFt = this._getWaveHeightFt();
+    const rainIn = this._getRainTodayIn();
+    const pressureHpa = this._getPressureHpa(weather);
+    const ripRisk = this._getRipCurrentRisk();
+    const pressureTrend = this._getPressureTrend();
+    const weights = this._modeWeights();
+    const score = fish?.currentScore ?? null;
+    const rawScore = fish?.rawScores?.[fish?.details?.indexOf(detail)] ?? null;
+    const band = score !== null ? this._scoreBand(score, this._fishBand) : "n/a";
+    const capItems = detail ? [
+      ["overall cap", detail.cap],
+      ["wind cap", detail.wind.cap],
+      ["weather cap", detail.weather.cap],
+      ["water cap", detail.waterTemp.cap],
+      ["wave cap", detail.wave.cap],
+      ["rain cap", detail.rain.cap],
+      ["rip cap", detail.rip.cap],
+      ["clarity cap", detail.clarity.cap],
+      ["tide movement", detail.tide.movementScore],
+      ["moon multiplier", detail.moonMult]
+    ] : [];
+    const componentItems = detail ? [
+      ["tide", detail.tide.score, weights.tide, detail.tide.label],
+      ["wind", detail.wind.score, weights.wind, detail.wind.label],
+      ["water", detail.waterTemp.score, weights.waterTemp, detail.waterTemp.label],
+      ["weather", detail.weather.score, weights.weather, detail.weather.label],
+      ["clarity", detail.clarity.score, weights.clarity, detail.clarity.label],
+      ["light", detail.light.score, weights.light, detail.light.label],
+      ["solunar", detail.solunar, weights.solunar, "moon window"],
+      ["pressure", detail.pressure.score, weights.pressure, detail.pressure.label]
+    ] : [];
+    const auto = this._autoData || {};
+    const rows = (items) => items.map(([key, value, extra, label]) => {
+      const shown = extra !== undefined && typeof extra === "number"
+        ? `${this._fmtDebugNumber(value)} x ${extra.toFixed(2)}${label ? " - " + label : ""}`
+        : this._fmtDebugValue(value);
+      const warn = key.toLowerCase().includes("cap") && Number(value) < 0.65 ? " debug-warn" : "";
+      return `<div class="debug-line"><span class="debug-key">${this._escape(key)}</span><span class="debug-value${warn}">${this._escape(shown)}</span></div>`;
+    }).join("");
+
+    return `
+      <div class="debug-panel">
+        <div class="debug-title">
+          <span>TideWise Debug</span>
+          <span class="debug-note">shown because <code>debug: true</code></span>
+        </div>
+        <div class="debug-grid">
+          <div class="debug-section">
+            <div class="debug-section-title">Result</div>
+            ${rows([
+              ["band", band],
+              ["score", score],
+              ["raw score", rawScore],
+              ["reason", fish?.reason || "fishing score disabled"],
+              ["best window", fish?.bestWindow || "none"],
+              ["current tide", `${cur.toFixed(1)} ${unitLabel} ${rising ? "rising" : "falling"}`]
+            ])}
+            <div class="debug-section-title">Sources</div>
+            ${rows([
+              ["station", this._config.station],
+              ["coords", `${lat.toFixed(4)}, ${lon.toFixed(4)}`],
+              ["predictions", `${predictions?.length || 0}${this._data?.intervalFallback ? " hilo fallback" : " interval"}`],
+              ["auto updated", auto.updated || "not fetched"],
+              ["CO-OPS", auto.coops?.error || (auto.coops && Object.keys(auto.coops).length ? "available" : "missing")],
+              ["NWS hourly", auto.nws?.error || (auto.nws?.period ? "available" : "missing")],
+              ["NWS surf/rip", auto.surf?.error || (auto.surf && Object.keys(auto.surf).length ? "available" : "missing")]
+            ])}
+          </div>
+          <div class="debug-section">
+            <div class="debug-section-title">Inputs</div>
+            ${rows([
+              ["weather", `${weather?.state || "missing"} (${this._debugSource("weather")})`],
+              ["wind", `${this._fmtDebugNumber(windMph)} mph ${this._formatWindDirection(windBearing)} (${this._debugSource("wind")})`],
+              ["water temp", `${this._fmtDebugNumber(waterTempF)} F (${this._debugSource("waterTemp")})`],
+              ["surf/wave", `${this._fmtDebugNumber(waveFt)} ft (${this._debugSource("wave")})`],
+              ["rain", `${this._fmtDebugNumber(rainIn)} in (${this._debugSource("rain")})`],
+              ["rip risk", `${ripRisk || "missing"} (${this._debugSource("rip")})`],
+              ["pressure", `${this._fmtDebugNumber(pressureHpa)} hPa ${pressureTrend || ""} (${this._debugSource("pressure")})`]
+            ])}
+            <div class="debug-section-title">Components</div>
+            ${rows(componentItems)}
+            <div class="debug-section-title">Caps / Limits</div>
+            ${rows(capItems)}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  _fmtDebugNumber(value) {
+    const num = Number(value);
+    return Number.isFinite(num) ? num.toFixed(2) : "missing";
+  }
+
+  _fmtDebugValue(value) {
+    if (value === null || value === undefined || value === "") return "missing";
+    if (typeof value === "number") return this._fmtDebugNumber(value);
+    return String(value);
+  }
+
+  _debugSource(kind) {
+    const hasEntity = (id) => Boolean(id && this._getEntity(id));
+    if (kind === "weather") {
+      if (hasEntity(this._config.weather_entity)) return `entity ${this._config.weather_entity}`;
+      if (this._getWeatherState() && !this._getWeatherState()?.entity_id && this._autoData?.nws?.period) return "NWS hourly";
+      return this._getWeatherState() ? "Home Assistant weather" : "missing";
+    }
+    if (kind === "wind") {
+      if (hasEntity(this._config.wind_speed_entity)) return `entity ${this._config.wind_speed_entity}`;
+      if (this._getWeatherState()?.attributes?.wind_speed !== undefined) return "weather entity";
+      if (this._autoData?.coops?.wind) return "NOAA CO-OPS";
+      if (this._autoData?.nws?.period?.windSpeed) return "NWS hourly";
+      return "missing";
+    }
+    if (kind === "waterTemp") {
+      if (hasEntity(this._config.water_temp_entity)) return `entity ${this._config.water_temp_entity}`;
+      if (this._autoData?.coops?.waterTemp) return "NOAA CO-OPS";
+      if (Number.isFinite(Number(this._autoData?.surf?.waterTempF))) return "NWS SRF";
+      return "missing";
+    }
+    if (kind === "wave") {
+      if (hasEntity(this._config.wave_height_entity)) return `entity ${this._config.wave_height_entity}`;
+      if (Number.isFinite(Number(this._autoData?.surf?.surfHeightFt))) return "NWS SRF";
+      return "missing";
+    }
+    if (kind === "rain") return hasEntity(this._config.rain_today_entity) ? `entity ${this._config.rain_today_entity}` : "missing";
+    if (kind === "rip") {
+      if (hasEntity(this._config.rip_current_risk_entity)) return `entity ${this._config.rip_current_risk_entity}`;
+      if (this._autoData?.surf?.ripRisk) return "NWS SRF";
+      return "missing";
+    }
+    if (kind === "pressure") {
+      if (hasEntity(this._config.pressure_entity)) return `entity ${this._config.pressure_entity}`;
+      if (this._getWeatherState()?.attributes?.pressure !== undefined) return "weather entity";
+      if (this._autoData?.coops?.pressure) return "NOAA CO-OPS";
+      return "missing";
+    }
+    return "unknown";
   }
 
   _themeColor(name, fallback) {
@@ -1433,7 +1594,17 @@ class TideWiseCard extends HTMLElement {
     return `${((h % 12) || 12)}:${m} ${ap}`;
   }
 
-  getCardSize() { return 5; }
+  _escape(value) {
+    return String(value).replace(/[&<>"']/g, (char) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "\"": "&quot;",
+      "'": "&#39;"
+    }[char]));
+  }
+
+  getCardSize() { return this._config?.debug ? 8 : 5; }
 }
 
 class TideWiseCardEditor extends HTMLElement {
