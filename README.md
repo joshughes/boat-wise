@@ -18,13 +18,21 @@ TideWise is a Home Assistant dashboard (Lovelace) custom card for NOAA tide pred
 
 <img src="https://raw.githubusercontent.com/TheWillMiller/tide-wise/main/TIDE_CARD.png" alt="TideWise card showing current tide, tide chart, moon phase, and fishing window" width="720">
 
+### Theme Modes
+
+TideWise keeps its ocean-glass style by default. It can also follow Home Assistant theme colors more closely with `theme_mode: auto`.
+
+<img src="https://raw.githubusercontent.com/TheWillMiller/tide-wise/main/TIDE_CARD_THEME_TIDEWISE.png" alt="TideWise default ocean-glass theme mode" width="720">
+
+<img src="https://raw.githubusercontent.com/TheWillMiller/tide-wise/main/TIDE_CARD_THEME_AUTO_DARK.png" alt="TideWise Home Assistant theme mode on a dark dashboard" width="720">
+
 ### NOAA Station Picker
 
 <img src="https://raw.githubusercontent.com/TheWillMiller/tide-wise/main/TideStations.png" alt="TideWise NOAA station picker in the visual editor" width="720">
 
 ### Visual Editor
 
-<img src="https://raw.githubusercontent.com/TheWillMiller/tide-wise/main/Visual%20Editor.png" alt="TideWise visual editor configuration screen" width="720">
+<img src="https://raw.githubusercontent.com/TheWillMiller/tide-wise/main/ThemeEditor.png" alt="TideWise visual editor showing the theme selector and live preview" width="720">
 
 It combines NOAA tide data with local Home Assistant entities such as weather, wind, water temperature, surf height, pressure, rain, and rip current risk. Missing optional entities are allowed; TideWise falls back to neutral scoring where possible.
 
@@ -53,6 +61,7 @@ Helpful details include Home Assistant version, HACS version, TideWise version, 
 - 24-hour tide chart
 - High/low fallback for NOAA stations without full interval predictions
 - Visual editor support
+- Opt-in Home Assistant theme color support with `theme_mode: auto`
 - 50-station preset picker plus custom NOAA station ID
 - Optional fishing bite-window score
 - Fishing modes for general, surf, inlet, flounder, trout/redfish, and sheepshead use
@@ -201,6 +210,22 @@ grid_options:
   rows: full
   columns: full
 ```
+
+## Theme Support
+
+TideWise defaults to its built-in ocean-glass styling:
+
+```yaml
+theme_mode: tidewise
+```
+
+To make the card follow Home Assistant theme colors more closely, use:
+
+```yaml
+theme_mode: auto
+```
+
+The visual editor includes a **Theme** dropdown for this setting. Theme mode only changes the card styling; it does not change tide fetching, NOAA/NWS data, or fishing score behavior.
 
 ## Visual Editor
 
