@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.5.0
+ * TideWise Card v0.5.1
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.5.0";
+const CARD_VERSION = "0.5.1";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const STATION_PRESETS = [
   { station: "8410140", name: "Eastport, ME", lat: 44.9046, lon: -66.9829 },
@@ -1826,14 +1826,22 @@ class TideWiseCardEditor extends HTMLElement {
     this.attachShadow({ mode: "open" });
     this._config = {};
     this._hass = null;
+    this._rendered = false;
   }
 
   set hass(hass) {
     this._hass = hass;
     const home = this._homeLatLon();
-    if (this._config && this._config.latitude === undefined && home.lat) this._config.latitude = home.lat;
-    if (this._config && this._config.longitude === undefined && home.lon) this._config.longitude = home.lon;
-    this._render();
+    let shouldRender = !this._rendered;
+    if (this._config && this._config.latitude === undefined && home.lat) {
+      this._config.latitude = home.lat;
+      shouldRender = true;
+    }
+    if (this._config && this._config.longitude === undefined && home.lon) {
+      this._config.longitude = home.lon;
+      shouldRender = true;
+    }
+    if (shouldRender) this._render();
   }
 
   setConfig(config) {
@@ -1951,6 +1959,7 @@ class TideWiseCardEditor extends HTMLElement {
 
   _render() {
     if (!this.shadowRoot) return;
+    this._rendered = true;
     const config = this._config || {};
     const selectedPreset = this._presetForStation(config.station) ? String(config.station) : "custom";
     const home = this._homeLatLon();

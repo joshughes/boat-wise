@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.5.1
+
+### Fixed
+
+- Fixed the visual editor repeatedly re-rendering from Home Assistant state updates, which could cause mobile station dropdowns to close immediately on iOS Safari/Chrome.
+
 ## 0.5.0
 
 ### Added
