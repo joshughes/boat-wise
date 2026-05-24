@@ -8,7 +8,7 @@
 [![Validate](https://img.shields.io/github/actions/workflow/status/TheWillMiller/tide-wise/validate.yml?branch=main&label=validate)](https://github.com/TheWillMiller/tide-wise/actions/workflows/validate.yml)
 [![GitHub stars](https://img.shields.io/github/stars/TheWillMiller/tide-wise?label=stars)](https://github.com/TheWillMiller/tide-wise/stargazers)
 
-**Latest release:** `v0.4.9`
+**Latest release:** `v0.5.0`
 
 TideWise is a Home Assistant dashboard (Lovelace) custom card for NOAA tide predictions, current tide height, next high/low tides, and optional fishing bite-window scoring.
 
@@ -67,6 +67,8 @@ Helpful details include Home Assistant version, HACS version, TideWise version, 
 - Fishing modes for general, surf, inlet, flounder, trout/redfish, and sheepshead use
 - Optional NOAA/NWS public data fetching
 - Optional Home Assistant entity overrides for weather, wind, water temperature, surf height, pressure, rain, and rip current risk
+- Safety-aware fishing display that can cap the current score without globally flattening future bite windows
+- Hidden YAML-only debug panel for troubleshooting fishing inputs, score components, caps, and data sources
 - Legacy support for `custom:cherry-grove-tides-card`
 
 ## Installation
@@ -124,7 +126,7 @@ type: module
 For quick testing before installing locally, you can add this dashboard resource:
 
 ```yaml
-url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.4.9/tidewise-card.js
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.5.0/tidewise-card.js
 type: module
 ```
 
@@ -292,6 +294,22 @@ Depending on available data, TideWise may consider:
 
 When optional data is missing, TideWise falls back to the data it has available.
 
+Current safety conditions such as high rip current risk can cap the **Now** score while still allowing the future curve to show improving bite potential. This is why a card may show **Slow now** with a better bite window later in the day.
+
+## Hidden Debug Panel
+
+For troubleshooting, TideWise includes a YAML-only debug panel. It is hidden from normal users and is not exposed in the visual editor.
+
+Enable it manually only when diagnosing a station, data source, or fishing score:
+
+```yaml
+debug:
+  enabled: true
+  panel: true
+```
+
+The debug panel is collapsed by default and scrolls internally when expanded. It shows the current/Now score target, future curve mode, source availability, component weights, moon multiplier, safety caps, final current score, display score, and whether the future curve is globally capped.
+
 ## Configuration
 
 | Option | Required | Default | Description |
@@ -318,6 +336,7 @@ When optional data is missing, TideWise falls back to the data it has available.
 | `pressure_entity` | No | Weather attribute fallback | Barometric pressure. hPa and inHg are supported. |
 | `pressure_trend_entity` | No |  | Pressure trend entity. |
 | `rain_today_entity` | No |  | Rainfall in the last 24 hours. Inches and mm are supported. |
+| `debug` | No | disabled | Hidden troubleshooting object. Use `debug: { enabled: true, panel: true }` only when diagnosing score/data issues. Not available in the visual editor. |
 
 ## Finding a NOAA Station
 
@@ -352,7 +371,7 @@ Try:
 
 If HACS still shows an old README, the installed card file may still be current while the HACS display cache is stale.
 
-If HACS shows a short value like `214b6c2` instead of `v0.4.9`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
+If HACS shows a short value like `214b6c2` instead of `v0.5.0`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
 
 ### Card does not show up
 
@@ -382,6 +401,16 @@ If HACS shows a short value like `214b6c2` instead of `v0.4.9`, that is a GitHub
 This usually means optional weather, wind, water temperature, surf, pressure, rain, or rip current data is unavailable.
 
 The card should still work, but the score may be based on fewer inputs.
+
+For deeper troubleshooting, temporarily enable the hidden debug panel in YAML:
+
+```yaml
+debug:
+  enabled: true
+  panel: true
+```
+
+Remove it again after testing.
 
 ## Privacy
 

@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.4.9
+ * TideWise Card v0.5.0
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.4.9";
+const CARD_VERSION = "0.5.0";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const STATION_PRESETS = [
   { station: "8410140", name: "Eastport, ME", lat: 44.9046, lon: -66.9829 },
@@ -1233,33 +1233,35 @@ class TideWiseCard extends HTMLElement {
     if (!detail) return "Waiting on fishing inputs";
     const band = this._scoreBand(detail.score);
     const label = band.charAt(0).toUpperCase() + band.slice(1);
-    const concerns = [];
-    const helps = [];
+    const capReasons = [];
+    const negatives = [];
+    const positives = [];
 
-    if (detail.weather.cap <= 0.25) concerns.push("storms nearby");
-    else if (detail.weather.cap <= 0.45) concerns.push(detail.weather.label);
+    if (detail.weather.cap <= 0.25) capReasons.push("storms nearby");
+    else if (detail.weather.cap <= 0.45) capReasons.push(detail.weather.label);
     if (detail.rip && detail.rip.score < 0.65) {
-      concerns.push(detail.rip.label.includes("high") ? "high rip risk cap" : detail.rip.label);
+      capReasons.push(detail.rip.label.includes("high") ? "high rip risk cap" : detail.rip.label);
     }
-    if (detail.wind.cap <= 0.42) concerns.push("rough wind");
-    else if (detail.wind.score < 0.50) concerns.push("wind penalty");
-    if (detail.wave.score < 0.55) concerns.push(detail.wave.label);
-    if (detail.clarity.score < 0.60) concerns.push(detail.clarity.label);
-    if (detail.tide.movementScore < 0.12) concerns.push("near slack tide");
-    else concerns.push(detail.tide.label);
-    if (detail.light.score < 0.30) concerns.push("poor light window");
+    if (detail.wind.cap <= 0.42) capReasons.push("rough wind cap");
+    else if (detail.wind.score < 0.50) negatives.push("wind penalty");
+    if (detail.wave.score < 0.55) negatives.push(detail.wave.label);
+    if (detail.clarity.score < 0.60) negatives.push(detail.clarity.label);
+    if (detail.tide.movementScore < 0.12) negatives.push("near slack tide");
+    else positives.push(detail.tide.label);
+    if (detail.light.score < 0.30) negatives.push("poor light window");
 
-    if (detail.waterTemp.score >= 0.85) helps.push("prime water temp");
-    else if (detail.waterTemp.score < 0.55) concerns.push(detail.waterTemp.label);
-    if (detail.pressure.score >= 0.72) helps.push("favorable pressure");
-    if (detail.wind.score >= 0.80) helps.push("light wind");
-    if (detail.light.score >= 0.80) helps.push(detail.light.label);
-    if (detail.solunar >= 0.70) helps.push("moon window");
+    if (detail.waterTemp.score >= 0.85) positives.push("prime water temp");
+    else if (detail.waterTemp.score < 0.55) negatives.push(detail.waterTemp.label);
+    if (detail.pressure.score >= 0.72) positives.push("favorable pressure");
+    if (detail.wind.score >= 0.80) positives.push("light wind");
+    if (detail.light.score >= 0.80) positives.push(detail.light.label);
+    if (detail.solunar >= 0.70) positives.push("moon window");
 
-    const main = concerns.slice(0, 2).join(" + ") || "mixed signals";
-    if (bestWindow) return `${label} now: ${main}. Better bite window ${bestWindow}.`;
-    const good = helps.length ? ` ${this._capitalize(helps[0])} helps.` : "";
-    return `${label} now: ${main}.${good}`;
+    const limiting = [...capReasons, ...negatives].slice(0, 2);
+    const main = limiting.join(" + ") || "mixed signals";
+    const help = positives.length ? ` ${this._capitalize(positives[0])} helps.` : "";
+    const window = bestWindow ? ` Better bite window ${bestWindow}.` : "";
+    return `${label} now: ${main}.${help}${window}`;
   }
 
   _safetyBadgeHtml(detail) {

@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+## 0.5.0
+
+### Added
+
+- Added a hidden YAML-only TideWise debug panel for troubleshooting fishing score inputs, component weights, caps, and data sources.
+- Added collapsed-by-default debug presentation with internal scrolling.
+- Added a subtle high rip risk safety warning badge when active.
+- Added first-pass timed NWS Surf Zone Forecast rip-risk period parsing when the forecast text includes usable timing.
+
+### Fixed
+
+- Fixed fishing chart coloring so current safety caps do not globally flatten the full future bite curve.
+- Clarified debug score terminology by separating component sum, pre-cap score, moon multiplier, score after moon, active cap, final current score, and display score.
+- Clarified debug cap scope for current/near-term safety caps versus future bite potential.
+
+### Changed
+
+- Shortened the public fishing reason line and made future bite windows clearer.
+- Updated release references to `v0.5.0`.
+
 ## 0.4.9
 
 ### Added
