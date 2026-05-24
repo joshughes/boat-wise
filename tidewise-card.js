@@ -406,9 +406,11 @@ class TideWiseCard extends HTMLElement {
     const raw = String(text || "");
     if (!raw.trim()) return {};
     const normalized = raw.replace(/\r/g, "");
+    const ripPeriods = this._parseSurfRipRiskPeriods(normalized);
     return {
       office,
       ripRisk: this._parseSurfRipRisk(normalized),
+      ripPeriods,
       surfHeightFt: this._parseSurfHeightFt(normalized),
       waterTempF: this._parseSurfWaterTempF(normalized),
       source: "NWS SRF"
@@ -421,6 +423,119 @@ class TideWiseCard extends HTMLElement {
     if (/(moderate\s+rip\s+current\s+risk|rip\s+current\s+risk\s+is\s+moderate|moderate\s+surf\s+and\s+rip\s+currents|rip\s+current\s+risk\.*\s*moderate)/i.test(lower)) return "moderate";
     if (/(low\s+rip\s+current\s+risk|rip\s+current\s+risk\s+is\s+low|rip\s+current\s+risk\.*\s*low)/i.test(lower)) return "low";
     return null;
+  }
+
+  _parseSurfRipRiskPeriods(text) {
+    const sections = this._splitNwsForecastSections(text);
+    const periods = [];
+    sections.forEach((section) => {
+      const risk = this._parseSurfRipRisk(section.body);
+      if (!risk) return;
+      const window = this._periodWindowForLabel(section.label, section.body);
+      periods.push({ risk, label: section.label, start: window.start, end: window.end });
+    });
+    if (!periods.length) {
+      const risk = this._parseSurfRipRisk(text);
+      if (risk) {
+        const window = this._periodWindowForLabel("Current", text);
+        periods.push({ risk, label: "Current", start: window.start, end: window.end });
+      }
+    }
+    return periods;
+  }
+
+  _splitNwsForecastSections(text) {
+    const lines = String(text || "").split("\n");
+    const sections = [];
+    let current = null;
+    const headerPattern = /^\s*\.*\s*(today|tonight|this afternoon|this evening|overnight|tomorrow|monday|monday night|tuesday|tuesday night|wednesday|wednesday night|thursday|thursday night|friday|friday night|saturday|saturday night|sunday|sunday night)\s*\.*\s*$/i;
+    lines.forEach((line) => {
+      const match = line.match(headerPattern);
+      if (match) {
+        if (current) sections.push(current);
+        current = { label: match[1], body: "" };
+      } else if (current) {
+        current.body += `${line}\n`;
+      }
+    });
+    if (current) sections.push(current);
+    return sections;
+  }
+
+  _periodWindowForLabel(label, body = "") {
+    const now = new Date();
+    const lowerLabel = String(label || "").toLowerCase();
+    const lowerBody = String(body || "").toLowerCase();
+    const start = new Date(now);
+    const end = new Date(now);
+    const setTime = (date, h, m = 0) => { date.setHours(h, m, 0, 0); return date; };
+    const addDays = (date, days) => { date.setDate(date.getDate() + days); return date; };
+    const nextDayOffset = (name) => {
+      const names = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+      const target = names.indexOf(name);
+      if (target < 0) return 0;
+      const diff = (target - now.getDay() + 7) % 7;
+      return diff === 0 && now.getHours() >= 18 ? 7 : diff;
+    };
+
+    if (lowerBody.includes("until") || lowerBody.includes("through")) {
+      const explicit = this._explicitRipEnd(now, lowerBody);
+      if (explicit) return { start: now, end: explicit };
+    }
+
+    if (lowerLabel.includes("tonight") || lowerLabel.includes("night") || lowerLabel.includes("evening") || lowerLabel.includes("overnight")) {
+      const dayName = lowerLabel.split(" ")[0];
+      const offset = nextDayOffset(dayName);
+      addDays(start, offset);
+      addDays(end, offset + (lowerLabel.includes("overnight") ? 1 : 0));
+      setTime(start, lowerLabel.includes("overnight") ? 0 : 18);
+      setTime(end, lowerLabel.includes("overnight") ? 6 : 6);
+      if (!lowerLabel.includes("overnight")) addDays(end, 1);
+      return { start, end };
+    }
+
+    if (lowerLabel.includes("tomorrow")) {
+      addDays(start, 1); addDays(end, 1);
+      setTime(start, 6); setTime(end, 18);
+      return { start, end };
+    }
+
+    const dayName = lowerLabel.split(" ")[0];
+    const offset = nextDayOffset(dayName);
+    addDays(start, offset); addDays(end, offset);
+    if (lowerLabel.includes("afternoon")) { setTime(start, 12); setTime(end, 18); }
+    else { setTime(start, 6); setTime(end, 18); }
+    if (lowerLabel === "current" || (offset === 0 && now > start)) start.setTime(now.getTime());
+    return { start, end };
+  }
+
+  _explicitRipEnd(now, text) {
+    const explicitTime = text.match(/(?:until|through)\s+(?:around\s+)?([0-9]{1,2})(?::([0-9]{2}))?\s*(am|pm)\b/i);
+    if (explicitTime) {
+      let hour = Number(explicitTime[1]);
+      const minute = Number(explicitTime[2] || 0);
+      const ap = explicitTime[3].toLowerCase();
+      if (ap === "pm" && hour < 12) hour += 12;
+      if (ap === "am" && hour === 12) hour = 0;
+      const end = new Date(now);
+      end.setHours(hour, minute, 0, 0);
+      if (end <= now) end.setDate(end.getDate() + 1);
+      return end;
+    }
+    const phraseHours = [
+      ["morning", 12],
+      ["afternoon", 18],
+      ["evening", 22],
+      ["tonight", 6],
+      ["overnight", 6],
+      ["today", 18]
+    ];
+    const phrase = phraseHours.find(([name]) => text.includes(name));
+    if (!phrase) return null;
+    const end = new Date(now);
+    end.setHours(phrase[1], 0, 0, 0);
+    if (phrase[0] === "tonight" || phrase[0] === "overnight" || end <= now) end.setDate(end.getDate() + 1);
+    return end;
   }
 
   _parseSurfHeightFt(text) {
@@ -719,7 +834,25 @@ class TideWiseCard extends HTMLElement {
     return null;
   }
 
-  _getRipCurrentRisk() { const e = this._getEntity(this._config.rip_current_risk_entity); if (e) return String(e.state || "").toLowerCase().trim(); return this._autoData?.surf?.ripRisk || null; }
+  _getRipCurrentRisk(date = new Date()) {
+    const e = this._getEntity(this._config.rip_current_risk_entity);
+    if (e) return String(e.state || "").toLowerCase().trim();
+    const timed = this._ripRiskForTime(date);
+    return timed?.risk || this._autoData?.surf?.ripRisk || null;
+  }
+
+  _ripRiskForTime(date) {
+    const periods = this._autoData?.surf?.ripPeriods;
+    if (!Array.isArray(periods) || !periods.length) return null;
+    const t = date instanceof Date ? date.getTime() : new Date(date).getTime();
+    if (!Number.isFinite(t)) return null;
+    const period = periods.find((item) => {
+      const start = new Date(item.start).getTime();
+      const end = new Date(item.end).getTime();
+      return Number.isFinite(start) && Number.isFinite(end) && t >= start && t <= end;
+    });
+    return period || null;
+  }
   _getUnsafeToSwim() { const e = this._getEntity(this._config.unsafe_to_swim_entity); if (!e) return null; const raw = String(e.state || "").toLowerCase().trim(); return raw === "on" || raw === "true" || raw === "unsafe" || raw === "dangerous"; }
   _normalizeCondition(condition) { return String(condition || "").toLowerCase().replace(/[-_]/g, " ").trim(); }
 
@@ -976,10 +1109,10 @@ class TideWiseCard extends HTMLElement {
     const value = Number(cap);
     if (!Number.isFinite(value) || value >= 1) return 1.0;
     const hours = Math.max(0, Number(hoursAhead) || 0);
-    if (hours <= 2) return value;
+    if (hours <= 3) return value;
     const relaxed = Math.max(value, 0.86);
     if (hours >= 8) return relaxed;
-    const f = (hours - 2) / 6;
+    const f = (hours - 3) / 5;
     return value + (relaxed - value) * f;
   }
 
@@ -994,7 +1127,6 @@ class TideWiseCard extends HTMLElement {
     const waveFt = this._getWaveHeightFt();
     const rainIn = this._getRainTodayIn();
     const pressureTrend = this._getPressureTrend();
-    const ripRiskRaw = this._getRipCurrentRisk();
     const unsafeToSwim = this._getUnsafeToSwim();
     const wind = this._windScore(windMph, windBearing);
     const weatherScore = this._weatherScore(weather);
@@ -1002,7 +1134,6 @@ class TideWiseCard extends HTMLElement {
     const waterTemp = this._waterTempScore(waterTempF);
     const wave = this._waveScore(waveFt);
     const rain = this._rainScore(rainIn);
-    const rip = this._ripCurrentScore(ripRiskRaw, unsafeToSwim);
     const clarity = this._clarityScore(wind, wave, rain, weatherScore);
     const age = this._moonAge(new Date());
     const moonMult = this._moonMultiplier(age);
@@ -1027,8 +1158,11 @@ class TideWiseCard extends HTMLElement {
       const solunar = this._solunarScore(moon.HA);
       const tide = this._tideScore(predictions, i);
       const light = this._lightScore(hour);
-      let rawScore = tide.score * weights.tide + wind.score * weights.wind + waterTemp.score * weights.waterTemp + weatherScore.score * weights.weather + clarity.score * weights.clarity + light.score * weights.light + solunar * weights.solunar + pressure.score * weights.pressure;
-      rawScore *= moonMult;
+      const ripRiskRaw = this._getRipCurrentRisk(t);
+      const ripPeriod = this._ripRiskForTime(t);
+      const rip = this._ripCurrentScore(ripRiskRaw, unsafeToSwim);
+      const componentSum = tide.score * weights.tide + wind.score * weights.wind + waterTemp.score * weights.waterTemp + weatherScore.score * weights.weather + clarity.score * weights.clarity + light.score * weights.light + solunar * weights.solunar + pressure.score * weights.pressure;
+      const scoreAfterMoon = componentSum * moonMult;
       const hoursAhead = Math.max(0, (tMs - nowMs) / 3600000);
       const liveConditionCap = Math.min(wind.cap, weatherScore.cap, wave.cap, rain.cap, rip.cap, clarity.cap);
       const forecastConditionCap = this._forecastConditionCap(liveConditionCap, hoursAhead);
@@ -1036,15 +1170,18 @@ class TideWiseCard extends HTMLElement {
       if (tide.movementScore < 0.10) cap = Math.min(cap, 0.48);
       if (tide.movementScore < 0.20) cap = Math.min(cap, 0.62);
       if (hour >= 10 && hour <= 15) cap = Math.min(cap, 0.78);
-      const finalScore = Math.max(0, Math.min(1, Math.min(rawScore, cap)));
+      const finalScore = Math.max(0, Math.min(1, Math.min(scoreAfterMoon, cap)));
       scores.push(finalScore);
-      const detail = { time: t, score: finalScore, tide, wind, weather: weatherScore, waterTemp, wave, rain, rip, clarity, light, solunar, pressure, moonMult, cap, liveConditionCap, forecastConditionCap, hoursAhead };
+      const detail = { time: t, score: finalScore, componentSum, scoreAfterMoon, finalScore, displayScore: finalScore, tide, wind, weather: weatherScore, waterTemp, wave, rain, rip, ripRiskRaw, ripPeriod, clarity, light, solunar, pressure, moonMult, cap, liveConditionCap, forecastConditionCap, hoursAhead };
       details.push(detail);
       if (tMs >= nowMs && tMs <= maxFutureMs && finalScore > bestScore) { bestScore = finalScore; bestIdx = i; }
     }
 
     const smoothedScores = this._smoothScores(scores);
-    details.forEach((detail, i) => { detail.score = smoothedScores[i] ?? detail.score; });
+    details.forEach((detail, i) => {
+      detail.score = smoothedScores[i] ?? detail.score;
+      detail.displayScore = detail.score;
+    });
     bestIdx = null;
     bestScore = -1;
     details.forEach((detail, i) => {
@@ -1058,7 +1195,7 @@ class TideWiseCard extends HTMLElement {
     const currentDetail = details[currentIdx];
     const bestWindow = this._buildBestWindow(details, bestIdx);
     const reason = this._buildReason(currentDetail);
-    return { scores: smoothedScores, rawScores: scores, details, currentScore, currentDetail, age, bestWindow, reason };
+    return { scores: smoothedScores, finalScores: scores, details, currentScore, currentDetail, age, bestWindow, reason };
   }
 
   _buildBestWindow(details, bestIdx) {
@@ -1086,7 +1223,9 @@ class TideWiseCard extends HTMLElement {
 
     if (detail.weather.cap <= 0.25) concerns.push("storms nearby");
     else if (detail.weather.cap <= 0.45) concerns.push(detail.weather.label);
-    if (detail.rip && detail.rip.score < 0.65) concerns.push(detail.rip.label);
+    if (detail.rip && detail.rip.score < 0.65) {
+      concerns.push(detail.rip.label.includes("high") ? "high rip risk safety cap" : detail.rip.label);
+    }
     if (detail.wind.cap <= 0.42) concerns.push("rough wind");
     else if (detail.wind.score < 0.50) concerns.push("wind penalty");
     if (detail.wave.score < 0.55) concerns.push(detail.wave.label);
@@ -1095,15 +1234,15 @@ class TideWiseCard extends HTMLElement {
     else concerns.push(detail.tide.label);
     if (detail.light.score < 0.30) concerns.push("poor light window");
 
-    if (detail.wind.score >= 0.80) helps.push("light wind");
     if (detail.waterTemp.score >= 0.85) helps.push("prime water temp");
     else if (detail.waterTemp.score < 0.55) concerns.push(detail.waterTemp.label);
+    if (detail.pressure.score >= 0.72) helps.push("favorable pressure");
+    if (detail.wind.score >= 0.80) helps.push("light wind");
     if (detail.light.score >= 0.80) helps.push(detail.light.label);
     if (detail.solunar >= 0.70) helps.push("moon window");
-    if (detail.pressure.score >= 0.72) helps.push(detail.pressure.label);
 
-    const main = concerns.slice(0, 2).join(" and ") || "mixed signals";
-    const good = helps.length ? ` ${helps.slice(0, 2).join(" and ")} help.` : "";
+    const main = concerns.slice(0, 2).join(" + ") || "mixed signals";
+    const good = helps.length ? ` ${this._capitalize(helps.slice(0, 2).join(" and "))} help.` : "";
     const capNote = detail.liveConditionCap < 0.65
       ? " Current safety/weather limits ease later unless the forecast still says otherwise."
       : "";
@@ -1227,13 +1366,20 @@ class TideWiseCard extends HTMLElement {
     const ripRisk = this._getRipCurrentRisk();
     const pressureTrend = this._getPressureTrend();
     const weights = this._modeWeights();
-    const score = fish?.currentScore ?? null;
-    const rawScore = fish?.rawScores?.[fish?.details?.indexOf(detail)] ?? null;
-    const band = score !== null ? this._scoreBand(score, this._fishBand) : "n/a";
+    const displayScore = fish?.currentScore ?? detail?.displayScore ?? null;
+    const finalCurrentScore = detail?.finalScore ?? null;
+    const band = displayScore !== null ? this._scoreBand(displayScore, this._fishBand) : "n/a";
+    const safetyWarning = detail?.rip?.score < 0.65 ? detail.rip.label : "none";
+    const ripWindow = detail?.ripPeriod
+      ? `${detail.ripPeriod.label || "timed"} ${this._formatDebugWindow(detail.ripPeriod.start, detail.ripPeriod.end)}`
+      : "not time-specific";
     const capItems = detail ? [
-      ["overall cap", detail.cap],
-      ["live condition cap", detail.liveConditionCap],
-      ["forecast condition cap", detail.forecastConditionCap],
+      ["current safety cap", `${this._fmtDebugNumber(detail.liveConditionCap)}, applied to Now`],
+      ["near-term safety cap", `${this._fmtDebugNumber(detail.liveConditionCap)}, applied for first 3 hours`],
+      ["future curve globally capped", "false"],
+      ["safety warning active", safetyWarning],
+      ["timed rip window", ripWindow],
+      ["active cap", detail.cap],
       ["wind cap", detail.wind.cap],
       ["weather cap", detail.weather.cap],
       ["water cap", detail.waterTemp.cap],
@@ -1273,9 +1419,16 @@ class TideWiseCard extends HTMLElement {
           <div class="debug-section">
             <div class="debug-section-title">Result</div>
             ${rows([
+              ["debug target", "current point / Now"],
+              ["curve mode", "future bite potential"],
               ["band", band],
-              ["score", score],
-              ["raw score", rawScore],
+              ["component sum", detail?.componentSum],
+              ["pre-cap score", detail?.componentSum],
+              ["moon multiplier", detail?.moonMult],
+              ["score after moon", detail?.scoreAfterMoon],
+              ["active cap", detail?.cap],
+              ["final current score", finalCurrentScore],
+              ["display score", displayScore],
               ["reason", fish?.reason || "fishing score disabled"],
               ["best window", fish?.bestWindow || "none"],
               ["current tide", `${cur.toFixed(1)} ${unitLabel} ${rising ? "rising" : "falling"}`]
@@ -1321,6 +1474,18 @@ class TideWiseCard extends HTMLElement {
     if (value === null || value === undefined || value === "") return "missing";
     if (typeof value === "number") return this._fmtDebugNumber(value);
     return String(value);
+  }
+
+  _formatDebugWindow(start, end) {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    if (!Number.isFinite(startDate.getTime()) || !Number.isFinite(endDate.getTime())) return "unknown window";
+    return `${this._formatClock(startDate)}-${this._formatClock(endDate)}`;
+  }
+
+  _capitalize(text) {
+    const value = String(text || "");
+    return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
   }
 
   _debugSource(kind) {
