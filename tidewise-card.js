@@ -141,6 +141,7 @@ const STYLES = `
   .x-tick { font-size: 13px; font-weight: 650; color: var(--text-muted); }
   .fish-footer { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-top: 2px; margin-bottom: 2px; }
   .fish-reason { font-size: 12px; color: var(--text-muted); font-weight: 650; line-height: 1.3; max-height: 34px; overflow-y: auto; scrollbar-width: thin; min-width: 0; flex: 1 1 auto; }
+  .safety-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #8a3018; background: rgba(192,80,48,0.12); border: 1px solid rgba(192,80,48,0.18); border-radius: 99px; padding: 2px 8px; font-weight: 850; white-space: nowrap; flex-shrink: 0; }
   .fish-next { font-size: 12px; color: var(--wave-dark); font-weight: 800; white-space: nowrap; flex-shrink: 0; }
   .fish-legend { display: flex; align-items: center; gap: 12px; margin: 2px 0 6px; padding-left: 2px; min-width: 0; flex-wrap: nowrap; }
   .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--text-muted); font-weight: 750; white-space: nowrap; }
@@ -155,9 +156,14 @@ const STYLES = `
   .pill-arrow { font-size: 16px; margin-right: 4px; }
   .pill-arrow.low{color:var(--low-color)} .pill-arrow.high{color:var(--high-color)}
   .pill-ft { font-size: 16px; color: var(--text-muted); font-weight: 650; }
-  .debug-panel { margin-top: 8px; background: rgba(10,30,40,0.06); border: 1px solid rgba(42,122,148,0.24); border-radius: 12px; padding: 8px 10px; color: var(--text); }
-  .debug-title { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--wave-dark); font-weight: 850; margin-bottom: 6px; }
+  .debug-panel { margin-top: 8px; background: rgba(10,30,40,0.06); border: 1px solid rgba(42,122,148,0.24); border-radius: 12px; color: var(--text); overflow: hidden; }
+  .debug-panel summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; padding: 8px 10px; }
+  .debug-panel summary::-webkit-details-marker { display: none; }
+  .debug-title-main::before { content: "▸"; display: inline-block; margin-right: 6px; transition: transform 0.16s ease; }
+  .debug-panel[open] .debug-title-main::before { transform: rotate(90deg); }
+  .debug-title { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--wave-dark); font-weight: 850; }
   .debug-note { font-size: 11px; letter-spacing: 0; text-transform: none; color: var(--text-muted); font-weight: 650; }
+  .debug-body { max-height: 360px; overflow-y: auto; padding: 0 10px 10px; scrollbar-width: thin; }
   .debug-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
   .debug-section { min-width: 0; }
   .debug-section-title { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 850; margin: 4px 0 3px; }
@@ -232,7 +238,7 @@ class TideWiseCard extends HTMLElement {
       auto_sources: config.auto_sources !== false,
       auto_surf_forecast: config.auto_surf_forecast !== false,
       nws_office: String(config.nws_office || "").trim().toUpperCase(),
-      debug: config.debug === true
+      debug: this._normalizeDebugConfig(config.debug)
     };
     this.setAttribute("theme-mode", this._config.theme_mode);
     if (previousConfig.station !== this._config.station || previousConfig.mode !== this._config.mode) this._fishBand = null;
@@ -242,6 +248,15 @@ class TideWiseCard extends HTMLElement {
 
   _normalizeThemeMode(value) {
     return value === "auto" ? "auto" : "tidewise";
+  }
+
+  _normalizeDebugConfig(value) {
+    if (value === true) return { enabled: true, panel: true };
+    if (!value || typeof value !== "object") return { enabled: false, panel: false };
+    return {
+      enabled: value.enabled === true,
+      panel: value.enabled === true && value.panel === true
+    };
   }
 
   connectedCallback() {
@@ -1194,7 +1209,7 @@ class TideWiseCard extends HTMLElement {
     const currentScore = smoothedScores[currentIdx] || scores[currentIdx] || 0;
     const currentDetail = details[currentIdx];
     const bestWindow = this._buildBestWindow(details, bestIdx);
-    const reason = this._buildReason(currentDetail);
+    const reason = this._buildReason(currentDetail, bestWindow);
     return { scores: smoothedScores, finalScores: scores, details, currentScore, currentDetail, age, bestWindow, reason };
   }
 
@@ -1214,7 +1229,7 @@ class TideWiseCard extends HTMLElement {
     return `${this._formatClock(details[start].time)}-${this._formatClock(details[end].time)}`;
   }
 
-  _buildReason(detail) {
+  _buildReason(detail, bestWindow = "") {
     if (!detail) return "Waiting on fishing inputs";
     const band = this._scoreBand(detail.score);
     const label = band.charAt(0).toUpperCase() + band.slice(1);
@@ -1224,7 +1239,7 @@ class TideWiseCard extends HTMLElement {
     if (detail.weather.cap <= 0.25) concerns.push("storms nearby");
     else if (detail.weather.cap <= 0.45) concerns.push(detail.weather.label);
     if (detail.rip && detail.rip.score < 0.65) {
-      concerns.push(detail.rip.label.includes("high") ? "high rip risk safety cap" : detail.rip.label);
+      concerns.push(detail.rip.label.includes("high") ? "high rip risk cap" : detail.rip.label);
     }
     if (detail.wind.cap <= 0.42) concerns.push("rough wind");
     else if (detail.wind.score < 0.50) concerns.push("wind penalty");
@@ -1242,11 +1257,15 @@ class TideWiseCard extends HTMLElement {
     if (detail.solunar >= 0.70) helps.push("moon window");
 
     const main = concerns.slice(0, 2).join(" + ") || "mixed signals";
-    const good = helps.length ? ` ${this._capitalize(helps.slice(0, 2).join(" and "))} help.` : "";
-    const capNote = detail.liveConditionCap < 0.65
-      ? " Current safety/weather limits ease later unless the forecast still says otherwise."
-      : "";
-    return `${label} now: ${main}.${good}${capNote}`;
+    if (bestWindow) return `${label} now: ${main}. Better bite window ${bestWindow}.`;
+    const good = helps.length ? ` ${this._capitalize(helps[0])} helps.` : "";
+    return `${label} now: ${main}.${good}`;
+  }
+
+  _safetyBadgeHtml(detail) {
+    if (!detail?.rip || detail.rip.score >= 0.65) return "";
+    if (!String(detail.rip.label || "").includes("high")) return "";
+    return `<div class="safety-badge">&#9888; High rip risk active</div>`;
   }
 
   _render() {
@@ -1314,6 +1333,7 @@ class TideWiseCard extends HTMLElement {
       ${fish ? `
         <div class="fish-footer">
           <div class="fish-reason">${this._escape(fish.reason)}</div>
+          ${this._safetyBadgeHtml(fish.currentDetail)}
           <div class="fish-next">${fish.bestWindow ? "Best: " + fish.bestWindow : ""}</div>
         </div>
         <div class="fish-legend">
@@ -1327,7 +1347,7 @@ class TideWiseCard extends HTMLElement {
         ${this._pillHtml("low", nextLow, unitLabel)}
         ${this._pillHtml("high", nextHigh, unitLabel)}
       </div>
-      ${this._config.debug ? this._debugHtml(fish, chartPredictions, cur, rising, unitLabel) : ""}
+      ${this._config.debug?.enabled && this._config.debug?.panel ? this._debugHtml(fish, chartPredictions, cur, rising, unitLabel) : ""}
     `;
 
     requestAnimationFrame(() => {
@@ -1410,12 +1430,13 @@ class TideWiseCard extends HTMLElement {
     }).join("");
 
     return `
-      <div class="debug-panel">
-        <div class="debug-title">
-          <span>TideWise Debug</span>
-          <span class="debug-note">shown because <code>debug: true</code></span>
-        </div>
-        <div class="debug-grid">
+      <details class="debug-panel">
+        <summary>
+          <span class="debug-title debug-title-main">TideWise Debug</span>
+          <span class="debug-note">shown because debug is enabled in YAML</span>
+        </summary>
+        <div class="debug-body">
+          <div class="debug-grid">
           <div class="debug-section">
             <div class="debug-section-title">Result</div>
             ${rows([
@@ -1461,7 +1482,8 @@ class TideWiseCard extends HTMLElement {
             ${rows(capItems)}
           </div>
         </div>
-      </div>
+        </div>
+      </details>
     `;
   }
 
@@ -1793,7 +1815,7 @@ class TideWiseCard extends HTMLElement {
     }[char]));
   }
 
-  getCardSize() { return this._config?.debug ? 8 : 5; }
+  getCardSize() { return 5; }
 }
 
 class TideWiseCardEditor extends HTMLElement {
