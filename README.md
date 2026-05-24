@@ -8,7 +8,7 @@
 [![Validate](https://img.shields.io/github/actions/workflow/status/TheWillMiller/tide-wise/validate.yml?branch=main&label=validate)](https://github.com/TheWillMiller/tide-wise/actions/workflows/validate.yml)
 [![GitHub stars](https://img.shields.io/github/stars/TheWillMiller/tide-wise?label=stars)](https://github.com/TheWillMiller/tide-wise/stargazers)
 
-**Latest release:** `v0.4.8`
+**Latest release:** `v0.4.9`
 
 TideWise is a Home Assistant dashboard (Lovelace) custom card for NOAA tide predictions, current tide height, next high/low tides, and optional fishing bite-window scoring.
 
@@ -115,7 +115,7 @@ type: module
 For quick testing before installing locally, you can add this dashboard resource:
 
 ```yaml
-url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.4.8/tidewise-card.js
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.4.9/tidewise-card.js
 type: module
 ```
 
@@ -213,6 +213,7 @@ TideWise includes a Home Assistant visual editor. When adding the card from the 
 - Use your Home Assistant home latitude/longitude when that matches your fishing area
 - Select English or metric units
 - Select fishing mode
+- Choose TideWise styling or Home Assistant theme colors
 - Enable or disable fishing score
 - Enable or disable public NOAA/NWS auto sources
 - Enable or disable NWS surf/rip forecast parsing
@@ -275,6 +276,7 @@ When optional data is missing, TideWise falls back to the data it has available.
 | `station` | Yes |  | NOAA tides and currents station ID. |
 | `units` | No | `english` | NOAA units. Usually `english` or `metric`. |
 | `mode` | No | `general` | Fishing score mode: `general`, `surf`, `inlet`, `flounder`, `trout_redfish`, or `sheepshead`. |
+| `theme_mode` | No | `tidewise` | Visual style mode. Use `tidewise` for the default ocean-glass look or `auto` to follow Home Assistant theme colors more closely. |
 | `show_fishing_score` | No | `true` | Set to `false` for a tide-only card. |
 | `auto_sources` | No | `true` | Fetch public NOAA/NWS weather and marine observations directly where available. |
 | `auto_surf_forecast` | No | `true` | Try to parse NWS Surf Zone Forecast text for surf height, rip current risk, and water temperature. |
@@ -325,7 +327,7 @@ Try:
 
 If HACS still shows an old README, the installed card file may still be current while the HACS display cache is stale.
 
-If HACS shows a short value like `214b6c2` instead of `v0.4.8`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
+If HACS shows a short value like `214b6c2` instead of `v0.4.9`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
 
 ### Card does not show up
 

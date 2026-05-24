@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+## 0.4.9
+
+### Added
+
+- Added opt-in Home Assistant theme color support with `theme_mode: auto`.
+- Added a visual editor theme selector.
+
+### Changed
+
+- Kept the existing TideWise ocean-glass styling as the default `theme_mode: tidewise`.
+- Updated chart drawing to read theme-aware CSS colors when theme mode is enabled.
+- Updated release references to `v0.4.9`.
+
 ## 0.4.8
 
 ### Added

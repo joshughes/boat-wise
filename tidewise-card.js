@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.4.8
+ * TideWise Card v0.4.9
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.4.8";
+const CARD_VERSION = "0.4.9";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const STATION_PRESETS = [
   { station: "8410140", name: "Eastport, ME", lat: 44.9046, lon: -66.9829 },
@@ -65,9 +65,35 @@ const STYLES = `
     --wave: #2a7a94; --wave-dark: #1a5f72; --gold: #e8b84b;
     --low-color: #2a7a94; --high-color: #0a7a70; --text: #0a1e28; --text-muted: #1e4d5e;
     --elite: #16a34a; --prime: #2563eb; --good: #0891b2; --fair: #f59e0b; --slow: #dc2626;
+    --tw-panel-bg: rgba(255,255,255,0.35); --tw-panel-border: rgba(42,122,148,0.20);
+    --tw-chip-bg: rgba(255,255,255,0.48); --tw-chip-border: rgba(42,122,148,0.22);
+    --tw-chart-grid: rgba(10,30,45,0.15); --tw-chart-axis: rgba(10,30,45,0.65);
+    --tw-chart-label-bg: rgba(255,255,255,0.88); --tw-chart-now-label-bg: rgba(255,255,255,0.92);
+    --tw-chart-label-border: rgba(42,122,148,0.45); --tw-chart-now-label-border: rgba(42,122,148,0.55);
+    --tw-chart-label-text: #0a1e28; --tw-tide-line: #2a7a94;
+    --tw-marker-stroke: rgba(255,255,255,0.9); --tw-now-marker-stroke: rgba(255,255,255,0.92);
     --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Arial, sans-serif;
     --font-mono: "SF Mono", "Roboto Mono", "Courier New", monospace;
     display: block; font-family: var(--font-main); color: var(--text);
+  }
+  :host([theme-mode="auto"]) {
+    --wave: var(--accent-color, #2a7a94); --wave-dark: var(--primary-color, var(--accent-color, #1a5f72));
+    --low-color: var(--accent-color, #2a7a94); --high-color: var(--primary-color, #0a7a70);
+    --text: var(--primary-text-color, #0a1e28); --text-muted: var(--secondary-text-color, #1e4d5e);
+    --tw-panel-bg: var(--secondary-background-color, rgba(255,255,255,0.35));
+    --tw-panel-border: var(--divider-color, rgba(42,122,148,0.20));
+    --tw-chip-bg: var(--card-background-color, rgba(255,255,255,0.48));
+    --tw-chip-border: var(--divider-color, rgba(42,122,148,0.22));
+    --tw-chart-grid: var(--divider-color, rgba(10,30,45,0.15));
+    --tw-chart-axis: var(--secondary-text-color, rgba(10,30,45,0.65));
+    --tw-chart-label-bg: var(--card-background-color, rgba(255,255,255,0.88));
+    --tw-chart-now-label-bg: var(--card-background-color, rgba(255,255,255,0.92));
+    --tw-chart-label-border: var(--divider-color, rgba(42,122,148,0.45));
+    --tw-chart-now-label-border: var(--divider-color, rgba(42,122,148,0.55));
+    --tw-chart-label-text: var(--primary-text-color, #0a1e28);
+    --tw-tide-line: var(--accent-color, #2a7a94);
+    --tw-marker-stroke: var(--card-background-color, rgba(255,255,255,0.9));
+    --tw-now-marker-stroke: var(--card-background-color, rgba(255,255,255,0.92));
   }
   .card-outer {
     background: linear-gradient(135deg, rgba(255,255,255,0.70), rgba(222,244,248,0.58));
@@ -76,19 +102,24 @@ const STYLES = `
     border: 1px solid rgba(255,255,255,0.40); box-shadow: 0 5px 24px rgba(10,50,70,0.14);
     position: relative; overflow: hidden;
   }
+  :host([theme-mode="auto"]) .card-outer {
+    background: var(--ha-card-background, var(--card-background-color, rgba(255,255,255,0.70)));
+    border-color: var(--divider-color, rgba(255,255,255,0.40));
+    box-shadow: var(--ha-card-box-shadow, 0 5px 24px rgba(10,50,70,0.14));
+  }
   ha-card { background: transparent !important; box-shadow: none !important; border-radius: 22px !important; }
   .card-outer::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(42,122,148,0.62), transparent); }
   .header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 5px; flex-wrap: wrap; }
   .title { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1.05; letter-spacing: 0; overflow-wrap: anywhere; min-width: 0; max-width: 100%; }
   .subtitle { font-size: 13px; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; font-weight: 650; white-space: nowrap; padding-top: 8px; }
-  .current-row { display: flex; align-items: center; gap: 13px; flex-wrap: wrap; background: rgba(255,255,255,0.35); border: 1px solid rgba(42,122,148,0.20); border-radius: 14px; padding: 7px 13px; margin-bottom: 6px; }
+  .current-row { display: flex; align-items: center; gap: 13px; flex-wrap: wrap; background: var(--tw-panel-bg); border: 1px solid var(--tw-panel-border); border-radius: 14px; padding: 7px 13px; margin-bottom: 6px; }
   .current-icon { font-size: 22px; animation: bob 3s ease-in-out infinite; flex-shrink: 0; }
   @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
   .current-label { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--wave-dark); margin-bottom: 2px; font-weight: 750; }
   .current-value { font-family: var(--font-mono); font-size: 36px; font-weight: 800; color: var(--text); line-height: 1; }
   .current-unit { font-size: 18px; color: var(--text-muted); font-weight: 650; }
   .direction-chip { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 18px; color: var(--wave-dark); font-weight: 750; flex-shrink: 0; }
-  .condition-chip { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--wave-dark); background: rgba(255,255,255,0.48); border: 1px solid rgba(42,122,148,0.22); border-radius: 99px; padding: 4px 10px; white-space: nowrap; font-weight: 800; flex-shrink: 0; }
+  .condition-chip { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--wave-dark); background: var(--tw-chip-bg); border: 1px solid var(--tw-chip-border); border-radius: 99px; padding: 4px 10px; white-space: nowrap; font-weight: 800; flex-shrink: 0; }
   .condition-spacer { flex: 1 1 auto; min-width: 12px; }
   .pulse-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--wave); box-shadow: 0 0 0 3px rgba(42,122,148,0.25); animation: pulse 2s ease-in-out infinite; flex-shrink: 0; }
   @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.75)} }
@@ -102,7 +133,7 @@ const STYLES = `
   .score-good { background: rgba(42,122,148,0.12); color: var(--wave-dark); }
   .score-fair { background: rgba(232,184,75,0.20); color: #8a6a10; }
   .score-slow { background: rgba(192,80,48,0.14); color: #8a3018; }
-  .water-temp-chip { font-size: 13px; color: var(--wave-dark); background: rgba(255,255,255,0.52); border: 1px solid rgba(42,122,148,0.25); border-radius: 99px; padding: 2px 9px; white-space: nowrap; font-weight: 800; }
+  .water-temp-chip { font-size: 13px; color: var(--wave-dark); background: var(--tw-chip-bg); border: 1px solid var(--tw-chip-border); border-radius: 99px; padding: 2px 9px; white-space: nowrap; font-weight: 800; }
   .fish-moon { font-size: 13px; color: var(--text-muted); font-weight: 650; white-space: nowrap; }
   .chart-wrap { position: relative; height: 95px; border-radius: 10px; overflow: hidden; }
   canvas { display: block; width: 100%; height: 100%; }
@@ -117,7 +148,7 @@ const STYLES = `
   .legend-dot.elite{background:var(--elite)} .legend-dot.prime{background:var(--prime)} .legend-dot.good{background:var(--good)} .legend-dot.fair{background:var(--fair)} .legend-dot.slow{background:var(--slow)}
   .legend-item.elite{color:#0f7a38} .legend-item.prime{color:#1d4ed8} .legend-item.good{color:#0e7490} .legend-item.fair{color:#9a5b00} .legend-item.slow{color:#a51f1f}
   .tides-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
-  .tide-pill { background: rgba(255,255,255,0.35); border: 1px solid rgba(42,122,148,0.20); border-radius: 12px; padding: 5px 12px; }
+  .tide-pill { background: var(--tw-panel-bg); border: 1px solid var(--tw-panel-border); border-radius: 12px; padding: 5px 12px; }
   .pill-label { font-size: 13px; letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 3px; font-weight: 750; }
   .pill-label.low{color:var(--low-color)} .pill-label.high{color:var(--high-color)}
   .pill-time { font-family: var(--font-mono); font-size: 26px; font-weight: 800; color: var(--text); line-height: 1.1; }
@@ -150,6 +181,7 @@ class TideWiseCard extends HTMLElement {
       station: "8661070",
       units: "english",
       mode: "general",
+      theme_mode: "tidewise",
       show_fishing_score: true,
       auto_sources: true,
       auto_surf_forecast: true
@@ -183,14 +215,20 @@ class TideWiseCard extends HTMLElement {
       latitude: Number(config.latitude) || 33.688,
       longitude: Number(config.longitude) || -78.886,
       mode: String(config.mode || "general").toLowerCase(),
+      theme_mode: this._normalizeThemeMode(config.theme_mode),
       show_fishing_score: config.show_fishing_score !== false,
       auto_sources: config.auto_sources !== false,
       auto_surf_forecast: config.auto_surf_forecast !== false,
       nws_office: String(config.nws_office || "").trim().toUpperCase()
     };
+    this.setAttribute("theme-mode", this._config.theme_mode);
     if (previousConfig.station !== this._config.station || previousConfig.mode !== this._config.mode) this._fishBand = null;
     this._render();
     this._fetchData();
+  }
+
+  _normalizeThemeMode(value) {
+    return value === "auto" ? "auto" : "tidewise";
   }
 
   connectedCallback() {
@@ -1140,9 +1178,53 @@ class TideWiseCard extends HTMLElement {
       </div>`;
   }
 
+  _themeColor(name, fallback) {
+    const value = getComputedStyle(this).getPropertyValue(name).trim();
+    return value && !value.includes("var(") ? value : fallback;
+  }
+
+  _chartColors() {
+    if (this._config.theme_mode === "auto") {
+      const accent = this._themeColor("--accent-color", this._themeColor("--primary-color", "#2a7a94"));
+      const cardBg = this._themeColor("--card-background-color", "rgba(255,255,255,0.88)");
+      const divider = this._themeColor("--divider-color", "rgba(42,122,148,0.45)");
+      return {
+        grid: divider,
+        axis: this._themeColor("--secondary-text-color", "rgba(10,30,45,0.65)"),
+        labelBg: cardBg,
+        nowLabelBg: cardBg,
+        labelBorder: divider,
+        nowLabelBorder: divider,
+        labelText: this._themeColor("--primary-text-color", "#0a1e28"),
+        tideLine: accent,
+        highMarker: this._themeColor("--primary-color", "#0a7a70"),
+        lowMarker: accent,
+        nowMarker: this._themeColor("--warning-color", "#e8b84b"),
+        markerStroke: cardBg,
+        nowMarkerStroke: cardBg
+      };
+    }
+    return {
+      grid: this._themeColor("--tw-chart-grid", "rgba(10,30,45,0.15)"),
+      axis: this._themeColor("--tw-chart-axis", "rgba(10,30,45,0.65)"),
+      labelBg: this._themeColor("--tw-chart-label-bg", "rgba(255,255,255,0.88)"),
+      nowLabelBg: this._themeColor("--tw-chart-now-label-bg", "rgba(255,255,255,0.92)"),
+      labelBorder: this._themeColor("--tw-chart-label-border", "rgba(42,122,148,0.45)"),
+      nowLabelBorder: this._themeColor("--tw-chart-now-label-border", "rgba(42,122,148,0.55)"),
+      labelText: this._themeColor("--tw-chart-label-text", "#0a1e28"),
+      tideLine: this._themeColor("--tw-tide-line", "#2a7a94"),
+      highMarker: this._themeColor("--high-color", "#0a7a70"),
+      lowMarker: this._themeColor("--low-color", "#2a7a94"),
+      nowMarker: this._themeColor("--gold", "#e8b84b"),
+      markerStroke: this._themeColor("--tw-marker-stroke", "rgba(255,255,255,0.9)"),
+      nowMarkerStroke: this._themeColor("--tw-now-marker-stroke", "rgba(255,255,255,0.92)")
+    };
+  }
+
   _drawChart(predictions, now, cur, unitLabel, fishScores, fishDetails, tideEvents = []) {
     const canvas = this._chartCanvas;
     if (!canvas) return;
+    const theme = this._chartColors();
     const dpr = window.devicePixelRatio || 1;
     const W = canvas.offsetWidth || 340;
     const H = canvas.offsetHeight || 95;
@@ -1165,7 +1247,7 @@ class TideWiseCard extends HTMLElement {
     const toX = (p) => padL + ((this._parsePredictionTime(p.t).getTime() - startMs) / spanMs) * cW;
     const toY = (v) => padT + cH - ((v - minV) / (maxV - minV)) * cH;
 
-    ctx.strokeStyle = "rgba(10,30,45,0.15)";
+    ctx.strokeStyle = theme.grid;
     ctx.lineWidth = 1;
     for (let i = 0; i <= 3; i++) {
       const v = minV + (i / 3) * (maxV - minV);
@@ -1174,7 +1256,7 @@ class TideWiseCard extends HTMLElement {
       ctx.moveTo(padL, y);
       ctx.lineTo(W - padR, y);
       ctx.stroke();
-      ctx.fillStyle = "rgba(10,30,45,0.65)";
+      ctx.fillStyle = theme.axis;
       ctx.font = "bold 9px monospace";
       ctx.textAlign = "right";
       ctx.fillText(v.toFixed(1), padL - 3, y + 3);
@@ -1236,9 +1318,9 @@ class TideWiseCard extends HTMLElement {
       ctx.setLineDash([]);
       ctx.beginPath();
       ctx.arc(ex, ey, 4, 0, Math.PI * 2);
-      ctx.fillStyle = isHigh ? "#0a7a70" : "#2a7a94";
+      ctx.fillStyle = isHigh ? theme.highMarker : theme.lowMarker;
       ctx.fill();
-      ctx.strokeStyle = "rgba(255,255,255,0.9)";
+      ctx.strokeStyle = theme.markerStroke;
       ctx.lineWidth = 1.5;
       ctx.stroke();
       ctx.font = "bold 9px monospace";
@@ -1249,13 +1331,13 @@ class TideWiseCard extends HTMLElement {
       if (lx + lw + 8 > W - padR) lx = W - padR - lw - 8;
       if (ly < padT) ly = ey + 10;
       if (ly > H - padB - 16) ly = ey - 20;
-      ctx.fillStyle = "rgba(255,255,255,0.88)";
-      ctx.strokeStyle = "rgba(42,122,148,0.45)";
+      ctx.fillStyle = theme.labelBg;
+      ctx.strokeStyle = theme.labelBorder;
       ctx.lineWidth = 1;
       this._roundedRect(ctx, lx, ly, lw + 8, 15, 4);
       ctx.fill();
       ctx.stroke();
-      ctx.fillStyle = "#0a1e28";
+      ctx.fillStyle = theme.labelText;
       ctx.textAlign = "left";
       ctx.fillText(label, lx + 4, ly + 10);
     });
@@ -1266,7 +1348,7 @@ class TideWiseCard extends HTMLElement {
       const y = toY(parseFloat(p.v));
       i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     });
-    ctx.strokeStyle = "#2a7a94";
+    ctx.strokeStyle = theme.tideLine;
     ctx.lineWidth = 2.5;
     ctx.lineJoin = "round";
     ctx.stroke();
@@ -1283,9 +1365,9 @@ class TideWiseCard extends HTMLElement {
     ctx.setLineDash([]);
     ctx.beginPath();
     ctx.arc(nx, ny, 5, 0, Math.PI * 2);
-    ctx.fillStyle = "#e8b84b";
+    ctx.fillStyle = theme.nowMarker;
     ctx.fill();
-    ctx.strokeStyle = "rgba(255,255,255,0.92)";
+    ctx.strokeStyle = theme.nowMarkerStroke;
     ctx.lineWidth = 2;
     ctx.stroke();
 
@@ -1297,13 +1379,13 @@ class TideWiseCard extends HTMLElement {
     if (bx < padL) bx = padL;
     if (bx + tw + 10 > W - padR) bx = W - padR - tw - 10;
     if (by < padT) by = ny + 8;
-    ctx.fillStyle = "rgba(255,255,255,0.92)";
-    ctx.strokeStyle = "rgba(42,122,148,0.55)";
+    ctx.fillStyle = theme.nowLabelBg;
+    ctx.strokeStyle = theme.nowLabelBorder;
     ctx.lineWidth = 1;
     this._roundedRect(ctx, bx, by, tw + 10, 16, 4);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = "#0a1e28";
+    ctx.fillStyle = theme.labelText;
     ctx.textAlign = "left";
     ctx.fillText(lbl, bx + 5, by + 11);
   }
@@ -1376,12 +1458,14 @@ class TideWiseCardEditor extends HTMLElement {
       station: "8661070",
       units: "english",
       mode: "general",
+      theme_mode: "tidewise",
       show_fishing_score: true,
       auto_sources: true,
       auto_surf_forecast: true,
       grid_options: { rows: "full", columns: 18 },
       ...config
     };
+    this._config.theme_mode = this._normalizeThemeMode(this._config.theme_mode);
     const home = this._homeLatLon();
     if (this._config.latitude === undefined && home.lat) this._config.latitude = home.lat;
     if (this._config.longitude === undefined && home.lon) this._config.longitude = home.lon;
@@ -1402,6 +1486,10 @@ class TideWiseCardEditor extends HTMLElement {
   _isGeneratedTitle(title) {
     const value = String(title || "").trim();
     return value === "" || value === "TideWise" || STATION_PRESETS.some((item) => value === `${item.name} Tides`);
+  }
+
+  _normalizeThemeMode(value) {
+    return value === "auto" ? "auto" : "tidewise";
   }
 
   _emitConfig(nextConfig) {
@@ -1577,6 +1665,13 @@ class TideWiseCardEditor extends HTMLElement {
                 ${["general", "surf", "inlet", "flounder", "trout_redfish", "sheepshead"].map((mode) => `<option value="${mode}" ${config.mode === mode ? "selected" : ""}>${mode.replace("_", " / ")}</option>`).join("")}
               </select>
             </label>
+            <label>
+              Theme
+              <select id="themeMode">
+                <option value="tidewise" ${config.theme_mode !== "auto" ? "selected" : ""}>TideWise</option>
+                <option value="auto" ${config.theme_mode === "auto" ? "selected" : ""}>Home Assistant theme</option>
+              </select>
+            </label>
           </div>
           <label class="check">
             <input id="showFishing" type="checkbox" ${config.show_fishing_score !== false ? "checked" : ""}>
@@ -1624,6 +1719,7 @@ class TideWiseCardEditor extends HTMLElement {
     this.shadowRoot.getElementById("title")?.addEventListener("change", (event) => this._setValue("title", event.target.value || "TideWise"));
     this.shadowRoot.getElementById("units")?.addEventListener("change", (event) => this._setValue("units", event.target.value));
     this.shadowRoot.getElementById("mode")?.addEventListener("change", (event) => this._setValue("mode", event.target.value));
+    this.shadowRoot.getElementById("themeMode")?.addEventListener("change", (event) => this._setValue("theme_mode", this._normalizeThemeMode(event.target.value)));
     this.shadowRoot.getElementById("showFishing")?.addEventListener("change", (event) => this._setValue("show_fishing_score", event.target.checked));
     this.shadowRoot.getElementById("autoSources")?.addEventListener("change", (event) => this._setValue("auto_sources", event.target.checked));
     this.shadowRoot.getElementById("autoSurfForecast")?.addEventListener("change", (event) => this._setValue("auto_surf_forecast", event.target.checked));
