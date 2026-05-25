@@ -516,8 +516,9 @@ class TideWiseCard extends HTMLElement {
   async _fetchNwsSurfForecast(nwsData) {
     const office = this._config.nws_office || String(nwsData?.point?.cwa || "").toUpperCase();
     if (!office) return {};
+    const zoneId = this._nwsForecastZoneId(nwsData?.point?.forecastZone);
     const productText = await this._fetchLegacyNwsSurfProduct(office);
-    if (productText) return this._parseSurfForecastText(productText, office);
+    if (productText) return this._parseSurfForecastText(productText, office, zoneId);
     const headers = { Accept: "application/geo+json" };
     const listRes = await fetch(`https://api.weather.gov/products/types/SRF/locations/${office}`, { headers });
     if (!listRes.ok) return {};
@@ -529,7 +530,7 @@ class TideWiseCard extends HTMLElement {
     if (!productRes.ok) return {};
     const product = await productRes.json();
     const text = product?.productText || product?.properties?.productText || "";
-    return this._parseSurfForecastText(text, office);
+    return this._parseSurfForecastText(text, office, zoneId);
   }
 
   async _fetchLegacyNwsSurfProduct(office) {
@@ -539,26 +540,63 @@ class TideWiseCard extends HTMLElement {
     return res.text();
   }
 
-  _parseSurfForecastText(text, office) {
+  _nwsForecastZoneId(zoneUrl) {
+    const match = String(zoneUrl || "").match(/([A-Z]{2}Z[0-9]{3})/i);
+    return match ? match[1].toUpperCase() : "";
+  }
+
+  _parseSurfForecastText(text, office, zoneId = "") {
     const raw = String(text || "");
     if (!raw.trim()) return {};
     const normalized = raw.replace(/\r/g, "");
-    const ripPeriods = this._parseSurfRipRiskPeriods(normalized);
+    const scoped = this._scopeSurfForecastText(normalized, zoneId);
+    const forecastText = scoped.text;
+    const ripPeriods = this._parseSurfRipRiskPeriods(forecastText);
+    const activeRip = this._activeRipPeriod(ripPeriods, new Date());
+    const fallbackRip = ripPeriods.length ? null : this._parseSurfRipRisk(forecastText);
     return {
       office,
-      ripRisk: this._parseSurfRipRisk(normalized),
+      zone: scoped.zone || zoneId || "",
+      ripRisk: activeRip?.risk || fallbackRip,
       ripPeriods,
-      surfHeightFt: this._parseSurfHeightFt(normalized),
-      waterTempF: this._parseSurfWaterTempF(normalized),
+      surfHeightFt: this._parseSurfHeightFt(forecastText),
+      waterTempF: this._parseSurfWaterTempF(forecastText),
       source: "NWS SRF"
     };
   }
 
+  _scopeSurfForecastText(text, zoneId = "") {
+    const cleaned = this._stripSurfForecastDefinitions(text);
+    const zone = String(zoneId || "").toUpperCase();
+    if (!zone) return { text: cleaned, zone: "" };
+    const blocks = cleaned.split(/\n\s*\$\$\s*\n/g).map((block) => block.trim()).filter(Boolean);
+    const matched = blocks.find((block) => new RegExp(`(^|\\n)\\s*${zone}\\b`, "i").test(block));
+    return { text: matched || cleaned, zone };
+  }
+
+  _stripSurfForecastDefinitions(text) {
+    return String(text || "")
+      .replace(/\n&&\s*\n[\s\S]*?(?=\n\s*\$\$|\s*$)/g, "\n")
+      .replace(/\nRip Current Risk Category[\s\S]*?(?=\n\s*\$\$|\s*$)/gi, "\n");
+  }
+
   _parseSurfRipRisk(text) {
     const lower = text.toLowerCase();
+    const blockRisk = this._parseSurfRipRiskBlock(lower);
+    if (blockRisk) return blockRisk;
     if (/(high\s+rip\s+current\s+risk|dangerous\s+rip\s+currents|high\s+surf\s+and\s+dangerous\s+rip\s+currents|rip\s+current\s+risk\s+is\s+high|rip\s+current\s+risk\.*\s*high)/i.test(lower)) return "high";
     if (/(moderate\s+rip\s+current\s+risk|rip\s+current\s+risk\s+is\s+moderate|moderate\s+surf\s+and\s+rip\s+currents|rip\s+current\s+risk\.*\s*moderate)/i.test(lower)) return "moderate";
     if (/(low\s+rip\s+current\s+risk|rip\s+current\s+risk\s+is\s+low|rip\s+current\s+risk\.*\s*low)/i.test(lower)) return "low";
+    return null;
+  }
+
+  _parseSurfRipRiskBlock(text) {
+    const match = String(text || "").match(/rip\s+current\s+risk\*?[\s.:\n-]*([\s\S]*?)(?=\n\s*(surf\s+height|thunderstorm|waterspout|uv\s+index|water\s+temperature|weather|high\s+temperature|winds|tides|remarks)\b|$)/i);
+    if (!match) return null;
+    const risks = [...match[1].matchAll(/\b(high|moderate|low)\b/gi)].map((item) => item[1].toLowerCase());
+    if (risks.includes("high")) return "high";
+    if (risks.includes("moderate")) return "moderate";
+    if (risks.includes("low")) return "low";
     return null;
   }
 
@@ -572,7 +610,7 @@ class TideWiseCard extends HTMLElement {
       periods.push({ risk, label: section.label, start: window.start, end: window.end });
     });
     if (!periods.length) {
-      const risk = this._parseSurfRipRisk(text);
+      const risk = this._parseSurfRipRisk(this._stripSurfForecastDefinitions(text));
       if (risk) {
         const window = this._periodWindowForLabel("Current", text);
         periods.push({ risk, label: "Current", start: window.start, end: window.end });
@@ -585,7 +623,7 @@ class TideWiseCard extends HTMLElement {
     const lines = String(text || "").split("\n");
     const sections = [];
     let current = null;
-    const headerPattern = /^\s*\.*\s*(today|tonight|this afternoon|this evening|overnight|tomorrow|monday|monday night|tuesday|tuesday night|wednesday|wednesday night|thursday|thursday night|friday|friday night|saturday|saturday night|sunday|sunday night)\s*\.*\s*$/i;
+    const headerPattern = /^\s*\.*\s*(rest of today|today|tonight|this afternoon|this evening|overnight|tomorrow|monday|monday night|tuesday|tuesday night|wednesday|wednesday night|thursday|thursday night|friday|friday night|saturday|saturday night|sunday|sunday night)\s*\.*\s*$/i;
     lines.forEach((line) => {
       const match = line.match(headerPattern);
       if (match) {
@@ -597,6 +635,17 @@ class TideWiseCard extends HTMLElement {
     });
     if (current) sections.push(current);
     return sections;
+  }
+
+  _activeRipPeriod(periods, date) {
+    if (!Array.isArray(periods) || !periods.length) return null;
+    const t = date instanceof Date ? date.getTime() : new Date(date).getTime();
+    if (!Number.isFinite(t)) return null;
+    return periods.find((item) => {
+      const start = new Date(item.start).getTime();
+      const end = new Date(item.end).getTime();
+      return Number.isFinite(start) && Number.isFinite(end) && t >= start && t <= end;
+    }) || null;
   }
 
   _periodWindowForLabel(label, body = "") {
