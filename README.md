@@ -10,7 +10,7 @@
 
 [![Open TideWise in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=TheWillMiller&repository=tide-wise&category=plugin)
 
-**Latest release:** `v0.6.0`
+**Latest release:** `v0.6.1`
 
 TideWise is a Home Assistant dashboard (Lovelace) custom card for tide predictions, current tide height, next high/low tides, and optional fishing bite-window scoring. The default provider is NOAA CO-OPS, with early Canada CHS/DFO support available for testing.
 
@@ -130,7 +130,7 @@ type: module
 For quick testing before installing locally, you can add this dashboard resource:
 
 ```yaml
-url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.6.0/tidewise-card.js
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.6.1/tidewise-card.js
 type: module
 ```
 
@@ -409,7 +409,7 @@ Try:
 
 If HACS still shows an old README, the installed card file may still be current while the HACS display cache is stale.
 
-If HACS shows a short value like `214b6c2` instead of `v0.6.0`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
+If HACS shows a short value like `214b6c2` instead of `v0.6.1`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
 
 ### Card does not show up
 
