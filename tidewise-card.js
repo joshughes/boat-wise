@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.6.3
+ * TideWise Card v0.6.4
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.6.3";
+const CARD_VERSION = "0.6.4";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const TIDEWISE_PROVIDERS = {
   noaa_coops: { label: "US NOAA CO-OPS", stationLabel: "NOAA" },
@@ -64,6 +64,45 @@ const NWS_BEACH_AREAS = [
   { id: "nc-brunswick", state: "NC", name: "Brunswick County Beaches", office: "ILM", zone: "NCZ110", lat: 33.9020, lon: -78.3850 },
   { id: "nc-new-hanover", state: "NC", name: "New Hanover County Beaches", office: "ILM", zone: "NCZ108", lat: 34.1940, lon: -77.8010 },
   { id: "nc-pender", state: "NC", name: "Pender County Beaches", office: "ILM", zone: "NCZ106", lat: 34.4300, lon: -77.5500 }
+];
+const NWS_SRF_OFFICES = [
+  { region: "Atlantic/Gulf/Caribbean", state: "AL", area: "Mobile", nws: "MOB", srf: "SRFMOB" },
+  { region: "Atlantic/Gulf/Caribbean", state: "FL", area: "Jacksonville", nws: "JAX", srf: "SRFJAX" },
+  { region: "Atlantic/Gulf/Caribbean", state: "FL", area: "Melbourne", nws: "MLB", srf: "SRFMLB" },
+  { region: "Atlantic/Gulf/Caribbean", state: "FL", area: "Miami / South Florida", nws: "MFL", srf: "SRFMFL" },
+  { region: "Atlantic/Gulf/Caribbean", state: "FL", area: "Tallahassee", nws: "TAE", srf: "SRFTAE" },
+  { region: "Atlantic/Gulf/Caribbean", state: "FL", area: "Tampa Bay", nws: "TBW", srf: "SRFTBW" },
+  { region: "Atlantic/Gulf/Caribbean", state: "MA", area: "Boston / Norton", nws: "BOX", srf: "SRFBOX" },
+  { region: "Atlantic/Gulf/Caribbean", state: "ME", area: "Caribou", nws: "CAR", srf: "SRFCAR" },
+  { region: "Atlantic/Gulf/Caribbean", state: "ME", area: "Portland / Gray", nws: "GYX", srf: "SRFGYX" },
+  { region: "Atlantic/Gulf/Caribbean", state: "NC", area: "Morehead City", nws: "MHX", srf: "SRFMHX" },
+  { region: "Atlantic/Gulf/Caribbean", state: "NC", area: "Wilmington", nws: "ILM", srf: "SRFILM" },
+  { region: "Atlantic/Gulf/Caribbean", state: "NY", area: "New York City / Upton", nws: "OKX", srf: "SRFOKX" },
+  { region: "Atlantic/Gulf/Caribbean", state: "PA/NJ", area: "Philadelphia / Mount Holly", nws: "PHI", srf: "SRFPHI" },
+  { region: "Atlantic/Gulf/Caribbean", state: "PR/VI", area: "San Juan / Puerto Rico / U.S. Virgin Islands", nws: "SJU", srf: "SRFSJU" },
+  { region: "Atlantic/Gulf/Caribbean", state: "SC", area: "Charleston", nws: "CHS", srf: "SRFCHS" },
+  { region: "Atlantic/Gulf/Caribbean", state: "TX", area: "Brownsville", nws: "BRO", srf: "SRFBRO" },
+  { region: "Atlantic/Gulf/Caribbean", state: "TX", area: "Corpus Christi", nws: "CRP", srf: "SRFCRP" },
+  { region: "Atlantic/Gulf/Caribbean", state: "VA", area: "Wakefield", nws: "AKQ", srf: "SRFAKQ" },
+  { region: "Great Lakes", state: "IL", area: "Chicago", nws: "LOT", srf: "SRFLOT" },
+  { region: "Great Lakes", state: "IN", area: "Northern Indiana / Syracuse", nws: "IWX", srf: "SRFIWX" },
+  { region: "Great Lakes", state: "MI", area: "Detroit", nws: "DTX", srf: "SRFDTX" },
+  { region: "Great Lakes", state: "MI", area: "Gaylord", nws: "APX", srf: "SRFAPX" },
+  { region: "Great Lakes", state: "MI", area: "Grand Rapids", nws: "GRR", srf: "SRFGRR" },
+  { region: "Great Lakes", state: "MI", area: "Marquette", nws: "MQT", srf: "SRFMQT" },
+  { region: "Great Lakes", state: "MN", area: "Duluth", nws: "DLH", srf: "SRFDLH" },
+  { region: "Great Lakes", state: "NY", area: "Buffalo", nws: "BUF", srf: "SRFBUF" },
+  { region: "Great Lakes", state: "OH", area: "Cleveland", nws: "CLE", srf: "SRFCLE" },
+  { region: "Great Lakes", state: "WI", area: "Green Bay", nws: "GRB", srf: "SRFGRB" },
+  { region: "Great Lakes", state: "WI", area: "Milwaukee", nws: "MKX", srf: "SRFMKX" },
+  { region: "West Coast", state: "CA", area: "Eureka", nws: "EKA", srf: "SRFEKA" },
+  { region: "West Coast", state: "CA", area: "Los Angeles / Oxnard", nws: "LOX", srf: "SRFLOX" },
+  { region: "West Coast", state: "CA", area: "San Francisco / Monterey", nws: "MTR", srf: "SRFMTR" },
+  { region: "West Coast", state: "CA", area: "San Diego", nws: "SGX", srf: "SRFSGX" },
+  { region: "West Coast", state: "OR", area: "Medford", nws: "MFR", srf: "SRFMFR" },
+  { region: "West Coast", state: "OR", area: "Portland", nws: "PQR", srf: "SRFPQR" },
+  { region: "Pacific", state: "GU/MP", area: "Guam / Marianas", nws: "GUM", srf: "SRFGUM" },
+  { region: "Pacific", state: "HI", area: "Honolulu", nws: "HFO", srf: "SRFHFO" }
 ];
 const STATION_PRESETS = [
   { station: "8410140", name: "Eastport, ME", lat: 44.9046, lon: -66.9829 },
@@ -302,6 +341,7 @@ class TideWiseCard extends HTMLElement {
       show_fishing_score: true,
       auto_sources: true,
       auto_surf_forecast: true,
+      srf_region: "",
       beach_state: "",
       beach_area: "",
       surf_zone: "",
@@ -346,6 +386,7 @@ class TideWiseCard extends HTMLElement {
       show_fishing_score: config.show_fishing_score !== false,
       auto_sources: config.auto_sources !== false,
       auto_surf_forecast: config.auto_surf_forecast !== false,
+      srf_region: String(config.srf_region || ""),
       beach_state: String(config.beach_state || ""),
       beach_area: String(config.beach_area || ""),
       surf_zone: String(config.surf_zone || "").trim().toUpperCase(),
@@ -639,6 +680,10 @@ class TideWiseCard extends HTMLElement {
 
   _selectedNwsBeachArea() {
     return NWS_BEACH_AREAS.find((area) => area.id === this._config.beach_area) || null;
+  }
+
+  _selectedNwsSrfOffice() {
+    return NWS_SRF_OFFICES.find((office) => office.nws === this._config.nws_office) || null;
   }
 
   async _fetchLegacyNwsSurfProduct(office) {
@@ -1749,6 +1794,7 @@ class TideWiseCard extends HTMLElement {
               ["NWS hourly", auto.nws?.error || (auto.nws?.period ? "available" : "missing")],
               ["NWS surf/rip", auto.surf?.error || (auto.surf && Object.keys(auto.surf).length ? "available" : "missing")],
               ["NWS beach area", this._selectedNwsBeachArea()?.name || "coordinate lookup"],
+              ["NWS SRF office", this._selectedNwsSrfOffice()?.area || "auto/manual"],
               ["NWS SRF office/zone", auto.surf?.office ? `${auto.surf.office} ${auto.surf.zone || "unscoped"}` : "missing"]
             ])}
           </div>
@@ -2141,6 +2187,7 @@ class TideWiseCardEditor extends HTMLElement {
       ca_station: "",
       ca_station_code: "",
       ca_series_code: "",
+      srf_region: "",
       beach_state: "",
       beach_area: "",
       surf_zone: "",
@@ -2179,6 +2226,18 @@ class TideWiseCardEditor extends HTMLElement {
 
   _selectedBeachArea() {
     return NWS_BEACH_AREAS.find((area) => area.id === this._config.beach_area) || null;
+  }
+
+  _srfRegions() {
+    return [...new Set(NWS_SRF_OFFICES.map((office) => office.region))].sort();
+  }
+
+  _srfOfficesForRegion(region) {
+    return NWS_SRF_OFFICES.filter((office) => office.region === region).sort((a, b) => `${a.state} ${a.area}`.localeCompare(`${b.state} ${b.area}`));
+  }
+
+  _selectedSrfOffice() {
+    return NWS_SRF_OFFICES.find((office) => office.nws === this._config.nws_office) || null;
   }
 
   _presetForStation(station) {
@@ -2415,6 +2474,9 @@ class TideWiseCardEditor extends HTMLElement {
     const grid = config.grid_options || {};
     const canadaRegion = config.ca_region || "atlantic";
     const canadaStations = this._canadaRegionStations(canadaRegion);
+    const srfRegion = config.srf_region || "";
+    const srfOffices = this._srfOfficesForRegion(srfRegion);
+    const selectedSrfOffice = this._selectedSrfOffice();
     const beachState = config.beach_state || "";
     const beachAreas = this._beachAreasForState(beachState);
     const selectedBeachArea = this._selectedBeachArea();
@@ -2533,6 +2595,20 @@ class TideWiseCardEditor extends HTMLElement {
           <div class="title">Beach / Surf Forecast</div>
           <div class="grid">
             <label>
+              NWS SRF region
+              <select id="srfRegion">
+                <option value="">Use coordinates</option>
+                ${this._srfRegions().map((region) => `<option value="${region}" ${srfRegion === region ? "selected" : ""}>${region}</option>`).join("")}
+              </select>
+            </label>
+            <label>
+              NWS-listed SRF office
+              <select id="srfOffice">
+                <option value="">Use coordinates</option>
+                ${srfOffices.map((office) => `<option value="${office.nws}" ${config.nws_office === office.nws ? "selected" : ""}>${office.state} - ${office.area} (${office.nws})</option>`).join("")}
+              </select>
+            </label>
+            <label>
               State
               <select id="beachState">
                 <option value="">Use coordinates</option>
@@ -2548,7 +2624,7 @@ class TideWiseCardEditor extends HTMLElement {
             </label>
             <label>
               NWS office
-              <input id="nwsOffice" value="${this._escape(config.nws_office || selectedBeachArea?.office || "")}" placeholder="ILM">
+              <input id="nwsOffice" value="${this._escape(config.nws_office || selectedBeachArea?.office || selectedSrfOffice?.nws || "")}" placeholder="ILM">
             </label>
             <label>
               NWS surf zone
@@ -2670,6 +2746,23 @@ class TideWiseCardEditor extends HTMLElement {
     this.shadowRoot.getElementById("longitude")?.addEventListener("change", (event) => this._setNumber("longitude", event.target.value));
     this.shadowRoot.getElementById("stationLocation")?.addEventListener("click", () => this._useNoaaStationLocation());
     this.shadowRoot.getElementById("homeLocation")?.addEventListener("click", () => this._useHomeLocation());
+    this.shadowRoot.getElementById("srfRegion")?.addEventListener("change", (event) => {
+      const region = event.target.value;
+      const first = this._srfOfficesForRegion(region)[0];
+      const next = { ...this._config, srf_region: region };
+      if (first) {
+        next.nws_office = first.nws;
+      } else {
+        next.nws_office = "";
+      }
+      this._emitConfig(next);
+    });
+    this.shadowRoot.getElementById("srfOffice")?.addEventListener("change", (event) => {
+      const office = NWS_SRF_OFFICES.find((item) => item.nws === event.target.value);
+      const next = { ...this._config, nws_office: String(event.target.value || "").trim().toUpperCase() };
+      if (office) next.srf_region = office.region;
+      this._emitConfig(next);
+    });
     this.shadowRoot.getElementById("beachState")?.addEventListener("change", (event) => {
       const state = event.target.value;
       const first = this._beachAreasForState(state)[0];
@@ -2711,6 +2804,7 @@ class TideWiseCardEditor extends HTMLElement {
     config.beach_area = area.id;
     config.nws_office = area.office;
     config.surf_zone = area.zone;
+    config.srf_region = NWS_SRF_OFFICES.find((office) => office.nws === area.office)?.region || config.srf_region || "";
     config.latitude = area.lat;
     config.longitude = area.lon;
   }

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.4
+
+### Added
+
+- Added an NWS-listed SRF office catalog for Atlantic/Gulf/Caribbean, Great Lakes, West Coast, and Pacific Surf Zone Forecast offices.
+- Added a guided NWS SRF region/office selector in the visual editor.
+
+### Changed
+
+- Beach/surf forecast setup now distinguishes broad NWS SRF office selection from precise beach/surf-zone selection.
+- Documentation now labels these as NWS-listed SRF offices rather than claiming every coastal county is covered.
+
 ## 0.6.3
 
 ### Added
