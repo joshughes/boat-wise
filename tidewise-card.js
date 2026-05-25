@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.6.2
+ * TideWise Card v0.6.3
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.6.2";
+const CARD_VERSION = "0.6.3";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const TIDEWISE_PROVIDERS = {
   noaa_coops: { label: "US NOAA CO-OPS", stationLabel: "NOAA" },
@@ -57,6 +57,13 @@ const CANADA_STATION_SEEDS = [
   { region: "great_lakes", code: "14660", name: "Morrisburg", seriesCode: "wlf" },
   { region: "great_lakes", code: "14870", name: "Cornwall", seriesCode: "wlf" },
   { region: "great_lakes", code: "14940", name: "Summerstown", seriesCode: "wlf" }
+];
+const NWS_BEACH_AREAS = [
+  { id: "sc-horry", state: "SC", name: "Horry County / Grand Strand", office: "ILM", zone: "SCZ054", lat: 33.838489, lon: -78.603644 },
+  { id: "sc-georgetown", state: "SC", name: "Georgetown County Beaches", office: "ILM", zone: "SCZ056", lat: 33.3490, lon: -79.1880 },
+  { id: "nc-brunswick", state: "NC", name: "Brunswick County Beaches", office: "ILM", zone: "NCZ110", lat: 33.9020, lon: -78.3850 },
+  { id: "nc-new-hanover", state: "NC", name: "New Hanover County Beaches", office: "ILM", zone: "NCZ108", lat: 34.1940, lon: -77.8010 },
+  { id: "nc-pender", state: "NC", name: "Pender County Beaches", office: "ILM", zone: "NCZ106", lat: 34.4300, lon: -77.5500 }
 ];
 const STATION_PRESETS = [
   { station: "8410140", name: "Eastport, ME", lat: 44.9046, lon: -66.9829 },
@@ -295,6 +302,9 @@ class TideWiseCard extends HTMLElement {
       show_fishing_score: true,
       auto_sources: true,
       auto_surf_forecast: true,
+      beach_state: "",
+      beach_area: "",
+      surf_zone: "",
       debug: false
     };
   }
@@ -336,11 +346,14 @@ class TideWiseCard extends HTMLElement {
       show_fishing_score: config.show_fishing_score !== false,
       auto_sources: config.auto_sources !== false,
       auto_surf_forecast: config.auto_surf_forecast !== false,
+      beach_state: String(config.beach_state || ""),
+      beach_area: String(config.beach_area || ""),
+      surf_zone: String(config.surf_zone || "").trim().toUpperCase(),
       nws_office: String(config.nws_office || "").trim().toUpperCase(),
       debug: this._normalizeDebugConfig(config.debug)
     };
     this.setAttribute("theme-mode", this._config.theme_mode);
-    if (previousConfig.provider !== this._config.provider || previousConfig.station !== this._config.station || previousConfig.ca_station !== this._config.ca_station || previousConfig.ca_series_code !== this._config.ca_series_code || previousConfig.mode !== this._config.mode) this._fishBand = null;
+    if (previousConfig.provider !== this._config.provider || previousConfig.station !== this._config.station || previousConfig.ca_station !== this._config.ca_station || previousConfig.ca_series_code !== this._config.ca_series_code || previousConfig.beach_area !== this._config.beach_area || previousConfig.surf_zone !== this._config.surf_zone || previousConfig.mode !== this._config.mode) this._fishBand = null;
     this._render();
     this._fetchData();
   }
@@ -604,9 +617,10 @@ class TideWiseCard extends HTMLElement {
   }
 
   async _fetchNwsSurfForecast(nwsData) {
-    const office = this._config.nws_office || String(nwsData?.point?.cwa || "").toUpperCase();
+    const beachArea = this._selectedNwsBeachArea();
+    const office = this._config.nws_office || beachArea?.office || String(nwsData?.point?.cwa || "").toUpperCase();
     if (!office) return {};
-    const zoneId = this._nwsForecastZoneId(nwsData?.point?.forecastZone);
+    const zoneId = this._config.surf_zone || beachArea?.zone || this._nwsForecastZoneId(nwsData?.point?.forecastZone);
     const productText = await this._fetchLegacyNwsSurfProduct(office);
     if (productText) return this._parseSurfForecastText(productText, office, zoneId);
     const headers = { Accept: "application/geo+json" };
@@ -621,6 +635,10 @@ class TideWiseCard extends HTMLElement {
     const product = await productRes.json();
     const text = product?.productText || product?.properties?.productText || "";
     return this._parseSurfForecastText(text, office, zoneId);
+  }
+
+  _selectedNwsBeachArea() {
+    return NWS_BEACH_AREAS.find((area) => area.id === this._config.beach_area) || null;
   }
 
   async _fetchLegacyNwsSurfProduct(office) {
@@ -1729,7 +1747,9 @@ class TideWiseCard extends HTMLElement {
               ["auto updated", auto.updated || "not fetched"],
               ["CO-OPS", auto.coops?.error || (auto.coops && Object.keys(auto.coops).length ? "available" : "missing")],
               ["NWS hourly", auto.nws?.error || (auto.nws?.period ? "available" : "missing")],
-              ["NWS surf/rip", auto.surf?.error || (auto.surf && Object.keys(auto.surf).length ? "available" : "missing")]
+              ["NWS surf/rip", auto.surf?.error || (auto.surf && Object.keys(auto.surf).length ? "available" : "missing")],
+              ["NWS beach area", this._selectedNwsBeachArea()?.name || "coordinate lookup"],
+              ["NWS SRF office/zone", auto.surf?.office ? `${auto.surf.office} ${auto.surf.zone || "unscoped"}` : "missing"]
             ])}
           </div>
           <div class="debug-section">
@@ -2121,6 +2141,10 @@ class TideWiseCardEditor extends HTMLElement {
       ca_station: "",
       ca_station_code: "",
       ca_series_code: "",
+      beach_state: "",
+      beach_area: "",
+      surf_zone: "",
+      nws_office: "",
       units: "english",
       mode: "general",
       theme_mode: "tidewise",
@@ -2143,6 +2167,18 @@ class TideWiseCardEditor extends HTMLElement {
     const lat = Number(home?.attributes?.latitude);
     const lon = Number(home?.attributes?.longitude);
     return { lat: Number.isFinite(lat) ? lat : null, lon: Number.isFinite(lon) ? lon : null };
+  }
+
+  _beachStates() {
+    return [...new Set(NWS_BEACH_AREAS.map((area) => area.state))].sort();
+  }
+
+  _beachAreasForState(state) {
+    return NWS_BEACH_AREAS.filter((area) => area.state === state).sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  _selectedBeachArea() {
+    return NWS_BEACH_AREAS.find((area) => area.id === this._config.beach_area) || null;
   }
 
   _presetForStation(station) {
@@ -2379,6 +2415,9 @@ class TideWiseCardEditor extends HTMLElement {
     const grid = config.grid_options || {};
     const canadaRegion = config.ca_region || "atlantic";
     const canadaStations = this._canadaRegionStations(canadaRegion);
+    const beachState = config.beach_state || "";
+    const beachAreas = this._beachAreasForState(beachState);
+    const selectedBeachArea = this._selectedBeachArea();
     if (provider === "chs_iwls" && !this._canadaStations && !this._canadaStationsLoading) {
       setTimeout(() => this._loadCanadaStations(), 0);
     }
@@ -2491,6 +2530,32 @@ class TideWiseCardEditor extends HTMLElement {
             <button id="homeLocation" type="button" ${home.lat && home.lon ? "" : "disabled"}>Use HA home location</button>
             <span class="hint">For best fishing scores, use coordinates near the tide gauge, beach, inlet, or fishing area. ${home.lat && home.lon ? `HA home: ${home.lat.toFixed(4)}, ${home.lon.toFixed(4)}` : "HA home location is not available in zone.home."}</span>
           </div>
+          <div class="title">Beach / Surf Forecast</div>
+          <div class="grid">
+            <label>
+              State
+              <select id="beachState">
+                <option value="">Use coordinates</option>
+                ${this._beachStates().map((state) => `<option value="${state}" ${beachState === state ? "selected" : ""}>${state}</option>`).join("")}
+              </select>
+            </label>
+            <label>
+              Coastal county / beach area
+              <select id="beachArea">
+                <option value="">Use coordinates</option>
+                ${beachAreas.map((area) => `<option value="${area.id}" ${config.beach_area === area.id ? "selected" : ""}>${area.name}</option>`).join("")}
+              </select>
+            </label>
+            <label>
+              NWS office
+              <input id="nwsOffice" value="${this._escape(config.nws_office || selectedBeachArea?.office || "")}" placeholder="ILM">
+            </label>
+            <label>
+              NWS surf zone
+              <input id="surfZone" value="${this._escape(config.surf_zone || selectedBeachArea?.zone || "")}" placeholder="SCZ054">
+            </label>
+          </div>
+          <div class="hint">Beach area is used for NWS surf/rip risk. Tide height still comes from the tide station above.</div>
         </div>
 
         <div class="section">
@@ -2605,6 +2670,21 @@ class TideWiseCardEditor extends HTMLElement {
     this.shadowRoot.getElementById("longitude")?.addEventListener("change", (event) => this._setNumber("longitude", event.target.value));
     this.shadowRoot.getElementById("stationLocation")?.addEventListener("click", () => this._useNoaaStationLocation());
     this.shadowRoot.getElementById("homeLocation")?.addEventListener("click", () => this._useHomeLocation());
+    this.shadowRoot.getElementById("beachState")?.addEventListener("change", (event) => {
+      const state = event.target.value;
+      const first = this._beachAreasForState(state)[0];
+      const next = { ...this._config, beach_state: state, beach_area: "", surf_zone: "", nws_office: "" };
+      if (first) this._applyBeachAreaToConfig(next, first);
+      this._emitConfig(next);
+    });
+    this.shadowRoot.getElementById("beachArea")?.addEventListener("change", (event) => {
+      const area = NWS_BEACH_AREAS.find((item) => item.id === event.target.value);
+      const next = { ...this._config, beach_area: event.target.value };
+      if (area) this._applyBeachAreaToConfig(next, area);
+      this._emitConfig(next);
+    });
+    this.shadowRoot.getElementById("nwsOffice")?.addEventListener("change", (event) => this._setValue("nws_office", String(event.target.value || "").trim().toUpperCase()));
+    this.shadowRoot.getElementById("surfZone")?.addEventListener("change", (event) => this._setValue("surf_zone", String(event.target.value || "").trim().toUpperCase()));
     this.shadowRoot.getElementById("title")?.addEventListener("change", (event) => this._setValue("title", event.target.value || "TideWise"));
     this.shadowRoot.getElementById("units")?.addEventListener("change", (event) => this._setValue("units", event.target.value));
     this.shadowRoot.getElementById("mode")?.addEventListener("change", (event) => this._setValue("mode", event.target.value));
@@ -2624,6 +2704,15 @@ class TideWiseCardEditor extends HTMLElement {
       "\"": "&quot;",
       "'": "&#39;"
     }[char]));
+  }
+
+  _applyBeachAreaToConfig(config, area) {
+    config.beach_state = area.state;
+    config.beach_area = area.id;
+    config.nws_office = area.office;
+    config.surf_zone = area.zone;
+    config.latitude = area.lat;
+    config.longitude = area.lon;
   }
 }
 

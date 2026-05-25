@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.3
+
+### Added
+
+- Added first-pass NWS beach/surf forecast area selectors for the NWS Wilmington, NC office coverage area.
+- Added `beach_state`, `beach_area`, and `surf_zone` config support so SRF rip-risk parsing can be scoped to a selected beach/forecast zone instead of only coordinate-derived metadata.
+- Added debug source rows showing the selected NWS beach area and SRF office/zone.
+
+### Changed
+
+- Selecting a built-in beach area now sets the NWS office, surf zone, and forecast coordinates for surf/rip-risk context while leaving tide station selection separate.
+
 ## 0.6.2
 
 ### Fixed
