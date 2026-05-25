@@ -7,6 +7,7 @@
 - Scoped NWS Surf Zone Forecast rip-risk parsing to the matching NWS forecast zone when available.
 - Recognized active `Rest of Today` surf forecast sections so expired or future rip-risk wording is less likely to cap the current score incorrectly.
 - Avoided falling back to whole-product SRF risk text when timed rip-risk periods exist but none apply to the current time.
+- Added a Canadian **Great Lakes / Ontario** station picker region for CHS stations such as Belle River.
 
 ## 0.6.0
 

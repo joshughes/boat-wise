@@ -13,6 +13,7 @@ const TIDEWISE_PROVIDERS = {
 };
 const CANADA_REGIONS = [
   { code: "atlantic", name: "Atlantic Canada", bbox: [-68.5, 42.0, -52.0, 60.5] },
+  { code: "great_lakes", name: "Great Lakes / Ontario", bbox: [-95.0, 41.0, -74.0, 50.5] },
   { code: "quebec", name: "Quebec / St. Lawrence", bbox: [-80.5, 44.5, -57.0, 63.5] },
   { code: "pacific", name: "Pacific Canada", bbox: [-140.0, 47.0, -114.0, 60.5] },
   { code: "arctic", name: "Arctic Canada", bbox: [-142.0, 58.0, -52.0, 84.0] }

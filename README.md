@@ -344,7 +344,7 @@ The debug panel is collapsed by default and scrolls internally when expanded. It
 | `title` | No | `TideWise` | Card title. |
 | `provider` | No | `noaa_coops` | Tide data provider. Use `noaa_coops` for US NOAA CO-OPS or `chs_iwls` for early Canada CHS/DFO support. |
 | `station` | Required for NOAA |  | NOAA tides and currents station ID. |
-| `ca_region` | No | `atlantic` | Canada station picker region: `atlantic`, `quebec`, `pacific`, or `arctic`. |
+| `ca_region` | No | `atlantic` | Canada station picker region: `atlantic`, `great_lakes`, `quebec`, `pacific`, or `arctic`. |
 | `ca_station` | Required for Canada |  | Canadian CHS/DFO IWLS station object ID. Prefer choosing it from the visual editor. |
 | `ca_station_code` | No |  | Optional Canadian CHS display code. |
 | `units` | No | `english` | Display units. Usually `english` or `metric`. Canadian CHS data is metric and is converted to feet when `english` is selected. |
@@ -376,7 +376,7 @@ If your station does not work, try a nearby NOAA station that supports tide pred
 
 ## Finding a Canadian Station
 
-Set **Tide provider** to **Canada CHS / DFO** in the visual editor, choose a Canadian region, then choose a CHS tide station from the station dropdown.
+Set **Tide provider** to **Canada CHS / DFO** in the visual editor, choose a Canadian region, then choose a CHS tide station from the station dropdown. Canadian Great Lakes stations are under **Great Lakes / Ontario**.
 
 Canada support uses CHS/DFO IWLS water-level predictions. TideWise filters for operating stations that advertise water-level predictions, but selected stations may still need testing because CHS availability can vary by station and forecast window.
 
