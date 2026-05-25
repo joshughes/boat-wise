@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.2
+
+### Fixed
+
+- Fixed Canadian Great Lakes station discovery by accepting CHS/DFO `wlf` water-level forecast series when `wlp` tide prediction series is not advertised.
+- Added Canada provider fallback from `wlp` to `wlf` so manual Great Lakes station IDs such as Belle River can load forecast curves when CHS does not expose prediction curves.
+- Added a Great Lakes CHS seed list so Ontario/Great Lakes stations still appear when the CHS bulk station API omits them.
+
 ## 0.6.1
 
 ### Added

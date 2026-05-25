@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.6.1
+ * TideWise Card v0.6.2
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.6.1";
+const CARD_VERSION = "0.6.2";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const TIDEWISE_PROVIDERS = {
   noaa_coops: { label: "US NOAA CO-OPS", stationLabel: "NOAA" },
@@ -17,6 +17,46 @@ const CANADA_REGIONS = [
   { code: "quebec", name: "Quebec / St. Lawrence", bbox: [-80.5, 44.5, -57.0, 63.5] },
   { code: "pacific", name: "Pacific Canada", bbox: [-140.0, 47.0, -114.0, 60.5] },
   { code: "arctic", name: "Arctic Canada", bbox: [-142.0, 58.0, -52.0, 84.0] }
+];
+const CANADA_STATION_SEEDS = [
+  { region: "great_lakes", code: "10050", name: "Thunder Bay", seriesCode: "wlf" },
+  { region: "great_lakes", code: "10220", name: "Rossport", seriesCode: "wlf" },
+  { region: "great_lakes", code: "10750", name: "Michipicoten", seriesCode: "wlf" },
+  { region: "great_lakes", code: "10920", name: "Gros Cap", seriesCode: "wlf" },
+  { region: "great_lakes", code: "10980", name: "Sault Ste Marie - Above Locks", seriesCode: "wlf" },
+  { region: "great_lakes", code: "11010", name: "Sault Ste Marie - Below Locks", seriesCode: "wlf" },
+  { region: "great_lakes", code: "11070", name: "Thessalon", seriesCode: "wlf" },
+  { region: "great_lakes", code: "11195", name: "Little Current", seriesCode: "wlf" },
+  { region: "great_lakes", code: "11375", name: "Parry Sound", seriesCode: "wlf" },
+  { region: "great_lakes", code: "11445", name: "Midland", seriesCode: "wlf" },
+  { region: "great_lakes", code: "11500", name: "Collingwood", seriesCode: "wlf" },
+  { region: "great_lakes", code: "11690", name: "Tobermory", seriesCode: "wlf" },
+  { region: "great_lakes", code: "11860", name: "Goderich", seriesCode: "wlf" },
+  { region: "great_lakes", code: "11940", name: "Point Edward", seriesCode: "wlf" },
+  { region: "great_lakes", code: "11950", name: "Port Lambton", seriesCode: "wlf" },
+  { region: "great_lakes", code: "11965", name: "Belle River", seriesCode: "wlf" },
+  { region: "great_lakes", code: "11975", name: "Tecumseh", seriesCode: "wlp" },
+  { region: "great_lakes", code: "11985", name: "La Salle", seriesCode: "wlp" },
+  { region: "great_lakes", code: "11995", name: "Amherstburg", seriesCode: "wlf" },
+  { region: "great_lakes", code: "12005", name: "Bar Point", seriesCode: "wlf" },
+  { region: "great_lakes", code: "12065", name: "Kingsville", seriesCode: "wlf" },
+  { region: "great_lakes", code: "12250", name: "Erieau", seriesCode: "wlf" },
+  { region: "great_lakes", code: "12400", name: "Port Stanley", seriesCode: "wlf" },
+  { region: "great_lakes", code: "12710", name: "Port Dover", seriesCode: "wlf" },
+  { region: "great_lakes", code: "12865", name: "Port Colborne", seriesCode: "wlf" },
+  { region: "great_lakes", code: "12954", name: "Peace Bridge Below", seriesCode: "wlp" },
+  { region: "great_lakes", code: "13030", name: "Port Weller", seriesCode: "wlf" },
+  { region: "great_lakes", code: "13150", name: "Burlington", seriesCode: "wlf" },
+  { region: "great_lakes", code: "13320", name: "Toronto", seriesCode: "wlf" },
+  { region: "great_lakes", code: "13590", name: "Cobourg", seriesCode: "wlf" },
+  { region: "great_lakes", code: "13988", name: "Kingston", seriesCode: "wlf" },
+  { region: "great_lakes", code: "14400", name: "Brockville", seriesCode: "wlf" },
+  { region: "great_lakes", code: "14505", name: "Ogdensburg", seriesCode: "wlp" },
+  { region: "great_lakes", code: "14600", name: "Iroquois Above", seriesCode: "wlf" },
+  { region: "great_lakes", code: "14602", name: "Iroquois Below", seriesCode: "wlf" },
+  { region: "great_lakes", code: "14660", name: "Morrisburg", seriesCode: "wlf" },
+  { region: "great_lakes", code: "14870", name: "Cornwall", seriesCode: "wlf" },
+  { region: "great_lakes", code: "14940", name: "Summerstown", seriesCode: "wlf" }
 ];
 const STATION_PRESETS = [
   { station: "8410140", name: "Eastport, ME", lat: 44.9046, lon: -66.9829 },
@@ -276,6 +316,7 @@ class TideWiseCard extends HTMLElement {
       ca_region: String(config.ca_region || "atlantic"),
       ca_station: String(config.ca_station || ""),
       ca_station_code: String(config.ca_station_code || ""),
+      ca_series_code: String(config.ca_series_code || ""),
       units: config.units || "english",
       weather_entity: config.weather_entity || "",
       water_temp_entity: config.water_temp_entity || "",
@@ -299,7 +340,7 @@ class TideWiseCard extends HTMLElement {
       debug: this._normalizeDebugConfig(config.debug)
     };
     this.setAttribute("theme-mode", this._config.theme_mode);
-    if (previousConfig.provider !== this._config.provider || previousConfig.station !== this._config.station || previousConfig.ca_station !== this._config.ca_station || previousConfig.mode !== this._config.mode) this._fishBand = null;
+    if (previousConfig.provider !== this._config.provider || previousConfig.station !== this._config.station || previousConfig.ca_station !== this._config.ca_station || previousConfig.ca_series_code !== this._config.ca_series_code || previousConfig.mode !== this._config.mode) this._fishBand = null;
     this._render();
     this._fetchData();
   }
@@ -364,7 +405,7 @@ class TideWiseCard extends HTMLElement {
   }
 
   async _fetchCanadaData() {
-    const stationId = String(this._config.ca_station || "").trim();
+    let stationId = String(this._config.ca_station || "").trim();
     if (!stationId) {
       this._renderError("Choose a Canadian CHS station.");
       return;
@@ -372,31 +413,79 @@ class TideWiseCard extends HTMLElement {
     const now = new Date();
     const from = new Date(now.getTime() - 60 * 60 * 1000);
     const to = new Date(now.getTime() + 25 * 60 * 60 * 1000);
-    const url = `https://api-iwls.dfo-mpo.gc.ca/api/v1/stations/${encodeURIComponent(stationId)}/data?time-series-code=wlp&from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`;
     try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`CHS returned ${res.status}`);
-      const json = await res.json();
-      const rows = this._arrayFromApi(json)
-        .map((item) => {
-          const time = new Date(item.eventDate || item.date || item.time);
-          const rawValue = Number(item.value);
-          const value = this._config.units === "metric" ? rawValue : rawValue * 3.28084;
-          return { time, value };
-        })
-        .filter((item) => Number.isFinite(item.time.getTime()) && Number.isFinite(item.value))
-        .sort((a, b) => a.time - b.time);
-      if (rows.length < 4) throw new Error("CHS did not return enough tide prediction data for this station. It may be inactive, temporary, or outside the available prediction window.");
+      if (stationId.startsWith("code:")) {
+        const resolved = await this._fetchCanadaStationByCode(stationId.slice(5));
+        stationId = resolved.id;
+        if (!this._config.ca_series_code && resolved.seriesCode) this._config.ca_series_code = resolved.seriesCode;
+      }
+      const loaded = await this._fetchCanadaSeriesRows(stationId, from, to);
+      const rows = loaded.rows;
       const predictions = rows
         .filter((_, index) => index % 6 === 0)
         .map((item) => ({ t: this._formatNoaaTime(item.time), v: item.value.toFixed(3) }));
       const hilo = this._deriveHiloFromPredictions(predictions);
-      this._data = { predictions, hilo, intervalFallback: false, provider: "chs_iwls" };
+      this._data = { predictions, hilo, intervalFallback: false, provider: "chs_iwls", caSeriesCode: loaded.seriesCode };
       this._autoData = {};
       this._renderData();
     } catch (err) {
       this._renderError(`CHS tide data unavailable: ${err.message}`);
     }
+  }
+
+  async _fetchCanadaStationByCode(code) {
+    const res = await fetch(`https://api-iwls.dfo-mpo.gc.ca/api/v1/stations?code=${encodeURIComponent(code)}`);
+    if (!res.ok) throw new Error(`CHS returned ${res.status}`);
+    const station = this._arrayFromApi(await res.json()).find((item) => String(item?.code || "") === String(code));
+    if (!station?.id) throw new Error(`CHS station ${code} was not found`);
+    return {
+      id: String(station.id),
+      seriesCode: this._canadaStationSeriesCode(station)
+    };
+  }
+
+  async _fetchCanadaSeriesRows(stationId, from, to) {
+    const preferred = this._normalizeCanadaSeriesCode(this._config.ca_series_code);
+    const seriesCodes = [preferred, "wlp", "wlf"].filter((value, index, list) => value && list.indexOf(value) === index);
+    const errors = [];
+    for (const seriesCode of seriesCodes) {
+      try {
+        const rows = await this._fetchCanadaSeriesCodeRows(stationId, seriesCode, from, to);
+        if (rows.length >= 4) return { rows, seriesCode };
+        errors.push(`${seriesCode}: not enough data`);
+      } catch (err) {
+        errors.push(`${seriesCode}: ${err.message}`);
+      }
+    }
+    throw new Error(`CHS did not return enough water-level prediction or forecast data for this station (${errors.join("; ")}).`);
+  }
+
+  async _fetchCanadaSeriesCodeRows(stationId, seriesCode, from, to) {
+    const url = `https://api-iwls.dfo-mpo.gc.ca/api/v1/stations/${encodeURIComponent(stationId)}/data?time-series-code=${encodeURIComponent(seriesCode)}&from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`CHS returned ${res.status}`);
+    const json = await res.json();
+    return this._arrayFromApi(json)
+      .map((item) => {
+        const time = new Date(item.eventDate || item.date || item.time);
+        const rawValue = Number(item.value);
+        const value = this._config.units === "metric" ? rawValue : rawValue * 3.28084;
+        return { time, value };
+      })
+      .filter((item) => Number.isFinite(item.time.getTime()) && Number.isFinite(item.value))
+      .sort((a, b) => a.time - b.time);
+  }
+
+  _normalizeCanadaSeriesCode(value) {
+    const raw = String(value || "").toLowerCase().trim();
+    return raw === "wlf" ? "wlf" : raw === "wlp" ? "wlp" : "";
+  }
+
+  _canadaStationSeriesCode(station) {
+    const codes = (station?.timeSeries || []).map((series) => this._normalizeCanadaSeriesCode(series?.code));
+    if (codes.includes("wlp")) return "wlp";
+    if (codes.includes("wlf")) return "wlf";
+    return "";
   }
 
   _arrayFromApi(json) {
@@ -1634,6 +1723,7 @@ class TideWiseCard extends HTMLElement {
             ${rows([
               ["provider", this._config.provider],
               ["station", this._config.provider === "chs_iwls" ? `${this._config.ca_station_code || ""} ${this._config.ca_station}`.trim() : this._config.station],
+              ["CHS series", this._config.provider === "chs_iwls" ? (this._data?.caSeriesCode || this._config.ca_series_code || "auto") : "n/a"],
               ["coords", `${lat.toFixed(4)}, ${lon.toFixed(4)}`],
               ["predictions", `${predictions?.length || 0}${this._data?.intervalFallback ? " hilo fallback" : " interval"}`],
               ["auto updated", auto.updated || "not fetched"],
@@ -2030,6 +2120,7 @@ class TideWiseCardEditor extends HTMLElement {
       ca_region: "atlantic",
       ca_station: "",
       ca_station_code: "",
+      ca_series_code: "",
       units: "english",
       mode: "general",
       theme_mode: "tidewise",
@@ -2158,7 +2249,19 @@ class TideWiseCardEditor extends HTMLElement {
   }
 
   _stationHasCanadaPredictions(station) {
-    return (station?.timeSeries || []).some((series) => series?.code === "wlp");
+    return Boolean(this._canadaStationSeriesCode(station));
+  }
+
+  _normalizeCanadaSeriesCode(value) {
+    const raw = String(value || "").toLowerCase().trim();
+    return raw === "wlf" ? "wlf" : raw === "wlp" ? "wlp" : "";
+  }
+
+  _canadaStationSeriesCode(station) {
+    const codes = (station?.timeSeries || []).map((series) => this._normalizeCanadaSeriesCode(series?.code));
+    if (codes.includes("wlp")) return "wlp";
+    if (codes.includes("wlf")) return "wlf";
+    return "";
   }
 
   _stationIsUsableCanadaPredictionStation(station) {
@@ -2177,11 +2280,12 @@ class TideWiseCardEditor extends HTMLElement {
       const res = await fetch("https://api-iwls.dfo-mpo.gc.ca/api/v1/stations");
       if (!res.ok) throw new Error(`CHS returned ${res.status}`);
       const json = await res.json();
-      this._canadaStations = this._arrayFromApi(json)
+      const apiStations = this._arrayFromApi(json)
         .filter((station) => station?.id && station?.officialName && this._stationIsUsableCanadaPredictionStation(station))
         .map((station) => ({
           id: String(station.id),
           code: String(station.code || ""),
+          seriesCode: this._canadaStationSeriesCode(station),
           name: String(station.officialName || ""),
           type: String(station.type || ""),
           lat: Number(station.latitude),
@@ -2189,7 +2293,21 @@ class TideWiseCardEditor extends HTMLElement {
           region: this._regionForCanadaStation(station)
         }))
         .filter((station) => station.region)
-        .sort((a, b) => a.name.localeCompare(b.name));
+      const apiCodes = new Set(apiStations.map((station) => station.code).filter(Boolean));
+      const seededStations = CANADA_STATION_SEEDS
+        .filter((station) => !apiCodes.has(station.code))
+        .map((station) => ({
+          id: `code:${station.code}`,
+          code: station.code,
+          seriesCode: station.seriesCode,
+          name: station.name,
+          type: "CHS station",
+          lat: null,
+          lon: null,
+          region: station.region,
+          seed: true
+        }));
+      this._canadaStations = apiStations.concat(seededStations).sort((a, b) => a.name.localeCompare(b.name));
     } catch (err) {
       this._canadaStationsError = err.message || "Could not load CHS stations";
     } finally {
@@ -2210,15 +2328,43 @@ class TideWiseCardEditor extends HTMLElement {
     return (this._canadaStations || []).filter((station) => station.region === regionCode);
   }
 
-  _applyCanadaStation(stationId) {
+  async _resolveCanadaStationByCode(code) {
+    const res = await fetch(`https://api-iwls.dfo-mpo.gc.ca/api/v1/stations?code=${encodeURIComponent(code)}`);
+    if (!res.ok) throw new Error(`CHS returned ${res.status}`);
+    const station = this._arrayFromApi(await res.json()).find((item) => String(item?.code || "") === String(code));
+    if (!station?.id) throw new Error(`CHS station ${code} was not found`);
+    return {
+      id: String(station.id),
+      code: String(station.code || code),
+      seriesCode: this._canadaStationSeriesCode(station) || "",
+      name: String(station.officialName || `CHS ${code}`),
+      lat: Number(station.latitude),
+      lon: Number(station.longitude),
+      region: this._regionForCanadaStation(station) || "great_lakes"
+    };
+  }
+
+  async _applyCanadaStation(stationId) {
     const station = (this._canadaStations || []).find((item) => item.id === stationId);
-    const next = { ...this._config, provider: "chs_iwls", ca_station: String(stationId) };
-    if (station) {
-      next.ca_station_code = station.code;
-      next.ca_region = station.region;
-      next.latitude = station.lat;
-      next.longitude = station.lon;
-      if (this._isGeneratedTitle(next.title)) next.title = `${station.name} Tides`;
+    let selected = station;
+    if (station?.seed) {
+      try {
+        selected = await this._resolveCanadaStationByCode(station.code);
+      } catch (err) {
+        const next = { ...this._config, provider: "chs_iwls", ca_station: "", ca_station_code: station.code, ca_series_code: station.seriesCode, ca_region: station.region };
+        if (this._isGeneratedTitle(next.title)) next.title = `${station.name} Tides`;
+        this._emitConfig(next);
+        return;
+      }
+    }
+    const next = { ...this._config, provider: "chs_iwls", ca_station: String(selected?.id || stationId) };
+    if (selected) {
+      next.ca_station_code = selected.code;
+      next.ca_series_code = selected.seriesCode;
+      next.ca_region = selected.region;
+      if (Number.isFinite(selected.lat)) next.latitude = selected.lat;
+      if (Number.isFinite(selected.lon)) next.longitude = selected.lon;
+      if (this._isGeneratedTitle(next.title)) next.title = `${selected.name} Tides`;
     }
     this._emitConfig(next);
   }
@@ -2298,7 +2444,7 @@ class TideWiseCardEditor extends HTMLElement {
               </select>
             </label>
             <label>
-              CHS tide station
+              CHS water-level station
               <select id="caStation" ${this._canadaStationsLoading ? "disabled" : ""}>
                 <option value="">${this._canadaStationsLoading ? "Loading CHS stations..." : "Choose a CHS station"}</option>
                 ${canadaStations.map((station) => `<option value="${station.id}" ${config.ca_station === station.id ? "selected" : ""}>${station.name}${station.code ? " (" + station.code + ")" : ""}</option>`).join("")}
@@ -2314,7 +2460,7 @@ class TideWiseCardEditor extends HTMLElement {
             </label>
           </div>
           ${this._canadaStationsError ? `<div class="hint">Could not load CHS station list: ${this._escape(this._canadaStationsError)}</div>` : ""}
-          <div class="hint">Canadian support uses CHS/DFO IWLS water-level predictions. Weather, rip risk, surf, and other fishing inputs still depend on Home Assistant entities.</div>
+          <div class="hint">Canadian support uses CHS/DFO IWLS water-level predictions where available, with water-level forecasts as a fallback for Great Lakes stations. Weather, rip risk, surf, and other fishing inputs still depend on Home Assistant entities.</div>
           ` : `
           <div class="grid">
             <label>
@@ -2432,10 +2578,15 @@ class TideWiseCardEditor extends HTMLElement {
       const first = this._canadaRegionStations(region)[0];
       const next = { ...this._config, provider: "chs_iwls", ca_region: region };
       if (first) {
+        if (first.seed) {
+          this._applyCanadaStation(first.id);
+          return;
+        }
         next.ca_station = first.id;
         next.ca_station_code = first.code;
-        next.latitude = first.lat;
-        next.longitude = first.lon;
+        next.ca_series_code = first.seriesCode;
+        if (Number.isFinite(first.lat)) next.latitude = first.lat;
+        if (Number.isFinite(first.lon)) next.longitude = first.lon;
         if (this._isGeneratedTitle(next.title)) next.title = `${first.name} Tides`;
       }
       this._emitConfig(next);
