@@ -8,7 +8,6 @@
 [![Validate](https://img.shields.io/github/actions/workflow/status/TheWillMiller/tide-wise/validate.yml?branch=main&label=validate)](https://github.com/TheWillMiller/tide-wise/actions/workflows/validate.yml)
 [![GitHub stars](https://img.shields.io/github/stars/TheWillMiller/tide-wise?label=stars)](https://github.com/TheWillMiller/tide-wise/stargazers)
 
-[![Open TideWise in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=TheWillMiller&repository=tide-wise&category=plugin)
 
 **Latest release:** `v0.6.2`
 
@@ -78,6 +77,8 @@ Helpful details include Home Assistant version, HACS version, TideWise version, 
 ## Installation
 
 ### Recommended: HACS Custom Repository
+
+[![Open TideWise in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=TheWillMiller&repository=tide-wise&category=plugin)
 
 TideWise is not yet listed in the default/searchable HACS store. Until it is accepted into the default HACS list, install it as a custom HACS repository.
 
