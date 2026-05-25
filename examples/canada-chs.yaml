@@ -1,0 +1,12 @@
+type: custom:tidewise-card
+title: Pointe-du-Chene Tides
+provider: chs_iwls
+ca_region: atlantic
+ca_station: "64b6e5ec8027cb190816a0c0"
+ca_station_code: "01804"
+units: metric
+mode: general
+auto_sources: false
+grid_options:
+  rows: full
+  columns: 18

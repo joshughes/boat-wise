@@ -1,12 +1,22 @@
 /*
- * TideWise Card v0.5.1
+ * TideWise Card v0.6.0
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.5.1";
+const CARD_VERSION = "0.6.0";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
+const TIDEWISE_PROVIDERS = {
+  noaa_coops: { label: "US NOAA CO-OPS", stationLabel: "NOAA" },
+  chs_iwls: { label: "Canada CHS / DFO", stationLabel: "CHS" }
+};
+const CANADA_REGIONS = [
+  { code: "atlantic", name: "Atlantic Canada", bbox: [-68.5, 42.0, -52.0, 60.5] },
+  { code: "quebec", name: "Quebec / St. Lawrence", bbox: [-80.5, 44.5, -57.0, 63.5] },
+  { code: "pacific", name: "Pacific Canada", bbox: [-140.0, 47.0, -114.0, 60.5] },
+  { code: "arctic", name: "Arctic Canada", bbox: [-142.0, 58.0, -52.0, 84.0] }
+];
 const STATION_PRESETS = [
   { station: "8410140", name: "Eastport, ME", lat: 44.9046, lon: -66.9829 },
   { station: "8418150", name: "Portland, ME", lat: 43.6581, lon: -70.2442 },
@@ -74,7 +84,7 @@ const STYLES = `
     --tw-marker-stroke: rgba(255,255,255,0.9); --tw-now-marker-stroke: rgba(255,255,255,0.92);
     --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Arial, sans-serif;
     --font-mono: "SF Mono", "Roboto Mono", "Courier New", monospace;
-    display: block; font-family: var(--font-main); color: var(--text);
+    display: block; font-family: var(--font-main); color: var(--text); container-type: inline-size;
   }
   :host([theme-mode="auto"]) {
     --wave: var(--accent-color, #2a7a94); --wave-dark: var(--primary-color, var(--accent-color, #1a5f72));
@@ -152,6 +162,7 @@ const STYLES = `
   .tide-pill { background: var(--tw-panel-bg); border: 1px solid var(--tw-panel-border); border-radius: 12px; padding: 5px 12px; }
   .pill-label { font-size: 13px; letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 3px; font-weight: 750; }
   .pill-label.low{color:var(--low-color)} .pill-label.high{color:var(--high-color)}
+  .pill-main { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
   .pill-time { font-family: var(--font-mono); font-size: 26px; font-weight: 800; color: var(--text); line-height: 1.1; }
   .pill-arrow { font-size: 16px; margin-right: 4px; }
   .pill-arrow.low{color:var(--low-color)} .pill-arrow.high{color:var(--high-color)}
@@ -172,6 +183,46 @@ const STYLES = `
   .debug-value { color: var(--text); font-weight: 800; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .debug-warn { color: #a51f1f; font-weight: 900; }
   @media (max-width: 520px) { .debug-grid { grid-template-columns: 1fr; } }
+  @container (max-width: 520px) {
+    .card-outer { padding: 12px 14px 12px; border-radius: 20px; }
+    .header { display: block; margin-bottom: 8px; }
+    .title { font-size: 25px; line-height: 1.08; margin-bottom: 8px; }
+    .subtitle { display: block; padding-top: 0; font-size: 12px; white-space: normal; }
+    .current-row { gap: 8px 10px; padding: 10px 12px; align-items: center; }
+    .current-label { font-size: 12px; }
+    .current-value { font-size: 34px; }
+    .condition-spacer { display: none; }
+    .condition-chip { order: 3; font-size: 12px; padding: 3px 8px; }
+    .direction-chip { order: 4; margin-left: auto; font-size: 16px; gap: 6px; }
+    .pulse-dot { width: 10px; height: 10px; }
+    .chart-header { align-items: flex-start; flex-wrap: wrap; gap: 6px; }
+    .section-label { font-size: 12px; }
+    .fish-badge-row { justify-content: flex-start; flex-wrap: wrap; gap: 5px; }
+    .water-temp-chip, .fish-moon, .fish-score { font-size: 12px; }
+    .chart-wrap { height: 92px; }
+    .x-tick { font-size: 12px; }
+    .fish-footer { flex-wrap: wrap; gap: 5px 8px; }
+    .fish-reason { flex: 1 0 100%; max-height: 38px; font-size: 11.5px; }
+    .safety-badge { font-size: 10.5px; padding: 2px 7px; }
+    .fish-next { margin-left: auto; font-size: 11.5px; }
+    .fish-legend { gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    .legend-item { font-size: 11.5px; gap: 4px; }
+    .tides-grid { gap: 8px; }
+    .tide-pill { padding: 8px 10px; }
+    .pill-label { font-size: 11.5px; letter-spacing: 0.06em; }
+    .pill-main { gap: 6px; flex-wrap: wrap; }
+    .pill-time { font-size: 22px; line-height: 1.05; }
+    .pill-ft { font-size: 14px; }
+  }
+  @container (max-width: 390px) {
+    .title { font-size: 22px; }
+    .current-value { font-size: 30px; }
+    .chart-wrap { height: 86px; }
+    .fish-next { flex: 1 0 100%; margin-left: 0; }
+    .tides-grid { grid-template-columns: 1fr; }
+    .pill-main { justify-content: space-between; }
+    .pill-time { font-size: 24px; }
+  }
   .loading,.error { text-align: center; padding: 30px 20px; color: var(--text-muted); font-size: 14px; }
   .error{color:#c04444}
   .spinner { width: 28px; height: 28px; border: 2px solid rgba(255,255,255,0.40); border-top-color: var(--wave); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
@@ -195,6 +246,7 @@ class TideWiseCard extends HTMLElement {
   static getStubConfig() {
     return {
       title: "TideWise",
+      provider: "noaa_coops",
       station: "8661070",
       units: "english",
       mode: "general",
@@ -213,11 +265,16 @@ class TideWiseCard extends HTMLElement {
   set hass(hass) { this._hass = hass; }
 
   setConfig(config) {
-    if (!config.station) throw new Error("TideWise requires a NOAA station ID.");
+    const provider = this._normalizeProvider(config.provider);
+    if (provider === "noaa_coops" && !config.station) throw new Error("TideWise requires a NOAA station ID.");
     const previousConfig = this._config || {};
     this._config = {
       title: config.title || "TideWise",
-      station: String(config.station),
+      provider,
+      station: String(config.station || "8661070"),
+      ca_region: String(config.ca_region || "atlantic"),
+      ca_station: String(config.ca_station || ""),
+      ca_station_code: String(config.ca_station_code || ""),
       units: config.units || "english",
       weather_entity: config.weather_entity || "",
       water_temp_entity: config.water_temp_entity || "",
@@ -241,9 +298,13 @@ class TideWiseCard extends HTMLElement {
       debug: this._normalizeDebugConfig(config.debug)
     };
     this.setAttribute("theme-mode", this._config.theme_mode);
-    if (previousConfig.station !== this._config.station || previousConfig.mode !== this._config.mode) this._fishBand = null;
+    if (previousConfig.provider !== this._config.provider || previousConfig.station !== this._config.station || previousConfig.ca_station !== this._config.ca_station || previousConfig.mode !== this._config.mode) this._fishBand = null;
     this._render();
     this._fetchData();
+  }
+
+  _normalizeProvider(value) {
+    return value === "chs_iwls" ? "chs_iwls" : "noaa_coops";
   }
 
   _normalizeThemeMode(value) {
@@ -270,6 +331,10 @@ class TideWiseCard extends HTMLElement {
   }
 
   async _fetchData() {
+    if (this._config.provider === "chs_iwls") {
+      await this._fetchCanadaData();
+      return;
+    }
     const { station, units } = this._config;
     const today = this._dateStr(0);
     const tomorrow = this._dateStr(1);
@@ -295,6 +360,63 @@ class TideWiseCard extends HTMLElement {
     } catch (err) {
       this._renderError(err.message);
     }
+  }
+
+  async _fetchCanadaData() {
+    const stationId = String(this._config.ca_station || "").trim();
+    if (!stationId) {
+      this._renderError("Choose a Canadian CHS station.");
+      return;
+    }
+    const now = new Date();
+    const from = new Date(now.getTime() - 60 * 60 * 1000);
+    const to = new Date(now.getTime() + 25 * 60 * 60 * 1000);
+    const url = `https://api-iwls.dfo-mpo.gc.ca/api/v1/stations/${encodeURIComponent(stationId)}/data?time-series-code=wlp&from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`CHS returned ${res.status}`);
+      const json = await res.json();
+      const rows = this._arrayFromApi(json)
+        .map((item) => {
+          const time = new Date(item.eventDate || item.date || item.time);
+          const rawValue = Number(item.value);
+          const value = this._config.units === "metric" ? rawValue : rawValue * 3.28084;
+          return { time, value };
+        })
+        .filter((item) => Number.isFinite(item.time.getTime()) && Number.isFinite(item.value))
+        .sort((a, b) => a.time - b.time);
+      if (rows.length < 4) throw new Error("CHS did not return enough tide prediction data for this station. It may be inactive, temporary, or outside the available prediction window.");
+      const predictions = rows
+        .filter((_, index) => index % 6 === 0)
+        .map((item) => ({ t: this._formatNoaaTime(item.time), v: item.value.toFixed(3) }));
+      const hilo = this._deriveHiloFromPredictions(predictions);
+      this._data = { predictions, hilo, intervalFallback: false, provider: "chs_iwls" };
+      this._autoData = {};
+      this._renderData();
+    } catch (err) {
+      this._renderError(`CHS tide data unavailable: ${err.message}`);
+    }
+  }
+
+  _arrayFromApi(json) {
+    if (Array.isArray(json)) return json;
+    if (Array.isArray(json?.value)) return json.value;
+    if (Array.isArray(json?.data)) return json.data;
+    if (Array.isArray(json?.items)) return json.items;
+    return [];
+  }
+
+  _deriveHiloFromPredictions(predictions) {
+    const events = [];
+    for (let i = 1; i < predictions.length - 1; i++) {
+      const prev = parseFloat(predictions[i - 1].v);
+      const cur = parseFloat(predictions[i].v);
+      const next = parseFloat(predictions[i + 1].v);
+      if (![prev, cur, next].every(Number.isFinite)) continue;
+      if (cur >= prev && cur > next) events.push({ t: predictions[i].t, v: predictions[i].v, type: "H" });
+      if (cur <= prev && cur < next) events.push({ t: predictions[i].t, v: predictions[i].v, type: "L" });
+    }
+    return events;
   }
 
   _friendlyNoaaError(message) {
@@ -1299,6 +1421,8 @@ class TideWiseCard extends HTMLElement {
     const waterTempLabel = this._formatWaterTemp(this._getWaterTempF());
     const weather = this._getWeatherState();
     const windLabel = this._formatWind(this._getWindSpeedMph(weather), this._getWindBearing(weather));
+    const providerInfo = TIDEWISE_PROVIDERS[this._config.provider] || TIDEWISE_PROVIDERS.noaa_coops;
+    const stationLabel = this._config.provider === "chs_iwls" ? (this._config.ca_station_code || "Canada") : this._config.station;
     const headerBadges = [
       waterTempLabel ? `<span class="water-temp-chip">Water ${waterTempLabel}</span>` : "",
       fish ? `<span class="fish-moon">${phaseName}</span>` : "",
@@ -1309,7 +1433,7 @@ class TideWiseCard extends HTMLElement {
     root.innerHTML = `
       <div class="header">
         <div class="title">${this._config.title}</div>
-        <div class="subtitle">NOAA ${this._config.station}</div>
+        <div class="subtitle">${providerInfo.stationLabel} ${stationLabel}</div>
       </div>
       <div class="current-row">
         <div class="current-icon">&#127754;</div>
@@ -1368,7 +1492,7 @@ class TideWiseCard extends HTMLElement {
     return `
       <div class="tide-pill">
         ${labelRow}
-        <div style="display:flex;align-items:baseline;gap:10px;">
+        <div class="pill-main">
           <div class="pill-time"><span class="pill-arrow ${type}">${arrow}</span>${this._formatClock(this._parseHiloTime(tide.t))}</div>
           <div class="pill-ft">${parseFloat(tide.v).toFixed(1)} ${unitLabel}</div>
         </div>
@@ -1458,7 +1582,8 @@ class TideWiseCard extends HTMLElement {
             ])}
             <div class="debug-section-title">Sources</div>
             ${rows([
-              ["station", this._config.station],
+              ["provider", this._config.provider],
+              ["station", this._config.provider === "chs_iwls" ? `${this._config.ca_station_code || ""} ${this._config.ca_station}`.trim() : this._config.station],
               ["coords", `${lat.toFixed(4)}, ${lon.toFixed(4)}`],
               ["predictions", `${predictions?.length || 0}${this._data?.intervalFallback ? " hilo fallback" : " interval"}`],
               ["auto updated", auto.updated || "not fetched"],
@@ -1827,6 +1952,9 @@ class TideWiseCardEditor extends HTMLElement {
     this._config = {};
     this._hass = null;
     this._rendered = false;
+    this._canadaStations = null;
+    this._canadaStationsLoading = false;
+    this._canadaStationsError = "";
   }
 
   set hass(hass) {
@@ -1847,7 +1975,11 @@ class TideWiseCardEditor extends HTMLElement {
   setConfig(config) {
     this._config = {
       title: "TideWise",
+      provider: "noaa_coops",
       station: "8661070",
+      ca_region: "atlantic",
+      ca_station: "",
+      ca_station_code: "",
       units: "english",
       mode: "general",
       theme_mode: "tidewise",
@@ -1857,6 +1989,7 @@ class TideWiseCardEditor extends HTMLElement {
       grid_options: { rows: "full", columns: 18 },
       ...config
     };
+    this._config.provider = this._normalizeProvider(this._config.provider);
     this._config.theme_mode = this._normalizeThemeMode(this._config.theme_mode);
     const home = this._homeLatLon();
     if (this._config.latitude === undefined && home.lat) this._config.latitude = home.lat;
@@ -1877,11 +2010,18 @@ class TideWiseCardEditor extends HTMLElement {
 
   _isGeneratedTitle(title) {
     const value = String(title || "").trim();
-    return value === "" || value === "TideWise" || STATION_PRESETS.some((item) => value === `${item.name} Tides`);
+    return value === ""
+      || value === "TideWise"
+      || STATION_PRESETS.some((item) => value === `${item.name} Tides`)
+      || (this._canadaStations || []).some((item) => value === `${item.name} Tides`);
   }
 
   _normalizeThemeMode(value) {
     return value === "auto" ? "auto" : "tidewise";
+  }
+
+  _normalizeProvider(value) {
+    return value === "chs_iwls" ? "chs_iwls" : "noaa_coops";
   }
 
   _emitConfig(nextConfig) {
@@ -1957,13 +2097,95 @@ class TideWiseCardEditor extends HTMLElement {
     }
   }
 
+  _regionForCanadaStation(station) {
+    const lat = Number(station?.latitude);
+    const lon = Number(station?.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return "";
+    return CANADA_REGIONS.find((region) => {
+      const [minLon, minLat, maxLon, maxLat] = region.bbox;
+      return lon >= minLon && lon <= maxLon && lat >= minLat && lat <= maxLat;
+    })?.code || "";
+  }
+
+  _stationHasCanadaPredictions(station) {
+    return (station?.timeSeries || []).some((series) => series?.code === "wlp");
+  }
+
+  _stationIsUsableCanadaPredictionStation(station) {
+    const type = String(station?.type || "").toLowerCase();
+    if (station?.operating === false) return false;
+    if (type.includes("discontinued")) return false;
+    return this._stationHasCanadaPredictions(station);
+  }
+
+  async _loadCanadaStations() {
+    if (this._canadaStations || this._canadaStationsLoading) return;
+    this._canadaStationsLoading = true;
+    this._canadaStationsError = "";
+    this._render();
+    try {
+      const res = await fetch("https://api-iwls.dfo-mpo.gc.ca/api/v1/stations");
+      if (!res.ok) throw new Error(`CHS returned ${res.status}`);
+      const json = await res.json();
+      this._canadaStations = this._arrayFromApi(json)
+        .filter((station) => station?.id && station?.officialName && this._stationIsUsableCanadaPredictionStation(station))
+        .map((station) => ({
+          id: String(station.id),
+          code: String(station.code || ""),
+          name: String(station.officialName || ""),
+          type: String(station.type || ""),
+          lat: Number(station.latitude),
+          lon: Number(station.longitude),
+          region: this._regionForCanadaStation(station)
+        }))
+        .filter((station) => station.region)
+        .sort((a, b) => a.name.localeCompare(b.name));
+    } catch (err) {
+      this._canadaStationsError = err.message || "Could not load CHS stations";
+    } finally {
+      this._canadaStationsLoading = false;
+      this._render();
+    }
+  }
+
+  _arrayFromApi(json) {
+    if (Array.isArray(json)) return json;
+    if (Array.isArray(json?.value)) return json.value;
+    if (Array.isArray(json?.data)) return json.data;
+    if (Array.isArray(json?.items)) return json.items;
+    return [];
+  }
+
+  _canadaRegionStations(regionCode) {
+    return (this._canadaStations || []).filter((station) => station.region === regionCode);
+  }
+
+  _applyCanadaStation(stationId) {
+    const station = (this._canadaStations || []).find((item) => item.id === stationId);
+    const next = { ...this._config, provider: "chs_iwls", ca_station: String(stationId) };
+    if (station) {
+      next.ca_station_code = station.code;
+      next.ca_region = station.region;
+      next.latitude = station.lat;
+      next.longitude = station.lon;
+      if (this._isGeneratedTitle(next.title)) next.title = `${station.name} Tides`;
+    }
+    this._emitConfig(next);
+  }
+
   _render() {
     if (!this.shadowRoot) return;
     this._rendered = true;
     const config = this._config || {};
+    const provider = this._normalizeProvider(config.provider);
     const selectedPreset = this._presetForStation(config.station) ? String(config.station) : "custom";
     const home = this._homeLatLon();
     const grid = config.grid_options || {};
+    const canadaRegion = config.ca_region || "atlantic";
+    const canadaStations = this._canadaRegionStations(canadaRegion);
+    if (provider === "chs_iwls" && !this._canadaStations && !this._canadaStationsLoading) {
+      setTimeout(() => this._loadCanadaStations(), 0);
+    }
     this.shadowRoot.innerHTML = `
       <style>
         :host {
@@ -2009,6 +2231,42 @@ class TideWiseCardEditor extends HTMLElement {
         <div class="section">
           <div class="title">Location</div>
           <div class="grid">
+            <label class="wide">
+              Tide provider
+              <select id="provider">
+                <option value="noaa_coops" ${provider !== "chs_iwls" ? "selected" : ""}>US NOAA CO-OPS</option>
+                <option value="chs_iwls" ${provider === "chs_iwls" ? "selected" : ""}>Canada CHS / DFO</option>
+              </select>
+            </label>
+          </div>
+          ${provider === "chs_iwls" ? `
+          <div class="grid">
+            <label>
+              Canadian region
+              <select id="caRegion">
+                ${CANADA_REGIONS.map((region) => `<option value="${region.code}" ${canadaRegion === region.code ? "selected" : ""}>${region.name}</option>`).join("")}
+              </select>
+            </label>
+            <label>
+              CHS tide station
+              <select id="caStation" ${this._canadaStationsLoading ? "disabled" : ""}>
+                <option value="">${this._canadaStationsLoading ? "Loading CHS stations..." : "Choose a CHS station"}</option>
+                ${canadaStations.map((station) => `<option value="${station.id}" ${config.ca_station === station.id ? "selected" : ""}>${station.name}${station.code ? " (" + station.code + ")" : ""}</option>`).join("")}
+              </select>
+            </label>
+            <label>
+              Manual CHS station ID
+              <input id="caStationManual" value="${this._escape(config.ca_station || "")}" placeholder="CHS station object ID">
+            </label>
+            <label>
+              CHS station code
+              <input id="caStationCode" value="${this._escape(config.ca_station_code || "")}" placeholder="Optional display code">
+            </label>
+          </div>
+          ${this._canadaStationsError ? `<div class="hint">Could not load CHS station list: ${this._escape(this._canadaStationsError)}</div>` : ""}
+          <div class="hint">Canadian support uses CHS/DFO IWLS water-level predictions. Weather, rip risk, surf, and other fishing inputs still depend on Home Assistant entities.</div>
+          ` : `
+          <div class="grid">
             <label>
               NOAA tide station
               <select id="stationPreset">
@@ -2021,6 +2279,7 @@ class TideWiseCardEditor extends HTMLElement {
               <input id="station" value="${this._escape(config.station || "")}" placeholder="8661070">
             </label>
           </div>
+          `}
           <div class="grid">
             <label>
               Fishing/forecast latitude
@@ -2032,7 +2291,7 @@ class TideWiseCardEditor extends HTMLElement {
             </label>
           </div>
           <div class="row">
-            <button id="stationLocation" type="button">Use NOAA station location</button>
+            ${provider === "noaa_coops" ? `<button id="stationLocation" type="button">Use NOAA station location</button>` : ""}
             <button id="homeLocation" type="button" ${home.lat && home.lon ? "" : "disabled"}>Use HA home location</button>
             <span class="hint">For best fishing scores, use coordinates near the tide gauge, beach, inlet, or fishing area. ${home.lat && home.lon ? `HA home: ${home.lat.toFixed(4)}, ${home.lon.toFixed(4)}` : "HA home location is not available in zone.home."}</span>
           </div>
@@ -2100,6 +2359,42 @@ class TideWiseCardEditor extends HTMLElement {
       </div>
     `;
 
+    this.shadowRoot.getElementById("provider")?.addEventListener("change", (event) => {
+      const nextProvider = this._normalizeProvider(event.target.value);
+      const next = { ...this._config, provider: nextProvider };
+      if (nextProvider === "chs_iwls") {
+        next.ca_region = next.ca_region || "atlantic";
+        if (!next.ca_station && this._canadaStations) {
+          const first = this._canadaRegionStations(next.ca_region)[0];
+          if (first) {
+            next.ca_station = first.id;
+            next.ca_station_code = first.code;
+            next.latitude = first.lat;
+            next.longitude = first.lon;
+            if (this._isGeneratedTitle(next.title)) next.title = `${first.name} Tides`;
+          }
+        }
+      }
+      this._emitConfig(next);
+    });
+    this.shadowRoot.getElementById("caRegion")?.addEventListener("change", (event) => {
+      const region = event.target.value;
+      const first = this._canadaRegionStations(region)[0];
+      const next = { ...this._config, provider: "chs_iwls", ca_region: region };
+      if (first) {
+        next.ca_station = first.id;
+        next.ca_station_code = first.code;
+        next.latitude = first.lat;
+        next.longitude = first.lon;
+        if (this._isGeneratedTitle(next.title)) next.title = `${first.name} Tides`;
+      }
+      this._emitConfig(next);
+    });
+    this.shadowRoot.getElementById("caStation")?.addEventListener("change", (event) => {
+      if (event.target.value) this._applyCanadaStation(event.target.value);
+    });
+    this.shadowRoot.getElementById("caStationManual")?.addEventListener("change", (event) => this._setValue("ca_station", String(event.target.value || "").trim()));
+    this.shadowRoot.getElementById("caStationCode")?.addEventListener("change", (event) => this._setValue("ca_station_code", String(event.target.value || "").trim()));
     this.shadowRoot.getElementById("stationPreset")?.addEventListener("change", (event) => {
       const value = event.target.value;
       if (value !== "custom") this._applyStation(value);
@@ -2141,7 +2436,7 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: "tidewise-card",
   name: "TideWise",
-  description: "NOAA tides with optional bite-window fishing quality scoring",
+  description: "Tide predictions with optional bite-window fishing quality scoring",
   preview: true
 });
 

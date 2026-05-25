@@ -1,6 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.6.0
+
+### Added
+
+- Added early Canada CHS/DFO tide provider support with Canadian region and station pickers.
+- Added a Canada CHS example configuration.
+
+### Changed
+
+- Improved narrow/mobile card layout so header badges, fishing reason text, safety warnings, and tide pills wrap more cleanly.
+- Added README notes for future international tide-provider support and UK provider research.
+- Filtered the Canadian station picker to operating CHS stations that advertise water-level predictions.
 
 ## 0.5.1
 

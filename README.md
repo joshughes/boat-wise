@@ -8,9 +8,11 @@
 [![Validate](https://img.shields.io/github/actions/workflow/status/TheWillMiller/tide-wise/validate.yml?branch=main&label=validate)](https://github.com/TheWillMiller/tide-wise/actions/workflows/validate.yml)
 [![GitHub stars](https://img.shields.io/github/stars/TheWillMiller/tide-wise?label=stars)](https://github.com/TheWillMiller/tide-wise/stargazers)
 
-**Latest release:** `v0.5.1`
+[![Open TideWise in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=TheWillMiller&repository=tide-wise&category=plugin)
 
-TideWise is a Home Assistant dashboard (Lovelace) custom card for NOAA tide predictions, current tide height, next high/low tides, and optional fishing bite-window scoring.
+**Latest release:** `v0.6.0`
+
+TideWise is a Home Assistant dashboard (Lovelace) custom card for tide predictions, current tide height, next high/low tides, and optional fishing bite-window scoring. The default provider is NOAA CO-OPS, with early Canada CHS/DFO support available for testing.
 
 ## Screenshots
 
@@ -54,6 +56,7 @@ Helpful details include Home Assistant version, HACS version, TideWise version, 
 ## Features
 
 - NOAA tide predictions using a configurable station ID
+- Early Canada CHS/DFO tide prediction support
 - Current interpolated tide height
 - Water temperature display when available
 - Wind display when available
@@ -62,7 +65,8 @@ Helpful details include Home Assistant version, HACS version, TideWise version, 
 - High/low fallback for NOAA stations without full interval predictions
 - Visual editor support
 - Opt-in Home Assistant theme color support with `theme_mode: auto`
-- 50-station preset picker plus custom NOAA station ID
+- 50-station NOAA preset picker plus custom NOAA station ID
+- Canada region picker with CHS station discovery
 - Optional fishing bite-window score
 - Fishing modes for general, surf, inlet, flounder, trout/redfish, and sheepshead use
 - Optional NOAA/NWS public data fetching
@@ -126,7 +130,7 @@ type: module
 For quick testing before installing locally, you can add this dashboard resource:
 
 ```yaml
-url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.5.1/tidewise-card.js
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.6.0/tidewise-card.js
 type: module
 ```
 
@@ -195,6 +199,27 @@ grid_options:
   columns: 18
 ```
 
+## Canada CHS Example
+
+Canada support uses the Canadian Hydrographic Service / DFO IWLS API. The visual editor can load Canadian regions and station lists, so most users should choose a station from the editor instead of writing the object ID by hand.
+
+```yaml
+type: custom:tidewise-card
+title: Pointe-du-Chene Tides
+provider: chs_iwls
+ca_region: atlantic
+ca_station: "64b6e5ec8027cb190816a0c0"
+ca_station_code: "01804"
+units: metric
+mode: general
+auto_sources: false
+grid_options:
+  rows: full
+  columns: 18
+```
+
+Canadian tide predictions can render the tide chart and high/low times. NOAA/NWS auto sources are US-focused, so Canadian fishing inputs such as weather, wind, surf, water temperature, and pressure should come from Home Assistant entities when available.
+
 ## Dashboard Size
 
 TideWise is a dense chart card. In Home Assistant section/grid dashboards, give it enough horizontal space:
@@ -235,6 +260,7 @@ TideWise includes a Home Assistant visual editor. When adding the card from the 
 
 - Choose 50 common NOAA tide stations from a dropdown
 - Enter a custom NOAA station ID
+- Switch to Canada CHS / DFO and choose a region-fed station dropdown
 - Set fishing/forecast latitude and longitude
 - Fill coordinates from the selected NOAA station
 - Use your Home Assistant home latitude/longitude when that matches your fishing area
@@ -252,7 +278,7 @@ Latitude and longitude are used for fishing-score context such as NWS forecast l
 
 ## Auto Sources
 
-TideWise can fetch extra public NOAA/NWS data directly from the browser when `auto_sources` is enabled:
+For NOAA/US cards, TideWise can fetch extra public NOAA/NWS data directly from the browser when `auto_sources` is enabled:
 
 - NOAA CO-OPS water temperature, wind, and air pressure where the selected station supports those products
 - NWS hourly forecast weather and wind from latitude/longitude
@@ -316,8 +342,12 @@ The debug panel is collapsed by default and scrolls internally when expanded. It
 | --- | --- | --- | --- |
 | `type` | Yes |  | Use `custom:tidewise-card`. The legacy `custom:cherry-grove-tides-card` alias also works. |
 | `title` | No | `TideWise` | Card title. |
-| `station` | Yes |  | NOAA tides and currents station ID. |
-| `units` | No | `english` | NOAA units. Usually `english` or `metric`. |
+| `provider` | No | `noaa_coops` | Tide data provider. Use `noaa_coops` for US NOAA CO-OPS or `chs_iwls` for early Canada CHS/DFO support. |
+| `station` | Required for NOAA |  | NOAA tides and currents station ID. |
+| `ca_region` | No | `atlantic` | Canada station picker region: `atlantic`, `quebec`, `pacific`, or `arctic`. |
+| `ca_station` | Required for Canada |  | Canadian CHS/DFO IWLS station object ID. Prefer choosing it from the visual editor. |
+| `ca_station_code` | No |  | Optional Canadian CHS display code. |
+| `units` | No | `english` | Display units. Usually `english` or `metric`. Canadian CHS data is metric and is converted to feet when `english` is selected. |
 | `mode` | No | `general` | Fishing score mode: `general`, `surf`, `inlet`, `flounder`, `trout_redfish`, or `sheepshead`. |
 | `theme_mode` | No | `tidewise` | Visual style mode. Use `tidewise` for the default ocean-glass look or `auto` to follow Home Assistant theme colors more closely. |
 | `show_fishing_score` | No | `true` | Set to `false` for a tide-only card. |
@@ -343,6 +373,14 @@ The debug panel is collapsed by default and scrolls internally when expanded. It
 Use a NOAA tides and currents station ID near your location. TideWise uses the NOAA CO-OPS data API, so station IDs must support tide predictions.
 
 If your station does not work, try a nearby NOAA station that supports tide predictions.
+
+## Finding a Canadian Station
+
+Set **Tide provider** to **Canada CHS / DFO** in the visual editor, choose a Canadian region, then choose a CHS tide station from the station dropdown.
+
+Canada support uses CHS/DFO IWLS water-level predictions. TideWise filters for operating stations that advertise water-level predictions, but selected stations may still need testing because CHS availability can vary by station and forecast window.
+
+NOAA/NWS auto sources are US-focused. For Canadian fishing context, configure Home Assistant entities for weather, wind, pressure, water temperature, surf, rain, or safety/rip-risk data when available.
 
 ## Troubleshooting
 
@@ -371,7 +409,7 @@ Try:
 
 If HACS still shows an old README, the installed card file may still be current while the HACS display cache is stale.
 
-If HACS shows a short value like `214b6c2` instead of `v0.5.1`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
+If HACS shows a short value like `214b6c2` instead of `v0.6.0`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
 
 ### Card does not show up
 
@@ -490,6 +528,23 @@ Planned areas for future releases:
 - International tide-provider research for non-NOAA regions
 - Further fishing outlook calibration based on tester feedback
 - Additional mobile layout polish
+
+### International Provider Notes
+
+TideWise currently uses NOAA CO-OPS as its tide provider. Future non-US support should be added through explicit provider adapters instead of stretching NOAA-specific code paths.
+
+UK tide support needs its own provider research. The Environment Agency flood-monitoring API can be useful for rivers, flood gauges, and some observed level stations, but it should not be treated as a full tide-prediction source unless it can provide tide predictions, high/low times, chartable interval data, station metadata, usable licensing, and browser-accessible CORS behavior.
+
+The National Tidal and Sea Level Facility is a stronger UK research candidate because it documents the UK National Tide Gauge Network and publishes tidal predictions for selected UK and Ireland ports. It still needs licensing, CORS, and data-shape validation before TideWise can depend on it.
+
+Likely future shape:
+
+```yaml
+provider: noaa_coops
+station: "8661070"
+```
+
+Other providers should get their own station picker and validation rules. For example, Canadian or UK support may need separate station IDs, units, datum notes, and availability checks.
 
 ## Contributing
 
