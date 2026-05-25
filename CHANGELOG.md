@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.6.0
+
+### Added
+
+- Added early Canada CHS/DFO tide provider support with Canadian region and station pickers.
+- Added a Canada CHS example configuration.
 
 ### Fixed
 
@@ -8,13 +13,6 @@
 - Recognized active `Rest of Today` surf forecast sections so expired or future rip-risk wording is less likely to cap the current score incorrectly.
 - Avoided falling back to whole-product SRF risk text when timed rip-risk periods exist but none apply to the current time.
 - Added a Canadian **Great Lakes / Ontario** station picker region for CHS stations such as Belle River.
-
-## 0.6.0
-
-### Added
-
-- Added early Canada CHS/DFO tide provider support with Canadian region and station pickers.
-- Added a Canada CHS example configuration.
 
 ### Changed
 
