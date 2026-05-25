@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.5
+
+### Changed
+
+- Simplified the Beach / Surf Forecast visual editor to a two-step State and Area picker.
+- Hid NWS SRF office and surf-zone plumbing from the visual editor while preserving YAML/manual support.
+- Area choices now combine precise beach-zone presets where available with broader NWS-listed SRF offices for the selected state.
+
 ## 0.6.4
 
 ### Added
