@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.7.0
+ * TideWise Card v0.7.1
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.7.0";
+const CARD_VERSION = "0.7.1";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const TIDEWISE_PROVIDERS = {
   noaa_coops: { label: "US NOAA CO-OPS", stationLabel: "NOAA" },
@@ -507,8 +507,8 @@ class TideWiseCard extends HTMLElement {
     }
 
     const now = new Date();
-    const from = new Date(now.getTime() - 60 * 60 * 1000);
-    const to = new Date(now.getTime() + 25 * 60 * 60 * 1000);
+    const from = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+    const to = new Date(now.getTime() + 36 * 60 * 60 * 1000);
     const base = "https://admiraltyapi.azure-api.net/uktidalapi/api/V1";
     const headers = { "Ocp-Apim-Subscription-Key": apiKey };
     const qs = `StartDateTime=${encodeURIComponent(from.toISOString())}&EndDateTime=${encodeURIComponent(to.toISOString())}`;
@@ -516,23 +516,10 @@ class TideWiseCard extends HTMLElement {
     const eventsUrl = `${base}/Stations/${encodeURIComponent(station)}/TidalEvents?${qs}`;
 
     try {
-      const [heightRes, eventRes] = await Promise.all([
-        fetch(heightsUrl, { headers }),
-        fetch(eventsUrl, { headers })
-      ]);
-      if (!heightRes.ok) throw new Error(`UKHO heights returned ${heightRes.status}`);
+      const eventRes = await fetch(eventsUrl, { headers });
       if (!eventRes.ok) throw new Error(`UKHO events returned ${eventRes.status}`);
 
-      const heightRows = this._arrayFromApi(await heightRes.json());
       const eventRows = this._arrayFromApi(await eventRes.json());
-      const predictions = heightRows
-        .map((item) => {
-          const time = new Date(item.DateTime || item.dateTime || item.eventDate || item.time);
-          const metres = Number(item.Height ?? item.height ?? item.value);
-          const value = this._config.units === "metric" ? metres : metres * 3.28084;
-          return { t: this._formatNoaaTime(time), v: value.toFixed(3) };
-        })
-        .filter((item) => !item.t.includes("NaN") && item.v !== "NaN");
       const hilo = eventRows
         .map((item) => {
           const time = new Date(item.DateTime || item.dateTime || item.eventDate || item.time);
@@ -543,8 +530,31 @@ class TideWiseCard extends HTMLElement {
         })
         .filter((item) => !item.t.includes("NaN") && item.v !== "NaN");
 
-      if (predictions.length < 4) throw new Error("UKHO returned no usable tide-height predictions for this station.");
-      this._data = { predictions, hilo, intervalFallback: false, provider: "ukho" };
+      if (hilo.length < 2) throw new Error("UKHO returned no usable high/low tide events for this station.");
+
+      let predictions = [];
+      let intervalFallback = true;
+      try {
+        const heightRes = await fetch(heightsUrl, { headers });
+        if (heightRes.ok) {
+          const heightRows = this._arrayFromApi(await heightRes.json());
+          predictions = heightRows
+            .map((item) => {
+              const time = new Date(item.DateTime || item.dateTime || item.eventDate || item.time);
+              const metres = Number(item.Height ?? item.height ?? item.value);
+              const value = this._config.units === "metric" ? metres : metres * 3.28084;
+              return { t: this._formatNoaaTime(time), v: value.toFixed(3) };
+            })
+            .filter((item) => !item.t.includes("NaN") && item.v !== "NaN");
+          intervalFallback = predictions.length < 4;
+        }
+      } catch (err) {
+        intervalFallback = true;
+      }
+      if (intervalFallback) predictions = this._buildPredictionsFromHilo(hilo);
+      if (predictions.length < 4) throw new Error("UKHO returned events, but TideWise could not build a usable tide curve.");
+
+      this._data = { predictions, hilo, intervalFallback, provider: "ukho" };
       this._autoData = {};
       this._renderData();
     } catch (err) {

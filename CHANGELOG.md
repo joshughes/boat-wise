@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.7.1
+
+### Fixed
+
+- Fixed experimental UKHO Discovery support so TideWise loads UKHO high/low tide events first.
+- Made UKHO interval heights optional; if `TidalHeights` is unavailable, TideWise now builds the chart curve from `TidalEvents`.
+
+### Known Issues
+
+- UKHO support is still experimental and may still fail if the UKHO API blocks browser-side requests, CORS, or a user's subscription tier.
+- UKHO API keys are stored in dashboard configuration and are visible to browsers/users that can inspect the card.
+
 ## 0.7.0
 
 ### Added
