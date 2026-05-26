@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.7.1
+ * TideWise Card v0.7.2
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.7.1";
+const CARD_VERSION = "0.7.2";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const TIDEWISE_PROVIDERS = {
   noaa_coops: { label: "US NOAA CO-OPS", stationLabel: "NOAA" },
@@ -510,13 +510,13 @@ class TideWiseCard extends HTMLElement {
     const from = new Date(now.getTime() - 12 * 60 * 60 * 1000);
     const to = new Date(now.getTime() + 36 * 60 * 60 * 1000);
     const base = "https://admiraltyapi.azure-api.net/uktidalapi/api/V1";
-    const headers = { "Ocp-Apim-Subscription-Key": apiKey };
     const qs = `StartDateTime=${encodeURIComponent(from.toISOString())}&EndDateTime=${encodeURIComponent(to.toISOString())}`;
     const heightsUrl = `${base}/Stations/${encodeURIComponent(station)}/TidalHeights?${qs}&IntervalInMinutes=10`;
     const eventsUrl = `${base}/Stations/${encodeURIComponent(station)}/TidalEvents?${qs}`;
+    const withKey = (url) => `${url}&subscription-key=${encodeURIComponent(apiKey)}`;
 
     try {
-      const eventRes = await fetch(eventsUrl, { headers });
+      const eventRes = await fetch(withKey(eventsUrl));
       if (!eventRes.ok) throw new Error(`UKHO events returned ${eventRes.status}`);
 
       const eventRows = this._arrayFromApi(await eventRes.json());
@@ -535,7 +535,7 @@ class TideWiseCard extends HTMLElement {
       let predictions = [];
       let intervalFallback = true;
       try {
-        const heightRes = await fetch(heightsUrl, { headers });
+        const heightRes = await fetch(withKey(heightsUrl));
         if (heightRes.ok) {
           const heightRows = this._arrayFromApi(await heightRes.json());
           predictions = heightRows
@@ -558,7 +558,12 @@ class TideWiseCard extends HTMLElement {
       this._autoData = {};
       this._renderData();
     } catch (err) {
-      this._renderError(`UKHO tide data unavailable: ${err.message}`);
+      const message = String(err?.message || err || "Failed to fetch");
+      if (message.toLowerCase().includes("failed to fetch")) {
+        this._renderError("UKHO tide data unavailable: browser fetch was blocked. UKHO may require CORS support or a Home Assistant/backend proxy for dashboard cards.");
+      } else {
+        this._renderError(`UKHO tide data unavailable: ${message}`);
+      }
     }
   }
 

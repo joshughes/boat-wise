@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.7.2
+
+### Changed
+
+- Changed experimental UKHO browser requests to pass the subscription key as an Azure APIM query parameter instead of a custom request header, avoiding browser preflight where possible.
+- Improved UKHO browser-blocked error messaging so `Failed to fetch` points users toward CORS/backend limitations instead of looking like a bad station.
+
+### Known Issues
+
+- UKHO support remains experimental. If UKHO does not return browser-readable CORS responses for a user's subscription, a future Home Assistant/backend helper will be required.
+- UKHO API keys are stored in dashboard configuration and are visible to browsers/users that can inspect the card.
+
 ## 0.7.1
 
 ### Fixed

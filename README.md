@@ -9,7 +9,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/TheWillMiller/tide-wise?label=stars)](https://github.com/TheWillMiller/tide-wise/stargazers)
 
 
-**Latest release:** `v0.7.1`
+**Latest release:** `v0.7.2`
 
 TideWise is a Home Assistant dashboard (Lovelace) custom card for tide predictions, current tide height, next high/low tides, and optional fishing bite-window scoring. The default provider is NOAA CO-OPS, with early Canada CHS/DFO support and experimental UKHO Admiralty support available for testing.
 
@@ -133,7 +133,7 @@ type: module
 For quick testing before installing locally, you can add this dashboard resource:
 
 ```yaml
-url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.7.1/tidewise-card.js
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.7.2/tidewise-card.js
 type: module
 ```
 
@@ -225,7 +225,7 @@ Canadian tide predictions can render the tide chart and high/low times. NOAA/NWS
 
 ## UK UKHO Example
 
-UK support uses the UKHO Admiralty API directly from the browser. Each user must provide their own UKHO API key.
+UK support uses the UKHO Admiralty API directly from the browser. Each user must provide their own UKHO API key. This is experimental because browser-side API calls depend on UKHO/Azure allowing CORS from Home Assistant dashboards.
 
 ```yaml
 type: custom:tidewise-card
@@ -419,9 +419,9 @@ NOAA/NWS auto sources are US-focused. For Canadian fishing context, configure Ho
 
 Set **Tide provider** to **UK UKHO Admiralty** in the visual editor, choose a UKHO station, then enter your own UKHO API key. The key is required because TideWise calls the UKHO API directly from the browser.
 
-UKHO support is experimental. It can render UK tide heights and high/low events where the selected station and API key allow access. Weather, wind, water temperature, surf, rain, pressure, and fishing safety context should come from Home Assistant entities for UK cards.
+UKHO support is experimental. It can render UK tide heights and high/low events where the selected station, API key, subscription tier, and browser access allow it. Weather, wind, water temperature, surf, rain, pressure, and fishing safety context should come from Home Assistant entities for UK cards.
 
-Because this is a frontend card, the UKHO key is not secret storage. Anyone with access to inspect the dashboard/browser traffic can see it.
+Because this is a frontend card, the UKHO key is not secret storage. Anyone with access to inspect the dashboard/browser traffic can see it. If UKHO blocks browser-side CORS for your subscription, TideWise will need a future Home Assistant/backend helper for UKHO rather than a pure Lovelace-only fetch.
 
 ## Beach / Surf Forecast Area
 
@@ -470,7 +470,7 @@ Try:
 
 If HACS still shows an old README, the installed card file may still be current while the HACS display cache is stale.
 
-If HACS shows a short value like `214b6c2` instead of `v0.7.1`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
+If HACS shows a short value like `214b6c2` instead of `v0.7.2`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
 
 ### Card does not show up
 
