@@ -9,9 +9,9 @@
 [![GitHub stars](https://img.shields.io/github/stars/TheWillMiller/tide-wise?label=stars)](https://github.com/TheWillMiller/tide-wise/stargazers)
 
 
-**Latest release:** `v0.6.5`
+**Latest release:** `v0.7.0`
 
-TideWise is a Home Assistant dashboard (Lovelace) custom card for tide predictions, current tide height, next high/low tides, and optional fishing bite-window scoring. The default provider is NOAA CO-OPS, with early Canada CHS/DFO support available for testing.
+TideWise is a Home Assistant dashboard (Lovelace) custom card for tide predictions, current tide height, next high/low tides, and optional fishing bite-window scoring. The default provider is NOAA CO-OPS, with early Canada CHS/DFO support and experimental UKHO Admiralty support available for testing.
 
 ## Screenshots
 
@@ -35,7 +35,7 @@ TideWise keeps its ocean-glass style by default. It can also follow Home Assista
 
 <img src="https://raw.githubusercontent.com/TheWillMiller/tide-wise/main/ThemeEditor.png" alt="TideWise visual editor showing the theme selector and live preview" width="720">
 
-It combines NOAA tide data with local Home Assistant entities such as weather, wind, water temperature, surf height, pressure, rain, and rip current risk. Missing optional entities are allowed; TideWise falls back to neutral scoring where possible.
+It combines tide data with local Home Assistant entities such as weather, wind, water temperature, surf height, pressure, rain, and rip current risk. Missing optional entities are allowed; TideWise falls back to neutral scoring where possible.
 
 > **Beta notice:** TideWise is still early beta software. Please expect occasional layout issues, missing-data fallbacks, and station-specific quirks while testing.
 
@@ -56,6 +56,7 @@ Helpful details include Home Assistant version, HACS version, TideWise version, 
 
 - NOAA tide predictions using a configurable station ID
 - Early Canada CHS/DFO water-level prediction and forecast support
+- Experimental UKHO Admiralty tide support with a user-provided UKHO API key
 - Current interpolated tide height
 - Water temperature display when available
 - Wind display when available
@@ -66,6 +67,7 @@ Helpful details include Home Assistant version, HACS version, TideWise version, 
 - Opt-in Home Assistant theme color support with `theme_mode: auto`
 - 50-station NOAA preset picker plus custom NOAA station ID
 - Canada region picker with CHS station discovery
+- UKHO station picker and API key field
 - Optional fishing bite-window score
 - Fishing modes for general, surf, inlet, flounder, trout/redfish, and sheepshead use
 - Optional NOAA/NWS public data fetching
@@ -131,7 +133,7 @@ type: module
 For quick testing before installing locally, you can add this dashboard resource:
 
 ```yaml
-url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.6.5/tidewise-card.js
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.7.0/tidewise-card.js
 type: module
 ```
 
@@ -221,6 +223,29 @@ grid_options:
 
 Canadian tide predictions can render the tide chart and high/low times. NOAA/NWS auto sources are US-focused, so Canadian fishing inputs such as weather, wind, surf, water temperature, and pressure should come from Home Assistant entities when available.
 
+## UK UKHO Example
+
+UK support uses the UKHO Admiralty API directly from the browser. Each user must provide their own UKHO API key.
+
+```yaml
+type: custom:tidewise-card
+title: Portsmouth Tides
+provider: ukho
+ukho_station: "0390"
+ukho_api_key: "YOUR_UKHO_API_KEY"
+units: metric
+mode: general
+auto_sources: false
+auto_surf_forecast: false
+grid_options:
+  rows: full
+  columns: 18
+```
+
+UKHO tide heights are provided in metres. TideWise displays them as metres with `units: metric`, or converts them to feet with `units: english`.
+
+> **UKHO key note:** This is a frontend dashboard card, so the API key is stored in your dashboard configuration and is visible to browsers/users who can inspect that dashboard. Use your own UKHO key and follow UKHO's API terms.
+
 ## Dashboard Size
 
 TideWise is a dense chart card. In Home Assistant section/grid dashboards, give it enough horizontal space:
@@ -262,6 +287,7 @@ TideWise includes a Home Assistant visual editor. When adding the card from the 
 - Choose 50 common NOAA tide stations from a dropdown
 - Enter a custom NOAA station ID
 - Switch to Canada CHS / DFO and choose a region-fed station dropdown
+- Switch to UK UKHO Admiralty, choose a UKHO station, and enter your own UKHO API key
 - Set fishing/forecast latitude and longitude
 - Fill coordinates from the selected NOAA station
 - Use your Home Assistant home latitude/longitude when that matches your fishing area
@@ -343,17 +369,19 @@ The debug panel is collapsed by default and scrolls internally when expanded. It
 | --- | --- | --- | --- |
 | `type` | Yes |  | Use `custom:tidewise-card`. The legacy `custom:cherry-grove-tides-card` alias also works. |
 | `title` | No | `TideWise` | Card title. |
-| `provider` | No | `noaa_coops` | Tide data provider. Use `noaa_coops` for US NOAA CO-OPS or `chs_iwls` for early Canada CHS/DFO support. |
+| `provider` | No | `noaa_coops` | Tide data provider. Use `noaa_coops` for US NOAA CO-OPS, `chs_iwls` for early Canada CHS/DFO support, or `ukho` for experimental UKHO Admiralty support. |
 | `station` | Required for NOAA |  | NOAA tides and currents station ID. |
 | `ca_region` | No | `atlantic` | Canada station picker region: `atlantic`, `great_lakes`, `quebec`, `pacific`, or `arctic`. |
 | `ca_station` | Required for Canada |  | Canadian CHS/DFO IWLS station object ID. Prefer choosing it from the visual editor. |
 | `ca_station_code` | No |  | Optional Canadian CHS display code. |
-| `units` | No | `english` | Display units. Usually `english` or `metric`. Canadian CHS data is metric and is converted to feet when `english` is selected. |
+| `ukho_station` | Required for UKHO | `0390` | UKHO Admiralty tide station ID. Prefer choosing it from the visual editor. |
+| `ukho_api_key` | Required for UKHO |  | User-provided UKHO Admiralty API key. This is stored in dashboard config and visible to browsers that can load the card. |
+| `units` | No | `english` | Display units. Usually `english` or `metric`. Canadian CHS and UKHO data are metric and are converted to feet when `english` is selected. |
 | `mode` | No | `general` | Fishing score mode: `general`, `surf`, `inlet`, `flounder`, `trout_redfish`, or `sheepshead`. |
 | `theme_mode` | No | `tidewise` | Visual style mode. Use `tidewise` for the default ocean-glass look or `auto` to follow Home Assistant theme colors more closely. |
 | `show_fishing_score` | No | `true` | Set to `false` for a tide-only card. |
-| `auto_sources` | No | `true` | Fetch public NOAA/NWS weather and marine observations directly where available. |
-| `auto_surf_forecast` | No | `true` | Try to parse NWS Surf Zone Forecast text for surf height, rip current risk, and water temperature. |
+| `auto_sources` | No | `true` | Fetch public NOAA/NWS weather and marine observations directly where available. US-focused; non-US providers should use Home Assistant entities for fishing context. |
+| `auto_surf_forecast` | No | `true` | Try to parse NWS Surf Zone Forecast text for surf height, rip current risk, and water temperature. US-focused. |
 | `srf_region` | No |  | Optional internal grouping for NWS-listed Surf Zone Forecast offices. Usually set by the visual editor. |
 | `nws_office` | No | Auto from NWS point metadata | Optional NWS office code such as `ILM`, `CHS`, or `SGX` for Surf Zone Forecast products. |
 | `beach_state` | No |  | Optional beach forecast state used by the visual editor. |
@@ -386,6 +414,14 @@ Set **Tide provider** to **Canada CHS / DFO** in the visual editor, choose a Can
 Canada support uses CHS/DFO IWLS water-level predictions where available. Some Great Lakes stations publish water-level forecasts instead, so TideWise falls back from `wlp` predictions to `wlf` forecasts when needed. The Great Lakes picker includes a small official CHS seed list because those stations may not appear in the CHS bulk station API. Selected stations may still need testing because CHS availability can vary by station and forecast window.
 
 NOAA/NWS auto sources are US-focused. For Canadian fishing context, configure Home Assistant entities for weather, wind, pressure, water temperature, surf, rain, or safety/rip-risk data when available.
+
+## Finding a UKHO Station
+
+Set **Tide provider** to **UK UKHO Admiralty** in the visual editor, choose a UKHO station, then enter your own UKHO API key. The key is required because TideWise calls the UKHO API directly from the browser.
+
+UKHO support is experimental. It can render UK tide heights and high/low events where the selected station and API key allow access. Weather, wind, water temperature, surf, rain, pressure, and fishing safety context should come from Home Assistant entities for UK cards.
+
+Because this is a frontend card, the UKHO key is not secret storage. Anyone with access to inspect the dashboard/browser traffic can see it.
 
 ## Beach / Surf Forecast Area
 
@@ -434,7 +470,7 @@ Try:
 
 If HACS still shows an old README, the installed card file may still be current while the HACS display cache is stale.
 
-If HACS shows a short value like `214b6c2` instead of `v0.6.5`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
+If HACS shows a short value like `214b6c2` instead of `v0.7.0`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
 
 ### Card does not show up
 
@@ -556,9 +592,9 @@ Planned areas for future releases:
 
 ### International Provider Notes
 
-TideWise currently uses NOAA CO-OPS as its tide provider. Future non-US support should be added through explicit provider adapters instead of stretching NOAA-specific code paths.
+TideWise uses explicit provider adapters instead of stretching NOAA-specific code paths. NOAA CO-OPS remains the default provider, Canada CHS/DFO is available for early testing, and UKHO Admiralty support is experimental with a user-provided API key.
 
-UK tide support needs its own provider research. The Environment Agency flood-monitoring API can be useful for rivers, flood gauges, and some observed level stations, but it should not be treated as a full tide-prediction source unless it can provide tide predictions, high/low times, chartable interval data, station metadata, usable licensing, and browser-accessible CORS behavior.
+The Environment Agency flood-monitoring API can be useful for rivers, flood gauges, and some observed level stations, but it should not be treated as the main UK tide-prediction source for TideWise.
 
 The National Tidal and Sea Level Facility is a stronger UK research candidate because it documents the UK National Tide Gauge Network and publishes tidal predictions for selected UK and Ireland ports. It still needs licensing, CORS, and data-shape validation before TideWise can depend on it.
 

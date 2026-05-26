@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.7.0
+
+### Added
+
+- Added experimental UK UKHO Admiralty tide provider support.
+- Added UKHO station presets and custom UKHO station ID support.
+- Added a visual editor UKHO API key field shown only when the UK provider is selected.
+- Added README setup notes and YAML example for UKHO cards.
+
+### Changed
+
+- UKHO cards require each user to provide their own UKHO API key.
+- UKHO tide heights are treated as metric source data and converted to feet when English units are selected.
+- NOAA/NWS auto sources remain US-focused; UK fishing context should come from Home Assistant entities.
+
+### Known Issues
+
+- UKHO support is experimental and depends on the user's UKHO API access and browser-side API availability.
+- The UKHO API key is stored in dashboard configuration and is visible to browsers/users that can inspect the card.
+
 ## 0.6.5
 
 ### Changed
