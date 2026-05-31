@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.8.1
+ * TideWise Card v0.8.2
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.8.1";
+const CARD_VERSION = "0.8.2";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const TIDEWISE_PROVIDERS = {
   noaa_coops: { label: "US NOAA CO-OPS", stationLabel: "NOAA" },
@@ -736,7 +736,7 @@ class TideWiseCard extends HTMLElement {
   }
 
   async _fetchNwsForecast() {
-    const { lat, lon } = this._getHomeLatLon();
+    const { lat, lon } = this._getForecastLatLon();
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) return {};
     const headers = { Accept: "application/geo+json" };
     const pointRes = await fetch(`https://api.weather.gov/points/${lat.toFixed(4)},${lon.toFixed(4)}`, { headers });
@@ -1084,22 +1084,29 @@ class TideWiseCard extends HTMLElement {
   _getWeatherState() {
     const states = this._hass?.states || {};
     if (this._config.weather_entity && states[this._config.weather_entity]) return states[this._config.weather_entity];
+    const autoWeather = this._getAutoWeatherState();
+    if (autoWeather) return autoWeather;
     const keys = Object.keys(states).filter((k) => k.startsWith("weather."));
-    if (!keys.length) return this._getAutoWeatherState();
+    if (!keys.length) return null;
     const preferred = keys.find((k) => {
       const fn = String(states[k]?.attributes?.friendly_name || "").toLowerCase();
       return fn.includes("home") || fn.includes("weather");
     });
-    const weather = states[preferred || keys[0]] || null;
-    if (weather) return weather;
-    return this._getAutoWeatherState();
+    return states[preferred || keys[0]] || null;
   }
 
-  _getHomeLatLon() {
-    const home = this._hass?.states?.["zone.home"];
+  _getForecastLatLon() {
+    const configLat = Number(this._config.latitude);
+    const configLon = Number(this._config.longitude);
+    const beach = this._selectedNwsBeachArea();
+    const preset = STATION_PRESETS.find((item) => item.station === String(this._config.station));
+    const fallbackLat = Number(beach?.lat);
+    const fallbackLon = Number(beach?.lon);
+    const stationLat = Number(preset?.lat);
+    const stationLon = Number(preset?.lon);
     return {
-      lat: this._config.latitude || Number(home?.attributes?.latitude) || 33.688,
-      lon: this._config.longitude || Number(home?.attributes?.longitude) || -78.886
+      lat: Number.isFinite(configLat) ? configLat : Number.isFinite(fallbackLat) ? fallbackLat : Number.isFinite(stationLat) ? stationLat : 33.688,
+      lon: Number.isFinite(configLon) ? configLon : Number.isFinite(fallbackLon) ? fallbackLon : Number.isFinite(stationLon) ? stationLon : -78.886
     };
   }
 
@@ -1198,6 +1205,7 @@ class TideWiseCard extends HTMLElement {
     const period = this._autoData?.nws?.period;
     if (!period) return null;
     return {
+      entity_id: "tidewise.nws_hourly",
       state: this._normalizeNwsShortForecast(period.shortForecast),
       attributes: {
         wind_speed: this._parseNwsWindSpeedMph(),
@@ -1551,7 +1559,7 @@ class TideWiseCard extends HTMLElement {
 
   _buildFishingScores(predictions) {
     const weights = this._modeWeights();
-    const { lat, lon } = this._getHomeLatLon();
+    const { lat, lon } = this._getForecastLatLon();
     const weather = this._getWeatherState();
     const windMph = this._getWindSpeedMph(weather);
     const windBearing = this._getWindBearing(weather);
@@ -1801,7 +1809,7 @@ class TideWiseCard extends HTMLElement {
 
   _debugHtml(fish, predictions, cur, rising, unitLabel) {
     const detail = fish?.currentDetail;
-    const { lat, lon } = this._getHomeLatLon();
+    const { lat, lon } = this._getForecastLatLon();
     const weather = this._getWeatherState();
     const windMph = this._getWindSpeedMph(weather);
     const windBearing = this._getWindBearing(weather);
@@ -1954,14 +1962,17 @@ class TideWiseCard extends HTMLElement {
 
   _debugSource(kind) {
     const hasEntity = (id) => Boolean(id && this._getEntity(id));
+    const weatherState = this._getWeatherState();
+    const isNwsWeather = weatherState?.entity_id === "tidewise.nws_hourly";
     if (kind === "weather") {
       if (hasEntity(this._config.weather_entity)) return `entity ${this._config.weather_entity}`;
-      if (this._getWeatherState() && !this._getWeatherState()?.entity_id && this._autoData?.nws?.period) return "NWS hourly";
-      return this._getWeatherState() ? "Home Assistant weather" : "missing";
+      if (isNwsWeather) return "NWS hourly";
+      return weatherState ? "Home Assistant weather fallback" : "missing";
     }
     if (kind === "wind") {
       if (hasEntity(this._config.wind_speed_entity)) return `entity ${this._config.wind_speed_entity}`;
-      if (this._getWeatherState()?.attributes?.wind_speed !== undefined) return "weather entity";
+      if (isNwsWeather && weatherState?.attributes?.wind_speed !== undefined) return "NWS hourly";
+      if (weatherState?.attributes?.wind_speed !== undefined) return "weather entity";
       if (this._autoData?.coops?.wind) return "NOAA CO-OPS";
       if (this._autoData?.nws?.period?.windSpeed) return "NWS hourly";
       return "missing";
@@ -1985,7 +1996,7 @@ class TideWiseCard extends HTMLElement {
     }
     if (kind === "pressure") {
       if (hasEntity(this._config.pressure_entity)) return `entity ${this._config.pressure_entity}`;
-      if (this._getWeatherState()?.attributes?.pressure !== undefined) return "weather entity";
+      if (weatherState?.attributes?.pressure !== undefined) return "weather entity";
       if (this._autoData?.coops?.pressure) return "NOAA CO-OPS";
       return "missing";
     }
@@ -2274,17 +2285,7 @@ class TideWiseCardEditor extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    const home = this._homeLatLon();
-    let shouldRender = !this._rendered;
-    if (this._config && this._config.latitude === undefined && home.lat) {
-      this._config.latitude = home.lat;
-      shouldRender = true;
-    }
-    if (this._config && this._config.longitude === undefined && home.lon) {
-      this._config.longitude = home.lon;
-      shouldRender = true;
-    }
-    if (shouldRender) this._render();
+    if (!this._rendered) this._render();
   }
 
   setConfig(config) {
@@ -2313,17 +2314,23 @@ class TideWiseCardEditor extends HTMLElement {
     };
     this._config.provider = this._normalizeProvider(this._config.provider);
     this._config.theme_mode = this._normalizeThemeMode(this._config.theme_mode);
-    const home = this._homeLatLon();
-    if (this._config.latitude === undefined && home.lat) this._config.latitude = home.lat;
-    if (this._config.longitude === undefined && home.lon) this._config.longitude = home.lon;
+    this._applyDefaultForecastPoint();
     this._render();
   }
 
-  _homeLatLon() {
-    const home = this._hass?.states?.["zone.home"];
-    const lat = Number(home?.attributes?.latitude);
-    const lon = Number(home?.attributes?.longitude);
-    return { lat: Number.isFinite(lat) ? lat : null, lon: Number.isFinite(lon) ? lon : null };
+  _applyDefaultForecastPoint() {
+    if (!this._config) return;
+    const hasLat = Number.isFinite(Number(this._config.latitude));
+    const hasLon = Number.isFinite(Number(this._config.longitude));
+    if (hasLat && hasLon) return;
+    const beach = this._selectedBeachArea();
+    const preset = this._presetForStation(this._config.station);
+    const point = beach || preset;
+    if (!point) return;
+    const lat = Number(point.lat);
+    const lon = Number(point.lon);
+    if (!hasLat && Number.isFinite(lat)) this._config.latitude = lat;
+    if (!hasLon && Number.isFinite(lon)) this._config.longitude = lon;
   }
 
   _beachStates() {
@@ -2472,12 +2479,6 @@ class TideWiseCardEditor extends HTMLElement {
       next.title = `${name.replace(/\s+Tides?$/i, "")} Tides`;
     }
     this._emitConfig(next);
-  }
-
-  _useHomeLocation() {
-    const home = this._homeLatLon();
-    if (!home.lat || !home.lon) return;
-    this._emitConfig({ ...this._config, latitude: home.lat, longitude: home.lon });
   }
 
   async _useNoaaStationLocation() {
@@ -2643,7 +2644,6 @@ class TideWiseCardEditor extends HTMLElement {
     const selectedPreset = this._presetForStation(config.station) ? String(config.station) : "custom";
     const ukhoEntityOptions = this._ukhoEntityOptions();
     const selectedUkhoEntityKnown = ukhoEntityOptions.some((item) => item.entityId === config.ukho_entity);
-    const home = this._homeLatLon();
     const grid = config.grid_options || {};
     const canadaRegion = config.ca_region || "atlantic";
     const canadaStations = this._canadaRegionStations(canadaRegion);
@@ -2767,18 +2767,17 @@ class TideWiseCardEditor extends HTMLElement {
           `}
           <div class="grid">
             <label>
-              Fishing/forecast latitude
+              Fishing / beach latitude
               <input id="latitude" type="number" step="0.000001" value="${config.latitude ?? ""}" placeholder="33.688">
             </label>
             <label>
-              Fishing/forecast longitude
+              Fishing / beach longitude
               <input id="longitude" type="number" step="0.000001" value="${config.longitude ?? ""}" placeholder="-78.886">
             </label>
           </div>
           <div class="row">
             ${provider === "noaa_coops" ? `<button id="stationLocation" type="button">Use NOAA station location</button>` : ""}
-            <button id="homeLocation" type="button" ${home.lat && home.lon ? "" : "disabled"}>Use HA home location</button>
-            <span class="hint">For best fishing scores, use coordinates near the tide gauge, beach, inlet, or fishing area. ${home.lat && home.lon ? `HA home: ${home.lat.toFixed(4)}, ${home.lon.toFixed(4)}` : "HA home location is not available in zone.home."}</span>
+            <span class="hint">For best fishing scores, use the beach, pier, inlet, or fishing spot you actually care about. Pick a beach/surf area to fill nearby context automatically, or use the tide station location for station-based context.</span>
           </div>
           ${provider === "noaa_coops" ? `
           <div class="title">Beach / Surf Forecast</div>
@@ -2922,7 +2921,6 @@ class TideWiseCardEditor extends HTMLElement {
     this.shadowRoot.getElementById("latitude")?.addEventListener("change", (event) => this._setNumber("latitude", event.target.value));
     this.shadowRoot.getElementById("longitude")?.addEventListener("change", (event) => this._setNumber("longitude", event.target.value));
     this.shadowRoot.getElementById("stationLocation")?.addEventListener("click", () => this._useNoaaStationLocation());
-    this.shadowRoot.getElementById("homeLocation")?.addEventListener("click", () => this._useHomeLocation());
     this.shadowRoot.getElementById("beachState")?.addEventListener("change", (event) => {
       const state = event.target.value;
       const first = this._forecastAreasForState(state)[0];

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.8.2
+
+### Changed
+
+- TideWise now prefers the configured fishing/beach point's NWS hourly forecast before falling back to a generic Home Assistant weather entity.
+- Removed the visual editor's normal "Use HA home location" setup path so users are guided toward the tide station, beach area, or actual fishing spot instead.
+- Renamed the visual editor coordinate fields to "Fishing / beach latitude" and "Fishing / beach longitude".
+- Clarified that recent rainfall should come from a sensor near the fishing/beach area, not an inland home rain sensor unless that truly represents the spot.
+
+### Fixed
+
+- Debug source labels now identify NWS hourly weather/wind more clearly when TideWise is using the configured fishing/beach point.
+
 ## 0.8.1
 
 ### Fixed

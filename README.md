@@ -9,7 +9,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/TheWillMiller/tide-wise?label=stars)](https://github.com/TheWillMiller/tide-wise/stargazers)
 
 
-**Latest release:** `v0.8.1`
+**Latest release:** `v0.8.2`
 
 TideWise is a Home Assistant dashboard (Lovelace) custom card for tide predictions, current tide height, next high/low tides, and optional fishing bite-window scoring. The default provider is NOAA CO-OPS, with early Canada CHS/DFO support and UK support through the UKHO Tides Home Assistant integration.
 
@@ -75,7 +75,7 @@ The visual editor is the recommended setup path. Start with **Tide provider**, t
 | **Tide provider** | Chooses the tide data source. | Use **US NOAA CO-OPS** for NOAA stations, **Canada CHS / DFO** for Canadian CHS/IWLS stations, or **UK UKHO Tides integration sensor** for a sensor created by the separate UKHO Tides Home Assistant integration. |
 | **Station / sensor picker** | Chooses the source used for the tide curve, current height, and next high/low tides. | This is the most important field. It is separate from weather, surf, or fishing coordinates. |
 | **Manual station/entity field** | Fallback when the dropdown does not show what you need. | NOAA uses a station ID, Canada uses a CHS station object ID/code, and UK uses a Home Assistant entity ID such as `sensor.london_bridge_tower_pier_tide`. |
-| **Fishing/forecast latitude and longitude** | Used for weather lookup, moon/solunar timing, and fishing-score context. | These coordinates do not have to be the tide gauge. For best fishing scores, use the beach, inlet, pier, or fishing area you actually care about. |
+| **Fishing / beach latitude and longitude** | Used for NWS weather lookup, moon/solunar timing, and fishing-score context. | These coordinates do not have to be the tide gauge. For best fishing scores, use the beach, inlet, pier, or fishing area you actually care about. |
 | **Beach / Surf Forecast** | Scopes US NWS surf/rip-current data. | This does not change the tide station. Pick a **State**, then a nearby **Coastal county / beach area**. |
 | **Card settings** | Title, units, fishing mode, theme, and optional data toggles. | These change display and scoring behavior, not the tide source itself. |
 | **Dashboard Size** | Home Assistant grid sizing. | Recommended: `rows: full`, `columns: 18`. Use `columns: full` on narrower dashboards. |
@@ -88,7 +88,7 @@ The visual editor is the recommended setup path. Start with **Tide provider**, t
 | **Canada CHS / DFO** | Canadian CHS/IWLS water-level stations, including early Great Lakes support. | Canadian region plus CHS station from the editor. | No TideWise API key needed. |
 | **UK UKHO Tides integration sensor** | UK tides through the separate UKHO Tides Home Assistant integration. | A Home Assistant sensor created by the UKHO Tides integration. | Add the UKHO API key to the UKHO Tides integration, not TideWise. |
 
-Common setup rule: **the station/sensor controls the tide chart; the forecast coordinates and beach/surf area control fishing context.**
+Common setup rule: **the station/sensor controls the tide chart; the forecast coordinates and beach/surf area control fishing context.** TideWise does not assume your Home Assistant home is the fishing spot.
 
 ## Features
 
@@ -172,7 +172,7 @@ type: module
 For quick testing before installing locally, you can add this dashboard resource:
 
 ```yaml
-url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.8.1/tidewise-card.js
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.8.2/tidewise-card.js
 type: module
 ```
 
@@ -215,14 +215,12 @@ units: english
 mode: inlet
 auto_sources: true
 auto_surf_forecast: true
-weather_entity: weather.nws_33_8552645_78_6761264_kmyr
 water_temp_entity: sensor.noaa_surf_water_temperature
 wave_height_entity: sensor.noaa_surf_surf_height
 rip_current_risk_entity: sensor.noaa_surf_rip_current_risk
 wind_speed_entity: sensor.noaa_weather_wind_speed
 wind_direction_entity: sensor.noaa_weather_wind_direction
 pressure_entity: sensor.noaa_weather_barometric_pressure
-rain_today_entity: sensor.rain_sensor_rain_last_24h
 grid_options:
   rows: full
   columns: 18
@@ -326,9 +324,8 @@ TideWise includes a Home Assistant visual editor. When adding the card from the 
 - Enter a custom NOAA station ID
 - Switch to Canada CHS / DFO and choose a region-fed station dropdown
 - Switch to UK UKHO Tides integration sensor and choose a UKHO Tides sensor entity
-- Set fishing/forecast latitude and longitude
+- Set fishing / beach latitude and longitude
 - Fill coordinates from the selected NOAA station
-- Use your Home Assistant home latitude/longitude when that matches your fishing area
 - Pick a US beach/surf forecast state and area for NWS rip-current and surf context
 - Select English or metric units
 - Select fishing mode
@@ -340,7 +337,7 @@ TideWise includes a Home Assistant visual editor. When adding the card from the 
 
 The station dropdown is a 50-station starter list, not a complete NOAA station database. If your station is not listed, choose **Custom station ID** and paste the NOAA CO-OPS station ID.
 
-Latitude and longitude are used for fishing-score context such as NWS forecast lookup, surf/rip forecast lookup, and moon/solunar timing. For best results, use coordinates near the tide gauge, beach, inlet, or fishing area.
+Latitude and longitude are used for fishing-score context such as NWS forecast lookup, surf/rip forecast lookup, and moon/solunar timing. For best results, use coordinates near the beach, pier, inlet, or fishing area you actually care about.
 
 The **Beach / Surf Forecast** controls US NWS surf/rip-current parsing only. It does not change the tide station. A Myrtle Beach tide station can still use a Grand Strand beach area, and a different NOAA tide station can use whatever nearby beach area best matches the place being fished.
 
@@ -349,10 +346,10 @@ The **Beach / Surf Forecast** controls US NWS surf/rip-current parsing only. It 
 For NOAA/US cards, TideWise can fetch extra public NOAA/NWS data directly from the browser when `auto_sources` is enabled:
 
 - NOAA CO-OPS water temperature, wind, and air pressure where the selected station supports those products
-- NWS hourly forecast weather and wind from latitude/longitude
+- NWS hourly forecast weather and wind from the configured fishing / beach latitude and longitude
 - NWS Surf Zone Forecast text for surf height, rip current risk, and water temperature where the local forecast office issues an SRF product
 
-Manual Home Assistant entities take priority. If a manual entity is configured, TideWise uses it instead of the auto-fetched value.
+Manual Home Assistant entities take priority. If a manual entity is configured, TideWise uses it instead of the auto-fetched value. For example, an explicit `weather_entity` overrides TideWise's NWS point forecast.
 
 Surf Zone Forecasts are text products and vary by NWS office. TideWise parses common formats such as:
 
@@ -362,7 +359,7 @@ Surf Zone Forecasts are text products and vary by NWS office. TideWise parses co
 
 Some locations may still show unknown surf or rip data. Manual entities or dedicated integrations remain the most reliable override.
 
-Recent rainfall totals are not yet reliably auto-filled. They work best through a local rain sensor or Home Assistant weather integration.
+Recent rainfall totals are not yet reliably auto-filled. If you configure `rain_today_entity`, use a sensor that represents the beach/fishing area or nearby runoff conditions. A home rain sensor can be misleading when your house is inland or far from the water.
 
 ## Fishing Score
 
@@ -427,9 +424,9 @@ The debug panel is collapsed by default and scrolls internally when expanded. It
 | `beach_state` | No |  | Optional beach forecast state used by the visual editor. |
 | `beach_area` | No |  | Optional NWS beach/surf area preset used for rip risk and surf context. |
 | `surf_zone` | No | Auto from NWS point metadata | Optional NWS surf/beach forecast zone such as `SCZ054`; overrides coordinate-derived zone for SRF parsing. |
-| `latitude` | No | Home Assistant home latitude, then Cherry Grove fallback | Fishing/forecast latitude for NWS lookup and moon/solunar scoring. |
-| `longitude` | No | Home Assistant home longitude, then Cherry Grove fallback | Fishing/forecast longitude for NWS lookup and moon/solunar scoring. |
-| `weather_entity` | No | First available weather entity | Weather condition source. |
+| `latitude` | No | Beach/surf area or station preset, then Cherry Grove fallback | Fishing / beach latitude for NWS lookup and moon/solunar scoring. |
+| `longitude` | No | Beach/surf area or station preset, then Cherry Grove fallback | Fishing / beach longitude for NWS lookup and moon/solunar scoring. |
+| `weather_entity` | No | NWS point forecast, then Home Assistant weather fallback | Optional weather condition override. Leave blank to use the configured fishing / beach point when available. |
 | `water_temp_entity` | No |  | Water temperature sensor. Fahrenheit and Celsius are supported. |
 | `wave_height_entity` | No |  | Wave/surf height sensor. Feet and meters are supported. |
 | `rip_current_risk_entity` | No |  | Rip current risk sensor. |
@@ -438,7 +435,7 @@ The debug panel is collapsed by default and scrolls internally when expanded. It
 | `wind_direction_entity` | No | Weather attribute fallback | Wind bearing in degrees. |
 | `pressure_entity` | No | Weather attribute fallback | Barometric pressure. hPa and inHg are supported. |
 | `pressure_trend_entity` | No |  | Pressure trend entity. |
-| `rain_today_entity` | No |  | Rainfall in the last 24 hours. Inches and mm are supported. |
+| `rain_today_entity` | No |  | Optional rainfall override for the fishing / beach area. Inches and mm are supported; avoid using an inland home rain sensor unless it represents the spot being fished. |
 | `debug` | No | disabled | Hidden troubleshooting object. Use `debug: { enabled: true, panel: true }` only when diagnosing score/data issues. Not available in the visual editor. |
 
 ## Finding a NOAA Station
@@ -528,7 +525,7 @@ Try:
 
 If HACS still shows an old README, the installed card file may still be current while the HACS display cache is stale.
 
-If HACS shows a short value like `214b6c2` instead of `v0.8.1`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
+If HACS shows a short value like `214b6c2` instead of `v0.8.2`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
 
 ### Card does not show up
 

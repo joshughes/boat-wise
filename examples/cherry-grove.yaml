@@ -2,7 +2,6 @@ type: custom:tidewise-card
 title: Cherry Grove Tides
 station: "8661070"
 units: english
-weather_entity: weather.nws_33_8552645_78_6761264_kmyr
 auto_sources: true
 auto_surf_forecast: true
 water_temp_entity: sensor.noaa_surf_water_temperature
@@ -11,7 +10,6 @@ rip_current_risk_entity: sensor.noaa_surf_rip_current_risk
 wind_speed_entity: sensor.noaa_weather_wind_speed
 wind_direction_entity: sensor.noaa_weather_wind_direction
 pressure_entity: sensor.noaa_weather_barometric_pressure
-rain_today_entity: sensor.rain_sensor_rain_last_24h
 mode: inlet
 grid_options:
   rows: full
