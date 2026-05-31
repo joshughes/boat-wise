@@ -39,6 +39,18 @@ It combines tide data with local Home Assistant entities such as weather, wind, 
 
 > **Beta notice:** TideWise is still early beta software. Please expect occasional layout issues, missing-data fallbacks, and station-specific quirks while testing.
 
+## Important For UK Users
+
+UK tide support requires a separate Home Assistant integration first. TideWise is a dashboard card, so it cannot reliably call the UKHO Admiralty API directly from the browser because UKHO/Azure may block browser-side requests.
+
+For UK tides, install and configure the [UKHO Tides Home Assistant integration](https://github.com/ianByrne/HASS-ukho_tides), add your UKHO API key and station there, then select the created UKHO Tides sensor in TideWise.
+
+In short:
+
+- NOAA/US: TideWise can fetch NOAA tide data directly.
+- Canada: TideWise can fetch CHS/DFO water-level data directly where available.
+- UK: TideWise needs the UKHO Tides Home Assistant integration sensor.
+
 ## Beta Feedback
 
 TideWise is in beta. If it works for your setup, please consider starring the repo so I can gauge interest and so you can follow development:
@@ -225,7 +237,7 @@ Canadian tide predictions can render the tide chart and high/low times. NOAA/NWS
 
 ## UK UKHO Example
 
-Recommended UK support uses the [UKHO Tides Home Assistant integration](https://github.com/ianByrne/HASS-ukho_tides). Configure your UKHO Admiralty API key and station in that integration first, then point TideWise at the created sensor.
+Recommended UK support uses the [UKHO Tides Home Assistant integration](https://github.com/ianByrne/HASS-ukho_tides). TideWise alone does not fetch UKHO tides reliably from the browser. Configure your UKHO Admiralty API key and station in that Home Assistant integration first, then point TideWise at the created sensor.
 
 ```yaml
 type: custom:tidewise-card
@@ -417,12 +429,14 @@ NOAA/NWS auto sources are US-focused. For Canadian fishing context, configure Ho
 
 ## Finding a UKHO Station
 
-Recommended UK setup:
+Required UK setup:
 
 1. Install and configure the [UKHO Tides Home Assistant integration](https://github.com/ianByrne/HASS-ukho_tides).
 2. Add your UKHO Admiralty API key and station in that integration.
 3. In TideWise, set **Tide provider** to **UK UKHO Tides integration**.
 4. Choose the UKHO Tides sensor from the visual editor.
+
+If no UKHO Tides sensor appears in TideWise, the UKHO Tides integration is not installed, not configured, or has not created a sensor yet. TideWise cannot create the UKHO sensor by itself.
 
 TideWise reads the integration sensor's high/low prediction attribute and builds a smooth chart curve from those events. Weather, wind, water temperature, surf, rain, pressure, and fishing safety context should come from Home Assistant entities for UK cards.
 

@@ -578,7 +578,7 @@ class TideWiseCard extends HTMLElement {
   _fetchUkEntityData() {
     const entityId = String(this._config.ukho_entity || "").trim();
     if (!entityId) {
-      this._renderError("Choose a UKHO Tides sensor entity from the visual editor or YAML.");
+      this._renderError("Choose a UKHO Tides sensor entity. UK cards require the separate UKHO Tides Home Assistant integration to be installed and configured first.");
       return;
     }
     const entity = this._getEntity(entityId);
@@ -593,7 +593,7 @@ class TideWiseCard extends HTMLElement {
 
     const hilo = this._buildUkhoEntityHilo(entity);
     if (hilo.length < 2) {
-      this._renderError("UKHO Tides entity does not expose enough high/low prediction data.");
+      this._renderError("UKHO Tides entity does not expose enough high/low prediction data. Check the UKHO Tides Home Assistant integration sensor.");
       return;
     }
     const predictions = this._buildPredictionsFromHilo(hilo);
@@ -2820,7 +2820,7 @@ class TideWiseCardEditor extends HTMLElement {
               <select id="provider">
                 <option value="noaa_coops" ${provider === "noaa_coops" ? "selected" : ""}>US NOAA CO-OPS</option>
                 <option value="chs_iwls" ${provider === "chs_iwls" ? "selected" : ""}>Canada CHS / DFO</option>
-                <option value="ukho_entity" ${provider === "ukho_entity" ? "selected" : ""}>UK UKHO Tides integration</option>
+                <option value="ukho_entity" ${provider === "ukho_entity" ? "selected" : ""}>UK UKHO Tides integration sensor</option>
                 <option value="ukho" ${provider === "ukho" ? "selected" : ""}>UKHO direct API (experimental)</option>
               </select>
             </label>
@@ -2866,7 +2866,8 @@ class TideWiseCardEditor extends HTMLElement {
               <input id="ukhoEntityManual" value="${this._escape(config.ukho_entity || "")}" placeholder="sensor.portsmouth_tide">
             </label>
           </div>
-          <div class="hint">Recommended UK setup: install and configure the UKHO Tides Home Assistant integration, then choose its sensor here. The UKHO API key stays in Home Assistant instead of being fetched directly by the browser.</div>
+          ${ukhoEntityOptions.length ? "" : `<div class="hint"><strong>No UKHO Tides sensors found yet.</strong> Install and configure the UKHO Tides Home Assistant integration first, then reopen this editor or enter the sensor entity ID manually.</div>`}
+          <div class="hint"><strong>Required for UK:</strong> TideWise reads a sensor from the separate UKHO Tides Home Assistant integration. Add your UKHO API key and station in that integration first, then choose the created sensor here. The API key stays in Home Assistant instead of browser/dashboard YAML.</div>
           ` : provider === "ukho" ? `
           <div class="grid">
             <label>
