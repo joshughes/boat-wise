@@ -1,6 +1,6 @@
 {
   "name": "tidewise-card",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "Tide predictions with optional bite-window fishing quality scoring for Home Assistant.",
   "type": "module",
   "files": [

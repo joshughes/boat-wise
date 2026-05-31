@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.9.1
+ * TideWise Card v0.9.2
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.9.1";
+const CARD_VERSION = "0.9.2";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const TIDEWISE_PROVIDERS = {
   noaa_coops: { label: "US NOAA CO-OPS", stationLabel: "NOAA" },
@@ -339,6 +339,7 @@ class TideWiseCard extends HTMLElement {
       station: "8661070",
       ukho_entity: "",
       units: "english",
+      wind_units: "auto",
       mode: "general",
       theme_mode: "tidewise",
       show_fishing_score: true,
@@ -378,6 +379,7 @@ class TideWiseCard extends HTMLElement {
       ca_series_code: String(config.ca_series_code || ""),
       ukho_entity: String(config.ukho_entity || ""),
       units: config.units || "english",
+      wind_units: this._normalizeWindUnits(config.wind_units),
       weather_entity: config.weather_entity || "",
       water_temp_entity: config.water_temp_entity || "",
       wave_height_entity: config.wave_height_entity || "",
@@ -418,6 +420,11 @@ class TideWiseCard extends HTMLElement {
 
   _normalizeThemeMode(value) {
     return value === "auto" ? "auto" : "tidewise";
+  }
+
+  _normalizeWindUnits(value) {
+    const unit = String(value || "auto").toLowerCase();
+    return ["auto", "mph", "kmh", "knots", "beaufort"].includes(unit) ? unit : "auto";
   }
 
   _normalizeDebugConfig(value) {
@@ -506,7 +513,7 @@ class TideWiseCard extends HTMLElement {
       this._renderError("UKHO Tides entity has events, but TideWise could not build a usable tide curve.");
       return;
     }
-    this._data = { predictions, hilo, intervalFallback: true, provider: "ukho_entity" };
+    this._data = { predictions, hilo, intervalFallback: true, provider: "ukho_entity", timeZone: "Europe/London" };
     this._autoData = {};
     this._renderData();
   }
@@ -521,7 +528,7 @@ class TideWiseCard extends HTMLElement {
         const heightRaw = Array.isArray(row)
           ? row[1]
           : row?.Height ?? row?.height ?? row?.value;
-        const time = new Date(timeRaw);
+        const time = this._parseUkhoEntityTime(timeRaw);
         const metres = this._parseUkhoEntityHeightMetres(heightRaw);
         const value = this._config.units === "metric" ? metres : metres * 3.28084;
         return { time, value };
@@ -550,6 +557,53 @@ class TideWiseCard extends HTMLElement {
   _parseUkhoEntityHeightMetres(value) {
     const parsed = this._parseNumericState(value);
     return Number.isFinite(parsed) ? parsed : NaN;
+  }
+
+  _parseUkhoEntityTime(value) {
+    if (value instanceof Date) return this._dateInTimeZone(value, "Europe/London");
+    const raw = String(value || "").trim();
+    if (!raw) return new Date(NaN);
+    const ukDate = raw.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (ukDate) {
+      const [, day, month, year, hour, minute, second] = ukDate;
+      return this._dateInTimeZone(new Date(Date.UTC(
+        Number(year),
+        Number(month) - 1,
+        Number(day),
+        Number(hour),
+        Number(minute),
+        Number(second || 0)
+      )), "Europe/London");
+    }
+    const hasZone = /(?:z|[+-]\d{2}:?\d{2})$/i.test(raw);
+    const isoLike = raw.includes("T") ? raw : raw.replace(" ", "T");
+    const instant = new Date(hasZone ? isoLike : `${isoLike}Z`);
+    if (!Number.isFinite(instant.getTime())) return new Date(raw);
+    return this._dateInTimeZone(instant, "Europe/London");
+  }
+
+  _dateInTimeZone(date, timeZone) {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    }).formatToParts(date).reduce((acc, part) => {
+      if (part.type !== "literal") acc[part.type] = part.value;
+      return acc;
+    }, {});
+    return new Date(
+      Number(parts.year),
+      Number(parts.month) - 1,
+      Number(parts.day),
+      Number(parts.hour),
+      Number(parts.minute),
+      Number(parts.second || 0)
+    );
   }
 
   async _fetchCanadaData() {
@@ -1142,9 +1196,26 @@ class TideWiseCard extends HTMLElement {
 
   _formatWind(speedMph, bearing) {
     if (!Number.isFinite(speedMph)) return "";
-    const speed = this._config.units === "metric" ? `${Math.round(speedMph * 1.60934)} km/h` : `${Math.round(speedMph)} mph`;
+    const windUnits = this._normalizeWindUnits(this._config.wind_units);
+    let speed;
+    if (windUnits === "kmh" || (windUnits === "auto" && this._config.units === "metric")) {
+      speed = `${Math.round(speedMph * 1.60934)} km/h`;
+    } else if (windUnits === "knots") {
+      speed = `${Math.round(speedMph / 1.15078)} kt`;
+    } else if (windUnits === "beaufort") {
+      speed = `Bft ${this._beaufortFromMph(speedMph)}`;
+    } else {
+      speed = `${Math.round(speedMph)} mph`;
+    }
     const direction = this._formatWindDirection(bearing);
     return `Wind ${speed}${direction ? " " + direction : ""}`;
+  }
+
+  _beaufortFromMph(speedMph) {
+    const mph = Math.max(0, Number(speedMph) || 0);
+    const upperBounds = [1, 4, 8, 13, 19, 25, 32, 39, 47, 55, 64, 73];
+    const index = upperBounds.findIndex((limit) => mph < limit);
+    return index === -1 ? 12 : index;
   }
 
   _formatWindDirection(bearing) {
@@ -1893,6 +1964,7 @@ class TideWiseCard extends HTMLElement {
               ["provider", this._config.provider],
               ["station", this._debugStationLabel()],
               ["CHS series", this._config.provider === "chs_iwls" ? (this._data?.caSeriesCode || this._config.ca_series_code || "auto") : "n/a"],
+              ["time zone", this._data?.timeZone || "browser/local"],
               ["coords", `${lat.toFixed(4)}, ${lon.toFixed(4)}`],
               ["predictions", `${predictions?.length || 0}${this._data?.intervalFallback ? " hilo fallback" : " interval"}`],
               ["auto updated", auto.updated || "not fetched"],
@@ -2309,6 +2381,7 @@ class TideWiseCardEditor extends HTMLElement {
       surf_zone: "",
       nws_office: "",
       units: "english",
+      wind_units: "auto",
       mode: "general",
       theme_mode: "tidewise",
       show_fishing_score: true,
@@ -2319,6 +2392,7 @@ class TideWiseCardEditor extends HTMLElement {
     };
     this._config.provider = this._normalizeProvider(this._config.provider);
     this._config.theme_mode = this._normalizeThemeMode(this._config.theme_mode);
+    this._config.wind_units = this._normalizeWindUnits(this._config.wind_units);
     this._applyDefaultForecastPoint();
     this._syncMapCenterToConfig(this._config);
     this._render();
@@ -2535,6 +2609,11 @@ class TideWiseCardEditor extends HTMLElement {
 
   _normalizeThemeMode(value) {
     return value === "auto" ? "auto" : "tidewise";
+  }
+
+  _normalizeWindUnits(value) {
+    const unit = String(value || "auto").toLowerCase();
+    return ["auto", "mph", "kmh", "knots", "beaufort"].includes(unit) ? unit : "auto";
   }
 
   _normalizeProvider(value) {
@@ -3181,6 +3260,16 @@ class TideWiseCardEditor extends HTMLElement {
               </select>
             </label>
             <label>
+              Wind units
+              <select id="windUnits">
+                <option value="auto" ${this._normalizeWindUnits(config.wind_units) === "auto" ? "selected" : ""}>Auto</option>
+                <option value="mph" ${this._normalizeWindUnits(config.wind_units) === "mph" ? "selected" : ""}>MPH</option>
+                <option value="kmh" ${this._normalizeWindUnits(config.wind_units) === "kmh" ? "selected" : ""}>km/h</option>
+                <option value="knots" ${this._normalizeWindUnits(config.wind_units) === "knots" ? "selected" : ""}>Knots</option>
+                <option value="beaufort" ${this._normalizeWindUnits(config.wind_units) === "beaufort" ? "selected" : ""}>Beaufort</option>
+              </select>
+            </label>
+            <label>
               Fishing mode
               <select id="mode">
                 ${["general", "surf", "inlet", "flounder", "trout_redfish", "sheepshead"].map((mode) => `<option value="${mode}" ${config.mode === mode ? "selected" : ""}>${mode.replace("_", " / ")}</option>`).join("")}
@@ -3317,6 +3406,7 @@ class TideWiseCardEditor extends HTMLElement {
     });
     this.shadowRoot.getElementById("title")?.addEventListener("change", (event) => this._setValue("title", event.target.value || "TideWise"));
     this.shadowRoot.getElementById("units")?.addEventListener("change", (event) => this._setValue("units", event.target.value));
+    this.shadowRoot.getElementById("windUnits")?.addEventListener("change", (event) => this._setValue("wind_units", this._normalizeWindUnits(event.target.value)));
     this.shadowRoot.getElementById("mode")?.addEventListener("change", (event) => this._setValue("mode", event.target.value));
     this.shadowRoot.getElementById("themeMode")?.addEventListener("change", (event) => this._setValue("theme_mode", this._normalizeThemeMode(event.target.value)));
     this.shadowRoot.getElementById("showFishing")?.addEventListener("change", (event) => this._setValue("show_fishing_score", event.target.checked));

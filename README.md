@@ -9,7 +9,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/TheWillMiller/tide-wise?label=stars)](https://github.com/TheWillMiller/tide-wise/stargazers)
 
 
-**Latest release:** `v0.9.1`
+**Latest release:** `v0.9.2`
 
 TideWise is a Home Assistant dashboard (Lovelace) custom card for tide predictions, current tide height, next high/low tides, and optional fishing bite-window scoring. The default provider is NOAA CO-OPS, with early Canada CHS/DFO support and UK support through the UKHO Tides Home Assistant integration.
 
@@ -53,6 +53,8 @@ In short:
 
 The UK option in TideWise is intentionally named **UK UKHO Tides integration sensor** because TideWise reads an existing Home Assistant sensor. It does not ask for, store, or call a UKHO API key directly.
 
+UKHO integration event times are displayed in UK local time (`Europe/London`), including British Summer Time. If a UK card is still exactly one hour off, check the UKHO Tides integration sensor attributes and your Home Assistant/browser timezone.
+
 ## Beta Feedback
 
 TideWise is in beta. If it works for your setup, please consider starring the repo so I can gauge interest and so you can follow development:
@@ -79,6 +81,7 @@ The visual editor is the recommended setup path. Start with **Tide provider**, t
 | **Fishing point picker** | OpenStreetMap picker for the fishing/beach point. | Drag to pan, zoom in/out, click or tap to set the point, or paste exact coordinates from Maps when precision matters. Map tiles load only while the visual editor is open. |
 | **Beach / Surf Forecast** | Scopes US NWS surf/rip-current data. | This does not change the tide station. Pick a **State**, then a nearby **Coastal county / beach area**. |
 | **Card settings** | Title, units, fishing mode, theme, and optional data toggles. | These change display and scoring behavior, not the tide source itself. |
+| **Wind units** | Controls only the displayed wind speed unit. | Use this when tide height should be metric but wind should remain MPH or Beaufort. |
 | **Dashboard Size** | Home Assistant grid sizing. | Recommended: `rows: full`, `columns: 18`. Use `columns: full` on narrower dashboards. |
 
 ### Provider Setup At A Glance
@@ -98,7 +101,7 @@ Common setup rule: **the station/sensor controls the tide chart; the forecast co
 - UK tide support through a UKHO Tides Home Assistant sensor
 - Current interpolated tide height
 - Water temperature display when available
-- Wind display when available
+- Wind display when available, with optional MPH, km/h, knots, or Beaufort display
 - Next high and low tide
 - 24-hour tide chart
 - High/low fallback for NOAA stations without full interval predictions
@@ -174,7 +177,7 @@ type: module
 For quick testing before installing locally, you can add this dashboard resource:
 
 ```yaml
-url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.9.1/tidewise-card.js
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.9.2/tidewise-card.js
 type: module
 ```
 
@@ -272,6 +275,7 @@ title: Portsmouth Tides
 provider: ukho_entity
 ukho_entity: sensor.portsmouth_tide
 units: metric
+wind_units: mph
 mode: general
 auto_sources: false
 auto_surf_forecast: false
@@ -283,6 +287,15 @@ grid_options:
 UKHO tide heights are provided in metres. TideWise displays them as metres with `units: metric`, or converts them to feet with `units: english`. When the UKHO Tides integration exposes high/low events, TideWise builds a smooth tide curve between those events.
 
 > **UKHO key note:** TideWise does not store or use a UKHO API key. Put the key and station in the UKHO Tides Home Assistant integration, then select that integration's sensor in TideWise.
+
+> **UK time note:** TideWise displays UKHO integration-sensor tide events in UK local time (`Europe/London`), including British Summer Time.
+
+For UK cards that use metric tide heights but prefer MPH wind, add:
+
+```yaml
+units: metric
+wind_units: mph
+```
 
 ## Dashboard Size
 
@@ -330,6 +343,7 @@ TideWise includes a Home Assistant visual editor. When adding the card from the 
 - Fill coordinates from the selected NOAA station
 - Pick a US beach/surf forecast state and area for NWS rip-current and surf context
 - Select English or metric units
+- Select wind units separately from tide height units
 - Select fishing mode
 - Choose TideWise styling or Home Assistant theme colors
 - Enable or disable fishing score
@@ -425,6 +439,7 @@ The debug panel is collapsed by default and scrolls internally when expanded. It
 | `ca_station_code` | No |  | Optional Canadian CHS display code. |
 | `ukho_entity` | Required for `ukho_entity` |  | Home Assistant sensor from the UKHO Tides integration. The sensor must expose a `predictions` attribute. |
 | `units` | No | `english` | Display units. Usually `english` or `metric`. Canadian CHS and UKHO data are metric and are converted to feet when `english` is selected. |
+| `wind_units` | No | `auto` | Wind display units. Use `auto`, `mph`, `kmh`, `knots`, or `beaufort`. `auto` follows the tide unit choice, so metric cards show km/h unless overridden. |
 | `mode` | No | `general` | Fishing score mode: `general`, `surf`, `inlet`, `flounder`, `trout_redfish`, or `sheepshead`. |
 | `theme_mode` | No | `tidewise` | Visual style mode. Use `tidewise` for the default ocean-glass look or `auto` to follow Home Assistant theme colors more closely. |
 | `show_fishing_score` | No | `true` | Set to `false` for a tide-only card. |
@@ -477,6 +492,8 @@ If no UKHO Tides sensor appears in TideWise, the UKHO Tides integration is not i
 
 TideWise reads the integration sensor's high/low prediction attribute and builds a smooth chart curve from those events. Weather, wind, water temperature, surf, rain, pressure, and fishing safety context should come from Home Assistant entities for UK cards.
 
+TideWise displays UKHO integration-sensor event times in UK local time (`Europe/London`). This handles British Summer Time when the integration exposes GMT/UTC prediction times.
+
 TideWise does not support direct browser calls to the UKHO API. That keeps UKHO API keys out of dashboard YAML/browser config and avoids UKHO/Azure browser CORS limitations.
 
 UK troubleshooting quick checks:
@@ -486,6 +503,7 @@ UK troubleshooting quick checks:
 - The TideWise YAML should point to the created sensor, for example `ukho_entity: sensor.london_bridge_tower_pier_tide`.
 - If TideWise says the entity is missing, verify the exact entity ID under **Settings -> Devices & services -> Entities**.
 - If the sensor exists but TideWise has no tide curve, check whether the sensor exposes a `predictions` attribute from the UKHO Tides integration.
+- If UK times are exactly one hour off, check whether the UKHO Tides integration sensor is exposing local-time events instead of GMT/UTC events and include the sensor attributes in a bug report.
 
 ## Beach / Surf Forecast Area
 
@@ -536,7 +554,7 @@ Try:
 
 If HACS still shows an old README, the installed card file may still be current while the HACS display cache is stale.
 
-If HACS shows a short value like `214b6c2` instead of `v0.9.1`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
+If HACS shows a short value like `214b6c2` instead of `v0.9.2`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
 
 ### Card does not show up
 

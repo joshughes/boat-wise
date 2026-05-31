@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.9.2
+
+### Added
+
+- Added a `wind_units` option and visual editor selector so wind can be shown as auto, MPH, km/h, knots, or Beaufort independently from tide height units.
+
+### Fixed
+
+- Fixed UKHO Tides integration sensor event times so TideWise displays UK tide events in UK local time, including British Summer Time.
+
+### Changed
+
+- Clarified UK setup docs for UKHO integration sensors, time handling, and mixed tide/wind units.
+
 ## 0.9.1
 
 ### Added
