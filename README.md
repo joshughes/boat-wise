@@ -9,7 +9,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/TheWillMiller/tide-wise?label=stars)](https://github.com/TheWillMiller/tide-wise/stargazers)
 
 
-**Latest release:** `v0.8.2`
+**Latest release:** `v0.9.0`
 
 TideWise is a Home Assistant dashboard (Lovelace) custom card for tide predictions, current tide height, next high/low tides, and optional fishing bite-window scoring. The default provider is NOAA CO-OPS, with early Canada CHS/DFO support and UK support through the UKHO Tides Home Assistant integration.
 
@@ -76,6 +76,7 @@ The visual editor is the recommended setup path. Start with **Tide provider**, t
 | **Station / sensor picker** | Chooses the source used for the tide curve, current height, and next high/low tides. | This is the most important field. It is separate from weather, surf, or fishing coordinates. |
 | **Manual station/entity field** | Fallback when the dropdown does not show what you need. | NOAA uses a station ID, Canada uses a CHS station object ID/code, and UK uses a Home Assistant entity ID such as `sensor.london_bridge_tower_pier_tide`. |
 | **Fishing / beach latitude and longitude** | Used for NWS weather lookup, moon/solunar timing, and fishing-score context. | These coordinates do not have to be the tide gauge. For best fishing scores, use the beach, inlet, pier, or fishing area you actually care about. |
+| **Fishing point picker** | Tap/click coordinate picker for the fishing/beach point. | This is a lightweight picker, not a live map tile. Use it to nudge the fishing point, or paste exact coordinates from Maps when precision matters. |
 | **Beach / Surf Forecast** | Scopes US NWS surf/rip-current data. | This does not change the tide station. Pick a **State**, then a nearby **Coastal county / beach area**. |
 | **Card settings** | Title, units, fishing mode, theme, and optional data toggles. | These change display and scoring behavior, not the tide source itself. |
 | **Dashboard Size** | Home Assistant grid sizing. | Recommended: `rows: full`, `columns: 18`. Use `columns: full` on narrower dashboards. |
@@ -102,6 +103,7 @@ Common setup rule: **the station/sensor controls the tide chart; the forecast co
 - 24-hour tide chart
 - High/low fallback for NOAA stations without full interval predictions
 - Visual editor support
+- Visual-editor fishing point picker for the weather/surf/scoring coordinates
 - Opt-in Home Assistant theme color support with `theme_mode: auto`
 - 50-station NOAA preset picker plus custom NOAA station ID
 - Canada region picker with CHS station discovery
@@ -172,7 +174,7 @@ type: module
 For quick testing before installing locally, you can add this dashboard resource:
 
 ```yaml
-url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.8.2/tidewise-card.js
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.9.0/tidewise-card.js
 type: module
 ```
 
@@ -338,6 +340,8 @@ TideWise includes a Home Assistant visual editor. When adding the card from the 
 The station dropdown is a 50-station starter list, not a complete NOAA station database. If your station is not listed, choose **Custom station ID** and paste the NOAA CO-OPS station ID.
 
 Latitude and longitude are used for fishing-score context such as NWS forecast lookup, surf/rip forecast lookup, and moon/solunar timing. For best results, use coordinates near the beach, pier, inlet, or fishing area you actually care about.
+
+The visual editor includes a **Fishing point picker** that writes directly to those latitude/longitude fields. It is intentionally lightweight and does not load external map tiles. Use it to move the forecast point away from the tide gauge, or paste exact coordinates from Google Maps/Apple Maps for the most precise setup.
 
 The **Beach / Surf Forecast** controls US NWS surf/rip-current parsing only. It does not change the tide station. A Myrtle Beach tide station can still use a Grand Strand beach area, and a different NOAA tide station can use whatever nearby beach area best matches the place being fished.
 
@@ -525,7 +529,7 @@ Try:
 
 If HACS still shows an old README, the installed card file may still be current while the HACS display cache is stale.
 
-If HACS shows a short value like `214b6c2` instead of `v0.8.2`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
+If HACS shows a short value like `214b6c2` instead of `v0.9.0`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
 
 ### Card does not show up
 

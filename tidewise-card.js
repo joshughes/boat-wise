@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.8.2
+ * TideWise Card v0.9.0
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.8.2";
+const CARD_VERSION = "0.9.0";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const TIDEWISE_PROVIDERS = {
   noaa_coops: { label: "US NOAA CO-OPS", stationLabel: "NOAA" },
@@ -2281,6 +2281,8 @@ class TideWiseCardEditor extends HTMLElement {
     this._canadaStations = null;
     this._canadaStationsLoading = false;
     this._canadaStationsError = "";
+    this._mapCenter = null;
+    this._mapSpanDeg = 0.5;
   }
 
   set hass(hass) {
@@ -2315,6 +2317,7 @@ class TideWiseCardEditor extends HTMLElement {
     this._config.provider = this._normalizeProvider(this._config.provider);
     this._config.theme_mode = this._normalizeThemeMode(this._config.theme_mode);
     this._applyDefaultForecastPoint();
+    this._syncMapCenterToConfig(this._config);
     this._render();
   }
 
@@ -2331,6 +2334,55 @@ class TideWiseCardEditor extends HTMLElement {
     const lon = Number(point.lon);
     if (!hasLat && Number.isFinite(lat)) this._config.latitude = lat;
     if (!hasLon && Number.isFinite(lon)) this._config.longitude = lon;
+  }
+
+  _currentForecastPoint() {
+    const lat = Number(this._config?.latitude);
+    const lon = Number(this._config?.longitude);
+    if (Number.isFinite(lat) && Number.isFinite(lon)) return { lat, lon };
+    const beach = this._selectedBeachArea();
+    const preset = this._presetForStation(this._config?.station);
+    const point = beach || preset;
+    const fallbackLat = Number(point?.lat);
+    const fallbackLon = Number(point?.lon);
+    return {
+      lat: Number.isFinite(fallbackLat) ? fallbackLat : 33.688,
+      lon: Number.isFinite(fallbackLon) ? fallbackLon : -78.886
+    };
+  }
+
+  _syncMapCenterToConfig(config = this._config) {
+    const lat = Number(config?.latitude);
+    const lon = Number(config?.longitude);
+    if (Number.isFinite(lat) && Number.isFinite(lon)) this._mapCenter = { lat, lon };
+  }
+
+  _clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  _roundCoord(value) {
+    return Math.round(Number(value) * 1000000) / 1000000;
+  }
+
+  _mapState() {
+    const point = this._currentForecastPoint();
+    if (!this._mapCenter || !Number.isFinite(this._mapCenter.lat) || !Number.isFinite(this._mapCenter.lon)) {
+      this._mapCenter = { ...point };
+    }
+    const span = this._clamp(Number(this._mapSpanDeg) || 0.5, 0.02, 5);
+    this._mapSpanDeg = span;
+    const x = this._clamp(50 + ((point.lon - this._mapCenter.lon) / span) * 100, 2, 98);
+    const y = this._clamp(50 - ((point.lat - this._mapCenter.lat) / span) * 100, 2, 98);
+    return {
+      point,
+      center: this._mapCenter,
+      span,
+      x,
+      y,
+      label: `${point.lat.toFixed(5)}, ${point.lon.toFixed(5)}`,
+      spanLabel: span < 1 ? `${span.toFixed(2)} deg` : `${span.toFixed(1)} deg`
+    };
   }
 
   _beachStates() {
@@ -2410,8 +2462,14 @@ class TideWiseCardEditor extends HTMLElement {
     return "noaa_coops";
   }
 
-  _emitConfig(nextConfig) {
+  _emitConfig(nextConfig, options = {}) {
+    const oldLat = Number(this._config?.latitude);
+    const oldLon = Number(this._config?.longitude);
     this._config = nextConfig;
+    const newLat = Number(nextConfig?.latitude);
+    const newLon = Number(nextConfig?.longitude);
+    const pointChanged = oldLat !== newLat || oldLon !== newLon;
+    if (!options.keepMapCenter && pointChanged) this._syncMapCenterToConfig(nextConfig);
     const event = new Event("config-changed", { bubbles: true, composed: true });
     event.detail = { config: nextConfig };
     this.dispatchEvent(event);
@@ -2421,6 +2479,52 @@ class TideWiseCardEditor extends HTMLElement {
   _setValue(key, value) {
     const next = { ...this._config, [key]: value };
     this._emitConfig(next);
+  }
+
+  _setForecastPoint(lat, lon, options = {}) {
+    const nextLat = this._roundCoord(lat);
+    const nextLon = this._roundCoord(lon);
+    if (!Number.isFinite(nextLat) || !Number.isFinite(nextLon)) return;
+    this._emitConfig({ ...this._config, latitude: nextLat, longitude: nextLon }, options);
+  }
+
+  _handleMapPick(event) {
+    const map = this.shadowRoot.getElementById("forecastMap");
+    if (!map) return;
+    const rect = map.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const x = this._clamp((event.clientX - rect.left) / rect.width, 0, 1);
+    const y = this._clamp((event.clientY - rect.top) / rect.height, 0, 1);
+    const state = this._mapState();
+    const lat = state.center.lat + (0.5 - y) * state.span;
+    const lon = state.center.lon + (x - 0.5) * state.span;
+    this._setForecastPoint(lat, lon, { keepMapCenter: true });
+  }
+
+  _handleMapKey(event) {
+    const keys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+    if (!keys.includes(event.key)) return;
+    event.preventDefault();
+    const point = this._currentForecastPoint();
+    const step = (this._mapSpanDeg || 0.5) * (event.shiftKey ? 0.10 : 0.025);
+    const delta = {
+      ArrowUp: [step, 0],
+      ArrowDown: [-step, 0],
+      ArrowLeft: [0, -step],
+      ArrowRight: [0, step]
+    }[event.key];
+    this._setForecastPoint(point.lat + delta[0], point.lon + delta[1], { keepMapCenter: true });
+  }
+
+  _zoomMap(factor) {
+    this._mapSpanDeg = this._clamp((Number(this._mapSpanDeg) || 0.5) * factor, 0.02, 5);
+    this._render();
+  }
+
+  _centerMapOnPoint() {
+    const point = this._currentForecastPoint();
+    this._mapCenter = { ...point };
+    this._render();
   }
 
   _setNumber(key, value) {
@@ -2650,6 +2754,7 @@ class TideWiseCardEditor extends HTMLElement {
     const beachState = config.beach_state || "";
     const forecastAreas = this._forecastAreasForState(beachState);
     const selectedForecastArea = this._selectedForecastAreaValue();
+    const mapState = this._mapState();
     if (provider === "chs_iwls" && !this._canadaStations && !this._canadaStationsLoading) {
       setTimeout(() => this._loadCanadaStations(), 0);
     }
@@ -2693,6 +2798,94 @@ class TideWiseCardEditor extends HTMLElement {
         .check { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--primary-text-color, #1f2933); }
         .check input { width: auto; min-height: auto; }
         .hint { font-size: 12px; line-height: 1.35; color: var(--secondary-text-color, #536471); }
+        .map-card {
+          grid-column: 1 / -1;
+          display: grid;
+          gap: 8px;
+          padding: 10px;
+          border: 1px solid var(--divider-color, #d0d7de);
+          border-radius: 12px;
+          background: var(--secondary-background-color, rgba(246,248,250,0.78));
+        }
+        .map-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .map-title { font-size: 13px; font-weight: 850; color: var(--primary-text-color, #1f2933); }
+        .map-subtitle { display: block; font-size: 11px; line-height: 1.3; color: var(--secondary-text-color, #536471); font-weight: 600; }
+        .map-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+        .map-actions button { min-height: 28px; padding: 4px 8px; border-radius: 7px; font-size: 12px; }
+        .map-span { font-size: 11px; color: var(--secondary-text-color, #536471); font-weight: 800; white-space: nowrap; }
+        .map-picker {
+          position: relative;
+          height: 168px;
+          border: 1px solid var(--divider-color, #d0d7de);
+          border-radius: 12px;
+          overflow: hidden;
+          cursor: crosshair;
+          outline: none;
+          touch-action: manipulation;
+          background:
+            radial-gradient(circle at 18% 22%, rgba(255,255,255,0.60), transparent 20%),
+            linear-gradient(135deg, rgba(72,172,204,0.45), rgba(47,124,164,0.36) 47%, rgba(228,204,142,0.42) 48%, rgba(234,218,170,0.52));
+        }
+        .map-picker:focus { box-shadow: 0 0 0 2px var(--accent-color, #2a9dcc); }
+        .map-picker::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background-image:
+            linear-gradient(rgba(255,255,255,0.28) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.28) 1px, transparent 1px);
+          background-size: 24px 24px;
+          opacity: 0.75;
+        }
+        .map-picker::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background:
+            linear-gradient(90deg, transparent calc(50% - 1px), rgba(10,30,45,0.18) 50%, transparent calc(50% + 1px)),
+            linear-gradient(0deg, transparent calc(50% - 1px), rgba(10,30,45,0.18) 50%, transparent calc(50% + 1px));
+          pointer-events: none;
+        }
+        .map-pin {
+          position: absolute;
+          width: 18px;
+          height: 18px;
+          transform: translate(-50%, -100%) rotate(45deg);
+          border-radius: 50% 50% 50% 2px;
+          background: var(--accent-color, #2a9dcc);
+          border: 2px solid var(--card-background-color, #fff);
+          box-shadow: 0 2px 10px rgba(0,0,0,0.28);
+          z-index: 2;
+          pointer-events: none;
+        }
+        .map-pin::after {
+          content: "";
+          position: absolute;
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: var(--card-background-color, #fff);
+          left: 4px;
+          top: 4px;
+        }
+        .map-coords {
+          position: absolute;
+          left: 8px;
+          bottom: 8px;
+          z-index: 2;
+          padding: 3px 7px;
+          border-radius: 99px;
+          background: rgba(255,255,255,0.82);
+          border: 1px solid rgba(0,0,0,0.10);
+          color: #1f2933;
+          font-size: 11px;
+          font-weight: 800;
+          font-family: var(--font-mono, monospace);
+        }
+        @media (max-width: 520px) {
+          .map-picker { height: 132px; }
+          .map-head { align-items: flex-start; }
+        }
       </style>
       <div class="wrap">
         <div class="section">
@@ -2774,6 +2967,25 @@ class TideWiseCardEditor extends HTMLElement {
               Fishing / beach longitude
               <input id="longitude" type="number" step="0.000001" value="${config.longitude ?? ""}" placeholder="-78.886">
             </label>
+          </div>
+          <div class="map-card">
+            <div class="map-head">
+              <div>
+                <span class="map-title">Fishing point picker</span>
+                <span class="map-subtitle">Tap or click to drop the point used for NWS weather, surf context, rain/runoff context, and moon timing.</span>
+              </div>
+              <div class="map-actions">
+                <button id="mapZoomOut" type="button" title="Widen picker area">-</button>
+                <span class="map-span">${mapState.spanLabel}</span>
+                <button id="mapZoomIn" type="button" title="Narrow picker area">+</button>
+                <button id="mapCenter" type="button">Center on pin</button>
+              </div>
+            </div>
+            <div id="forecastMap" class="map-picker" role="button" tabindex="0" aria-label="Tap or click to set fishing and beach coordinates">
+              <div class="map-pin" style="left:${mapState.x}%;top:${mapState.y}%;"></div>
+              <div class="map-coords">${this._escape(mapState.label)}</div>
+            </div>
+            <div class="hint">This is a lightweight coordinate picker, not a live map tile. Paste exact coordinates from Maps when precision matters, or use the picker to nudge the fishing point away from the tide gauge.</div>
           </div>
           <div class="row">
             ${provider === "noaa_coops" ? `<button id="stationLocation" type="button">Use NOAA station location</button>` : ""}
@@ -2920,6 +3132,11 @@ class TideWiseCardEditor extends HTMLElement {
     this.shadowRoot.getElementById("ukhoEntityManual")?.addEventListener("change", (event) => this._applyUkhoEntity(event.target.value));
     this.shadowRoot.getElementById("latitude")?.addEventListener("change", (event) => this._setNumber("latitude", event.target.value));
     this.shadowRoot.getElementById("longitude")?.addEventListener("change", (event) => this._setNumber("longitude", event.target.value));
+    this.shadowRoot.getElementById("forecastMap")?.addEventListener("click", (event) => this._handleMapPick(event));
+    this.shadowRoot.getElementById("forecastMap")?.addEventListener("keydown", (event) => this._handleMapKey(event));
+    this.shadowRoot.getElementById("mapZoomOut")?.addEventListener("click", () => this._zoomMap(2));
+    this.shadowRoot.getElementById("mapZoomIn")?.addEventListener("click", () => this._zoomMap(0.5));
+    this.shadowRoot.getElementById("mapCenter")?.addEventListener("click", () => this._centerMapOnPoint());
     this.shadowRoot.getElementById("stationLocation")?.addEventListener("click", () => this._useNoaaStationLocation());
     this.shadowRoot.getElementById("beachState")?.addEventListener("change", (event) => {
       const state = event.target.value;

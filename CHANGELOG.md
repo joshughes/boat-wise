@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9.0
+
+### Added
+
+- Added a visual-editor Fishing point picker for the latitude/longitude used by NWS weather lookup, surf context, moon timing, and fishing-score context.
+- Added picker zoom controls and keyboard arrow-key nudging for the fishing point.
+
+### Changed
+
+- Updated README setup guidance to explain that the picker is a lightweight coordinate helper and that exact coordinates can still be pasted from Maps when precision matters.
+- No tide-fetching or scoring model behavior changed.
+
 ## 0.8.2
 
 ### Changed
