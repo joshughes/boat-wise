@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.8.1
+
+### Fixed
+
+- Fixed UKHO integration-sensor preview timing so TideWise waits for Home Assistant state data before reporting that a UKHO Tides entity is missing.
+- Legacy `provider: ukho` configs now fall back to the supported UKHO integration-sensor provider path.
+
+### Changed
+
+- Removed the experimental direct-browser UKHO API provider, UKHO station presets, and UKHO API key fields from the visual editor and current documentation.
+- UK support now clearly requires the separate UKHO Tides Home Assistant integration (`provider: ukho_entity`), keeping UKHO API keys in Home Assistant instead of dashboard YAML/browser config.
+- No NOAA, Canada, chart, or fishing score behavior changed.
+
 ## 0.8.0
 
 ### Added
@@ -11,7 +24,7 @@
 ### Changed
 
 - Updated UK setup docs to recommend the Home Assistant integration path so UKHO API keys stay in Home Assistant and avoid browser CORS issues.
-- Kept direct UKHO API mode available as experimental for testing only.
+- Direct UKHO API mode was still present for testing only. It was removed in v0.8.1 after browser CORS/key-storage limitations were confirmed.
 
 ### Known Issues
 
