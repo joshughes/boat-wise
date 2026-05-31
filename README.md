@@ -51,6 +51,8 @@ In short:
 - Canada: TideWise can fetch CHS/DFO water-level data directly where available.
 - UK: TideWise needs the UKHO Tides Home Assistant integration sensor.
 
+The UK option in TideWise is intentionally named **UK UKHO Tides integration sensor** because TideWise reads an existing Home Assistant sensor. It does not ask for, store, or call a UKHO API key directly.
+
 ## Beta Feedback
 
 TideWise is in beta. If it works for your setup, please consider starring the repo so I can gauge interest and so you can follow development:
@@ -62,7 +64,31 @@ If you run into issues or want to confirm your station works, please open one of
 - [Beta Install Report](https://github.com/TheWillMiller/tide-wise/issues/new?template=beta-install-report.yml)
 - [Works For Me / Confirmed Station](https://github.com/TheWillMiller/tide-wise/issues/new?template=works-for-me-confirmed-station.yml)
 
-Helpful details include Home Assistant version, HACS version, TideWise version, browser/device, NOAA station ID, and a screenshot or console error if something broke.
+Helpful details include Home Assistant version, HACS version, TideWise version, browser/device, provider, station ID or UKHO entity ID, and a screenshot or console error if something broke.
+
+## Visual Editor Quick Reference
+
+The visual editor is the recommended setup path. Start with **Tide provider**, then work down the form.
+
+| Editor area | What it controls | Notes |
+| --- | --- | --- |
+| **Tide provider** | Chooses the tide data source. | Use **US NOAA CO-OPS** for NOAA stations, **Canada CHS / DFO** for Canadian CHS/IWLS stations, or **UK UKHO Tides integration sensor** for a sensor created by the separate UKHO Tides Home Assistant integration. |
+| **Station / sensor picker** | Chooses the source used for the tide curve, current height, and next high/low tides. | This is the most important field. It is separate from weather, surf, or fishing coordinates. |
+| **Manual station/entity field** | Fallback when the dropdown does not show what you need. | NOAA uses a station ID, Canada uses a CHS station object ID/code, and UK uses a Home Assistant entity ID such as `sensor.london_bridge_tower_pier_tide`. |
+| **Fishing/forecast latitude and longitude** | Used for weather lookup, moon/solunar timing, and fishing-score context. | These coordinates do not have to be the tide gauge. For best fishing scores, use the beach, inlet, pier, or fishing area you actually care about. |
+| **Beach / Surf Forecast** | Scopes US NWS surf/rip-current data. | This does not change the tide station. Pick a **State**, then a nearby **Coastal county / beach area**. |
+| **Card settings** | Title, units, fishing mode, theme, and optional data toggles. | These change display and scoring behavior, not the tide source itself. |
+| **Dashboard Size** | Home Assistant grid sizing. | Recommended: `rows: full`, `columns: 18`. Use `columns: full` on narrower dashboards. |
+
+### Provider Setup At A Glance
+
+| Provider | Best for | What TideWise needs | API key location |
+| --- | --- | --- | --- |
+| **US NOAA CO-OPS** | United States NOAA tide stations. | NOAA station ID. Presets are provided, and custom station IDs are supported. | No TideWise API key needed. |
+| **Canada CHS / DFO** | Canadian CHS/IWLS water-level stations, including early Great Lakes support. | Canadian region plus CHS station from the editor. | No TideWise API key needed. |
+| **UK UKHO Tides integration sensor** | UK tides through the separate UKHO Tides Home Assistant integration. | A Home Assistant sensor created by the UKHO Tides integration. | Add the UKHO API key to the UKHO Tides integration, not TideWise. |
+
+Common setup rule: **the station/sensor controls the tide chart; the forecast coordinates and beach/surf area control fishing context.**
 
 ## Features
 
@@ -123,8 +149,9 @@ Then add the card from your dashboard editor:
 2. Add a new card.
 3. Search for **TideWise**.
 4. Open the visual editor.
-5. Select a NOAA station or enter a custom station ID.
-6. Save.
+5. Choose the tide provider.
+6. Select a station or UKHO Tides sensor.
+7. Save.
 
 ### Manual Install
 
@@ -298,10 +325,11 @@ TideWise includes a Home Assistant visual editor. When adding the card from the 
 - Choose 50 common NOAA tide stations from a dropdown
 - Enter a custom NOAA station ID
 - Switch to Canada CHS / DFO and choose a region-fed station dropdown
-- Switch to UK UKHO Tides integration and choose a UKHO Tides sensor entity
+- Switch to UK UKHO Tides integration sensor and choose a UKHO Tides sensor entity
 - Set fishing/forecast latitude and longitude
 - Fill coordinates from the selected NOAA station
 - Use your Home Assistant home latitude/longitude when that matches your fishing area
+- Pick a US beach/surf forecast state and area for NWS rip-current and surf context
 - Select English or metric units
 - Select fishing mode
 - Choose TideWise styling or Home Assistant theme colors
@@ -313,6 +341,8 @@ TideWise includes a Home Assistant visual editor. When adding the card from the 
 The station dropdown is a 50-station starter list, not a complete NOAA station database. If your station is not listed, choose **Custom station ID** and paste the NOAA CO-OPS station ID.
 
 Latitude and longitude are used for fishing-score context such as NWS forecast lookup, surf/rip forecast lookup, and moon/solunar timing. For best results, use coordinates near the tide gauge, beach, inlet, or fishing area.
+
+The **Beach / Surf Forecast** controls US NWS surf/rip-current parsing only. It does not change the tide station. A Myrtle Beach tide station can still use a Grand Strand beach area, and a different NOAA tide station can use whatever nearby beach area best matches the place being fished.
 
 ## Auto Sources
 
@@ -431,14 +461,23 @@ Required UK setup:
 
 1. Install and configure the [UKHO Tides Home Assistant integration](https://github.com/ianByrne/HASS-ukho_tides).
 2. Add your UKHO Admiralty API key and station in that integration.
-3. In TideWise, set **Tide provider** to **UK UKHO Tides integration**.
-4. Choose the UKHO Tides sensor from the visual editor.
+3. Confirm Home Assistant created a UKHO Tides sensor entity.
+4. In TideWise, set **Tide provider** to **UK UKHO Tides integration sensor**.
+5. Choose the UKHO Tides sensor from the visual editor, or paste the entity ID into **Manual UKHO entity ID**.
 
 If no UKHO Tides sensor appears in TideWise, the UKHO Tides integration is not installed, not configured, or has not created a sensor yet. TideWise cannot create the UKHO sensor by itself.
 
 TideWise reads the integration sensor's high/low prediction attribute and builds a smooth chart curve from those events. Weather, wind, water temperature, surf, rain, pressure, and fishing safety context should come from Home Assistant entities for UK cards.
 
 TideWise does not support direct browser calls to the UKHO API. That keeps UKHO API keys out of dashboard YAML/browser config and avoids UKHO/Azure browser CORS limitations.
+
+UK troubleshooting quick checks:
+
+- The TideWise provider should be `ukho_entity`, not an API-key/browser mode.
+- The UKHO API key belongs in the UKHO Tides integration setup, not in TideWise.
+- The TideWise YAML should point to the created sensor, for example `ukho_entity: sensor.london_bridge_tower_pier_tide`.
+- If TideWise says the entity is missing, verify the exact entity ID under **Settings -> Devices & services -> Entities**.
+- If the sensor exists but TideWise has no tide curve, check whether the sensor exposes a `predictions` attribute from the UKHO Tides integration.
 
 ## Beach / Surf Forecast Area
 
@@ -449,6 +488,8 @@ TideWise includes a guided list of **NWS-listed SRF offices** for areas where th
 The visual editor keeps this simple: choose a **State**, then choose the closest **Area**. Where TideWise has an exact beach/surf-zone preset, that area is used. Otherwise, the area maps to the closest NWS-listed SRF office and TideWise still uses your coordinates for local forecast context.
 
 The first built-in precise beach-area set covers the NWS Wilmington, NC office beaches for the Grand Strand and nearby NC/SC beaches. Broader NWS-listed SRF offices are available for other supported states/regions, and more precise beach-zone presets can be added as confirmed.
+
+Use this section when the rip-risk or surf-height context should follow a beach/county area instead of the tide gauge. This is especially useful when the tide station is inland, across a bay, or many miles from the actual beach.
 
 Example:
 
@@ -507,10 +548,13 @@ If HACS shows a short value like `214b6c2` instead of `v0.8.1`, that is a GitHub
 
 ### Tide data unavailable
 
-1. Verify the NOAA station ID.
-2. Try a known preset station.
-3. Confirm your browser/Home Assistant can reach NOAA.
-4. Open the browser console and check for network or station errors.
+1. Verify the selected provider.
+2. Verify the station ID, CHS station, or UKHO entity ID.
+3. Try a known preset station or sensor.
+4. Confirm your browser/Home Assistant can reach the provider data source.
+5. Open the browser console and check for network or station errors.
+
+For UK cards, TideWise requires the separate UKHO Tides Home Assistant integration. If the integration sensor is missing or does not expose predictions, TideWise cannot render UK tides.
 
 ### Fishing score looks limited
 
@@ -546,7 +590,7 @@ If you are testing TideWise, please report:
 - HACS version
 - TideWise version
 - Browser/device
-- NOAA station ID used
+- Provider and station/entity ID used
 - Whether you installed from HACS custom repository, manual resource, or CDN
 - Screenshot of any layout issue
 - Browser console errors, if any
