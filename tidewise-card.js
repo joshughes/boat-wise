@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.9.0
+ * TideWise Card v0.9.1
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.9.0";
+const CARD_VERSION = "0.9.1";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const TIDEWISE_PROVIDERS = {
   noaa_coops: { label: "US NOAA CO-OPS", stationLabel: "NOAA" },
@@ -2282,7 +2282,10 @@ class TideWiseCardEditor extends HTMLElement {
     this._canadaStationsLoading = false;
     this._canadaStationsError = "";
     this._mapCenter = null;
-    this._mapSpanDeg = 0.5;
+    this._mapZoom = 12;
+    this._mapDrag = null;
+    this._mapRenderFrame = null;
+    this._suppressMapClick = false;
   }
 
   set hass(hass) {
@@ -2370,19 +2373,98 @@ class TideWiseCardEditor extends HTMLElement {
     if (!this._mapCenter || !Number.isFinite(this._mapCenter.lat) || !Number.isFinite(this._mapCenter.lon)) {
       this._mapCenter = { ...point };
     }
-    const span = this._clamp(Number(this._mapSpanDeg) || 0.5, 0.02, 5);
-    this._mapSpanDeg = span;
-    const x = this._clamp(50 + ((point.lon - this._mapCenter.lon) / span) * 100, 2, 98);
-    const y = this._clamp(50 - ((point.lat - this._mapCenter.lat) / span) * 100, 2, 98);
+    this._mapZoom = Math.round(this._clamp(Number(this._mapZoom) || 12, 3, 18));
     return {
       point,
       center: this._mapCenter,
-      span,
-      x,
-      y,
+      zoom: this._mapZoom,
       label: `${point.lat.toFixed(5)}, ${point.lon.toFixed(5)}`,
-      spanLabel: span < 1 ? `${span.toFixed(2)} deg` : `${span.toFixed(1)} deg`
+      zoomLabel: `Zoom ${this._mapZoom}`
     };
+  }
+
+  _wrapLon(lon) {
+    return ((((Number(lon) || 0) + 180) % 360) + 360) % 360 - 180;
+  }
+
+  _projectLatLon(lat, lon, zoom = this._mapZoom) {
+    const scale = 256 * 2 ** zoom;
+    const clampedLat = this._clamp(Number(lat) || 0, -85.05112878, 85.05112878);
+    const wrappedLon = this._wrapLon(lon);
+    const sinLat = Math.sin(clampedLat * Math.PI / 180);
+    return {
+      x: (wrappedLon + 180) / 360 * scale,
+      y: (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI)) * scale
+    };
+  }
+
+  _unprojectLatLon(x, y, zoom = this._mapZoom) {
+    const scale = 256 * 2 ** zoom;
+    const lon = x / scale * 360 - 180;
+    const n = Math.PI - 2 * Math.PI * y / scale;
+    const lat = 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+    return {
+      lat: this._clamp(lat, -85.05112878, 85.05112878),
+      lon: this._wrapLon(lon)
+    };
+  }
+
+  _mapPointFromEvent(event) {
+    const map = this.shadowRoot.getElementById("forecastMap");
+    if (!map) return null;
+    const rect = map.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    const state = this._mapState();
+    const centerPx = this._projectLatLon(state.center.lat, state.center.lon, state.zoom);
+    const x = centerPx.x + (event.clientX - rect.left) - rect.width / 2;
+    const y = centerPx.y + (event.clientY - rect.top) - rect.height / 2;
+    return this._unprojectLatLon(x, y, state.zoom);
+  }
+
+  _renderForecastMapTiles() {
+    const map = this.shadowRoot.getElementById("forecastMap");
+    const tileRoot = this.shadowRoot.getElementById("mapTiles");
+    const pin = this.shadowRoot.getElementById("mapPin");
+    const coords = this.shadowRoot.getElementById("mapCoords");
+    if (!map || !tileRoot || !pin) return;
+    const rect = map.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const state = this._mapState();
+    const zoom = state.zoom;
+    const tileSize = 256;
+    const tilesPerSide = 2 ** zoom;
+    const centerPx = this._projectLatLon(state.center.lat, state.center.lon, zoom);
+    const topLeft = {
+      x: centerPx.x - rect.width / 2,
+      y: centerPx.y - rect.height / 2
+    };
+    const minTileX = Math.floor(topLeft.x / tileSize);
+    const maxTileX = Math.floor((topLeft.x + rect.width) / tileSize);
+    const minTileY = Math.floor(topLeft.y / tileSize);
+    const maxTileY = Math.floor((topLeft.y + rect.height) / tileSize);
+    const imgs = [];
+    for (let ty = minTileY; ty <= maxTileY; ty++) {
+      if (ty < 0 || ty >= tilesPerSide) continue;
+      for (let tx = minTileX; tx <= maxTileX; tx++) {
+        const wrappedX = ((tx % tilesPerSide) + tilesPerSide) % tilesPerSide;
+        const left = Math.round(tx * tileSize - topLeft.x);
+        const top = Math.round(ty * tileSize - topLeft.y);
+        imgs.push(`<img src="https://tile.openstreetmap.org/${zoom}/${wrappedX}/${ty}.png" alt="" draggable="false" style="left:${left}px;top:${top}px;">`);
+      }
+    }
+    tileRoot.innerHTML = imgs.join("");
+    const pointPx = this._projectLatLon(state.point.lat, state.point.lon, zoom);
+    pin.style.left = `${pointPx.x - topLeft.x}px`;
+    pin.style.top = `${pointPx.y - topLeft.y}px`;
+    if (coords) coords.textContent = state.label;
+  }
+
+  _queueMapTileRender() {
+    if (this._mapRenderFrame) return;
+    this._mapRenderFrame = requestAnimationFrame(() => {
+      this._mapRenderFrame = null;
+      this._renderForecastMapTiles();
+    });
   }
 
   _beachStates() {
@@ -2489,24 +2571,30 @@ class TideWiseCardEditor extends HTMLElement {
   }
 
   _handleMapPick(event) {
-    const map = this.shadowRoot.getElementById("forecastMap");
-    if (!map) return;
-    const rect = map.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-    const x = this._clamp((event.clientX - rect.left) / rect.width, 0, 1);
-    const y = this._clamp((event.clientY - rect.top) / rect.height, 0, 1);
-    const state = this._mapState();
-    const lat = state.center.lat + (0.5 - y) * state.span;
-    const lon = state.center.lon + (x - 0.5) * state.span;
-    this._setForecastPoint(lat, lon, { keepMapCenter: true });
+    if (this._suppressMapClick) {
+      this._suppressMapClick = false;
+      return;
+    }
+    const point = this._mapPointFromEvent(event);
+    if (point) this._setForecastPoint(point.lat, point.lon, { keepMapCenter: true });
   }
 
   _handleMapKey(event) {
+    if (event.key === "+" || event.key === "=") {
+      event.preventDefault();
+      this._zoomMap(1);
+      return;
+    }
+    if (event.key === "-" || event.key === "_") {
+      event.preventDefault();
+      this._zoomMap(-1);
+      return;
+    }
     const keys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
     if (!keys.includes(event.key)) return;
     event.preventDefault();
     const point = this._currentForecastPoint();
-    const step = (this._mapSpanDeg || 0.5) * (event.shiftKey ? 0.10 : 0.025);
+    const step = (event.shiftKey ? 0.01 : 0.0025) * Math.max(1, 14 - this._mapZoom);
     const delta = {
       ArrowUp: [step, 0],
       ArrowDown: [-step, 0],
@@ -2516,8 +2604,8 @@ class TideWiseCardEditor extends HTMLElement {
     this._setForecastPoint(point.lat + delta[0], point.lon + delta[1], { keepMapCenter: true });
   }
 
-  _zoomMap(factor) {
-    this._mapSpanDeg = this._clamp((Number(this._mapSpanDeg) || 0.5) * factor, 0.02, 5);
+  _zoomMap(delta) {
+    this._mapZoom = Math.round(this._clamp((Number(this._mapZoom) || 12) + delta, 3, 18));
     this._render();
   }
 
@@ -2525,6 +2613,39 @@ class TideWiseCardEditor extends HTMLElement {
     const point = this._currentForecastPoint();
     this._mapCenter = { ...point };
     this._render();
+  }
+
+  _handleMapPointerDown(event) {
+    const map = this.shadowRoot.getElementById("forecastMap");
+    if (!map) return;
+    this._mapDrag = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      center: { ...this._mapState().center },
+      moved: false
+    };
+    map.setPointerCapture?.(event.pointerId);
+    map.classList.add("is-dragging");
+  }
+
+  _handleMapPointerMove(event) {
+    if (!this._mapDrag || this._mapDrag.pointerId !== event.pointerId) return;
+    const dx = event.clientX - this._mapDrag.startX;
+    const dy = event.clientY - this._mapDrag.startY;
+    if (Math.abs(dx) + Math.abs(dy) > 3) this._mapDrag.moved = true;
+    const zoom = this._mapState().zoom;
+    const startPx = this._projectLatLon(this._mapDrag.center.lat, this._mapDrag.center.lon, zoom);
+    this._mapCenter = this._unprojectLatLon(startPx.x - dx, startPx.y - dy, zoom);
+    this._queueMapTileRender();
+  }
+
+  _handleMapPointerUp(event) {
+    const map = this.shadowRoot.getElementById("forecastMap");
+    if (this._mapDrag?.moved) this._suppressMapClick = true;
+    this._mapDrag = null;
+    map?.classList.remove("is-dragging");
+    try { map?.releasePointerCapture?.(event.pointerId); } catch (err) { /* noop */ }
   }
 
   _setNumber(key, value) {
@@ -2819,32 +2940,48 @@ class TideWiseCardEditor extends HTMLElement {
           border: 1px solid var(--divider-color, #d0d7de);
           border-radius: 12px;
           overflow: hidden;
-          cursor: crosshair;
+          cursor: grab;
           outline: none;
-          touch-action: manipulation;
-          background:
-            radial-gradient(circle at 18% 22%, rgba(255,255,255,0.60), transparent 20%),
-            linear-gradient(135deg, rgba(72,172,204,0.45), rgba(47,124,164,0.36) 47%, rgba(228,204,142,0.42) 48%, rgba(234,218,170,0.52));
+          touch-action: none;
+          background: #b8d6df;
         }
+        .map-picker.is-dragging { cursor: grabbing; }
         .map-picker:focus { box-shadow: 0 0 0 2px var(--accent-color, #2a9dcc); }
-        .map-picker::before {
-          content: "";
+        .map-tiles {
           position: absolute;
           inset: 0;
-          background-image:
-            linear-gradient(rgba(255,255,255,0.28) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.28) 1px, transparent 1px);
-          background-size: 24px 24px;
-          opacity: 0.75;
+          z-index: 0;
         }
-        .map-picker::after {
-          content: "";
+        .map-tiles img {
+          position: absolute;
+          width: 256px;
+          height: 256px;
+          user-select: none;
+          -webkit-user-drag: none;
+        }
+        .map-crosshair {
           position: absolute;
           inset: 0;
-          background:
-            linear-gradient(90deg, transparent calc(50% - 1px), rgba(10,30,45,0.18) 50%, transparent calc(50% + 1px)),
-            linear-gradient(0deg, transparent calc(50% - 1px), rgba(10,30,45,0.18) 50%, transparent calc(50% + 1px));
+          z-index: 1;
           pointer-events: none;
+        }
+        .map-crosshair::before,
+        .map-crosshair::after {
+          content: "";
+          position: absolute;
+          background: rgba(10,30,45,0.20);
+        }
+        .map-crosshair::before {
+          left: 50%;
+          top: 0;
+          bottom: 0;
+          width: 1px;
+        }
+        .map-crosshair::after {
+          top: 50%;
+          left: 0;
+          right: 0;
+          height: 1px;
         }
         .map-pin {
           position: absolute;
@@ -2882,6 +3019,19 @@ class TideWiseCardEditor extends HTMLElement {
           font-weight: 800;
           font-family: var(--font-mono, monospace);
         }
+        .map-attribution {
+          position: absolute;
+          right: 6px;
+          bottom: 6px;
+          z-index: 2;
+          padding: 2px 5px;
+          border-radius: 5px;
+          background: rgba(255,255,255,0.82);
+          color: #1f2933;
+          font-size: 10px;
+          font-weight: 700;
+        }
+        .map-attribution a { color: #1f2933; text-decoration: none; }
         @media (max-width: 520px) {
           .map-picker { height: 132px; }
           .map-head { align-items: flex-start; }
@@ -2972,20 +3122,23 @@ class TideWiseCardEditor extends HTMLElement {
             <div class="map-head">
               <div>
                 <span class="map-title">Fishing point picker</span>
-                <span class="map-subtitle">Tap or click to drop the point used for NWS weather, surf context, rain/runoff context, and moon timing.</span>
+                <span class="map-subtitle">Drag to pan, zoom in/out, then tap or click to set the point used for NWS weather, surf context, rain/runoff context, and moon timing.</span>
               </div>
               <div class="map-actions">
-                <button id="mapZoomOut" type="button" title="Widen picker area">-</button>
-                <span class="map-span">${mapState.spanLabel}</span>
-                <button id="mapZoomIn" type="button" title="Narrow picker area">+</button>
+                <button id="mapZoomOut" type="button" title="Zoom out">-</button>
+                <span class="map-span">${mapState.zoomLabel}</span>
+                <button id="mapZoomIn" type="button" title="Zoom in">+</button>
                 <button id="mapCenter" type="button">Center on pin</button>
               </div>
             </div>
             <div id="forecastMap" class="map-picker" role="button" tabindex="0" aria-label="Tap or click to set fishing and beach coordinates">
-              <div class="map-pin" style="left:${mapState.x}%;top:${mapState.y}%;"></div>
-              <div class="map-coords">${this._escape(mapState.label)}</div>
+              <div id="mapTiles" class="map-tiles"></div>
+              <div class="map-crosshair"></div>
+              <div id="mapPin" class="map-pin"></div>
+              <div id="mapCoords" class="map-coords">${this._escape(mapState.label)}</div>
+              <div class="map-attribution">&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
             </div>
-            <div class="hint">This is a lightweight coordinate picker, not a live map tile. Paste exact coordinates from Maps when precision matters, or use the picker to nudge the fishing point away from the tide gauge.</div>
+            <div class="hint">This loads OpenStreetMap tiles only while the visual editor is open. Paste exact coordinates from Maps when precision matters, or use the map to move the fishing point away from the tide gauge.</div>
           </div>
           <div class="row">
             ${provider === "noaa_coops" ? `<button id="stationLocation" type="button">Use NOAA station location</button>` : ""}
@@ -3132,10 +3285,15 @@ class TideWiseCardEditor extends HTMLElement {
     this.shadowRoot.getElementById("ukhoEntityManual")?.addEventListener("change", (event) => this._applyUkhoEntity(event.target.value));
     this.shadowRoot.getElementById("latitude")?.addEventListener("change", (event) => this._setNumber("latitude", event.target.value));
     this.shadowRoot.getElementById("longitude")?.addEventListener("change", (event) => this._setNumber("longitude", event.target.value));
-    this.shadowRoot.getElementById("forecastMap")?.addEventListener("click", (event) => this._handleMapPick(event));
-    this.shadowRoot.getElementById("forecastMap")?.addEventListener("keydown", (event) => this._handleMapKey(event));
-    this.shadowRoot.getElementById("mapZoomOut")?.addEventListener("click", () => this._zoomMap(2));
-    this.shadowRoot.getElementById("mapZoomIn")?.addEventListener("click", () => this._zoomMap(0.5));
+    const forecastMap = this.shadowRoot.getElementById("forecastMap");
+    forecastMap?.addEventListener("click", (event) => this._handleMapPick(event));
+    forecastMap?.addEventListener("keydown", (event) => this._handleMapKey(event));
+    forecastMap?.addEventListener("pointerdown", (event) => this._handleMapPointerDown(event));
+    forecastMap?.addEventListener("pointermove", (event) => this._handleMapPointerMove(event));
+    forecastMap?.addEventListener("pointerup", (event) => this._handleMapPointerUp(event));
+    forecastMap?.addEventListener("pointercancel", (event) => this._handleMapPointerUp(event));
+    this.shadowRoot.getElementById("mapZoomOut")?.addEventListener("click", () => this._zoomMap(-1));
+    this.shadowRoot.getElementById("mapZoomIn")?.addEventListener("click", () => this._zoomMap(1));
     this.shadowRoot.getElementById("mapCenter")?.addEventListener("click", () => this._centerMapOnPoint());
     this.shadowRoot.getElementById("stationLocation")?.addEventListener("click", () => this._useNoaaStationLocation());
     this.shadowRoot.getElementById("beachState")?.addEventListener("change", (event) => {
@@ -3166,6 +3324,7 @@ class TideWiseCardEditor extends HTMLElement {
     this.shadowRoot.getElementById("autoSurfForecast")?.addEventListener("change", (event) => this._setValue("auto_surf_forecast", event.target.checked));
     this.shadowRoot.getElementById("gridRows")?.addEventListener("change", (event) => this._setGridValue("rows", event.target.value));
     this.shadowRoot.getElementById("gridColumns")?.addEventListener("change", (event) => this._setGridValue("columns", event.target.value));
+    requestAnimationFrame(() => this._renderForecastMapTiles());
   }
 
   _escape(value) {

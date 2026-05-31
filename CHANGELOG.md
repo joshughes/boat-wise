@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9.1
+
+### Added
+
+- Replaced the lightweight fishing point pad with an OpenStreetMap tile picker in the visual editor.
+- Added map panning, zoom in/out, click/tap-to-set, center-on-pin, and OpenStreetMap attribution.
+
+### Changed
+
+- Clarified that map tiles load only while the visual editor is open.
+- No tide-fetching, scoring model, provider, or dashboard rendering behavior changed.
+
 ## 0.9.0
 
 ### Added
