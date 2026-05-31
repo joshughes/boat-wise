@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.8.0
+
+### Added
+
+- Added a recommended UKHO Tides integration provider (`provider: ukho_entity`) that reads Home Assistant sensor data from the UKHO Tides integration instead of calling UKHO directly from the browser.
+- Added a visual editor picker for UKHO Tides sensor entities that expose prediction attributes.
+- Added conversion of UKHO high/low sensor predictions into TideWise's synthetic tide curve.
+
+### Changed
+
+- Updated UK setup docs to recommend the Home Assistant integration path so UKHO API keys stay in Home Assistant and avoid browser CORS issues.
+- Kept direct UKHO API mode available as experimental for testing only.
+
+### Known Issues
+
+- UKHO entity mode depends on the separate UKHO Tides Home Assistant integration being installed and configured.
+- UKHO entity mode builds the chart from high/low events, so the curve is a smooth approximation between events.
+
 ## 0.7.2
 
 ### Changed
