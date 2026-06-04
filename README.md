@@ -9,7 +9,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/TheWillMiller/tide-wise?label=stars)](https://github.com/TheWillMiller/tide-wise/stargazers)
 
 
-**Latest release:** `v0.9.2`
+**Latest release:** `v0.9.3`
 
 TideWise is a Home Assistant dashboard (Lovelace) custom card for tide predictions, current tide height, next high/low tides, and optional fishing bite-window scoring. The default provider is NOAA CO-OPS, with early Canada CHS/DFO support and UK support through the UKHO Tides Home Assistant integration.
 
@@ -177,7 +177,7 @@ type: module
 For quick testing before installing locally, you can add this dashboard resource:
 
 ```yaml
-url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.9.2/tidewise-card.js
+url: https://cdn.jsdelivr.net/gh/TheWillMiller/tide-wise@v0.9.3/tidewise-card.js
 type: module
 ```
 
@@ -276,6 +276,9 @@ provider: ukho_entity
 ukho_entity: sensor.portsmouth_tide
 units: metric
 wind_units: mph
+ukho_time_mode: uk_local
+time_offset_minutes: 0
+height_offset: 0
 mode: general
 auto_sources: false
 auto_surf_forecast: false
@@ -288,7 +291,7 @@ UKHO tide heights are provided in metres. TideWise displays them as metres with 
 
 > **UKHO key note:** TideWise does not store or use a UKHO API key. Put the key and station in the UKHO Tides Home Assistant integration, then select that integration's sensor in TideWise.
 
-> **UK time note:** TideWise displays UKHO integration-sensor tide events in UK local time (`Europe/London`), including British Summer Time.
+> **UK time note:** TideWise displays UKHO integration-sensor tide events in UK local time (`Europe/London`), including British Summer Time. If your integration already exposes local clock times, use `ukho_time_mode: as_is`.
 
 For UK cards that use metric tide heights but prefer MPH wind, add:
 
@@ -296,6 +299,18 @@ For UK cards that use metric tide heights but prefer MPH wind, add:
 units: metric
 wind_units: mph
 ```
+
+For UK secondary stations that need a consistent correction, use:
+
+```yaml
+ukho_time_mode: uk_local
+time_offset_minutes: 0
+height_offset: 0
+```
+
+`time_offset_minutes` moves all UKHO tide events forward or backward in time. Positive values make events later; negative values make events earlier.
+
+`height_offset` adjusts all UKHO tide heights by a fixed amount. It uses the selected display unit: metres with `units: metric`, feet with `units: english`. Use a negative value if TideWise needs to lower all displayed heights.
 
 ## Dashboard Size
 
@@ -438,6 +453,9 @@ The debug panel is collapsed by default and scrolls internally when expanded. It
 | `ca_station` | Required for Canada |  | Canadian CHS/DFO IWLS station object ID. Prefer choosing it from the visual editor. |
 | `ca_station_code` | No |  | Optional Canadian CHS display code. |
 | `ukho_entity` | Required for `ukho_entity` |  | Home Assistant sensor from the UKHO Tides integration. The sensor must expose a `predictions` attribute. |
+| `ukho_time_mode` | No | `uk_local` | UKHO integration-sensor time handling. Use `uk_local` to convert GMT/UTC events to UK local time including BST, or `as_is` when the sensor already exposes local clock times. |
+| `time_offset_minutes` | No | `0` | Manual minute offset applied to UKHO integration-sensor tide events. Useful for secondary-station timing corrections. |
+| `height_offset` | No | `0` | Manual height offset applied to all UKHO integration-sensor tide heights. Uses the selected display unit: metres with `metric`, feet with `english`. |
 | `units` | No | `english` | Display units. Usually `english` or `metric`. Canadian CHS and UKHO data are metric and are converted to feet when `english` is selected. |
 | `wind_units` | No | `auto` | Wind display units. Use `auto`, `mph`, `kmh`, `knots`, or `beaufort`. `auto` follows the tide unit choice, so metric cards show km/h unless overridden. |
 | `mode` | No | `general` | Fishing score mode: `general`, `surf`, `inlet`, `flounder`, `trout_redfish`, or `sheepshead`. |
@@ -496,6 +514,36 @@ TideWise displays UKHO integration-sensor event times in UK local time (`Europe/
 
 TideWise does not support direct browser calls to the UKHO API. That keeps UKHO API keys out of dashboard YAML/browser config and avoids UKHO/Azure browser CORS limitations.
 
+### UKHO Time And Height Corrections
+
+Default UK setup:
+
+```yaml
+ukho_time_mode: uk_local
+time_offset_minutes: 0
+height_offset: 0
+```
+
+Use `ukho_time_mode: uk_local` when the UKHO integration exposes GMT/UTC prediction times. TideWise converts those events to UK local time, including British Summer Time. If the sensor already exposes local clock times and TideWise appears one hour late or early, use `ukho_time_mode: as_is`.
+
+Use `time_offset_minutes` when a secondary station needs a consistent timing correction. Positive values move displayed tide events later and negative values move them earlier.
+
+Use `height_offset` when all displayed heights are consistently high or low. The value is in the selected display unit: metres for `units: metric`, feet for `units: english`.
+
+Example secondary-station correction:
+
+```yaml
+provider: ukho_entity
+ukho_entity: sensor.cardiff_tide
+units: metric
+wind_units: mph
+ukho_time_mode: uk_local
+time_offset_minutes: 0
+height_offset: 0.7
+```
+
+Use a negative `height_offset` if TideWise needs to lower all displayed heights.
+
 UK troubleshooting quick checks:
 
 - The TideWise provider should be `ukho_entity`, not an API-key/browser mode.
@@ -503,7 +551,10 @@ UK troubleshooting quick checks:
 - The TideWise YAML should point to the created sensor, for example `ukho_entity: sensor.london_bridge_tower_pier_tide`.
 - If TideWise says the entity is missing, verify the exact entity ID under **Settings -> Devices & services -> Entities**.
 - If the sensor exists but TideWise has no tide curve, check whether the sensor exposes a `predictions` attribute from the UKHO Tides integration.
-- If UK times are exactly one hour off, check whether the UKHO Tides integration sensor is exposing local-time events instead of GMT/UTC events and include the sensor attributes in a bug report.
+- If UK times are exactly one hour early, leave or set `ukho_time_mode: uk_local`.
+- If UK times become one hour late, the integration may already be exposing local clock times; try `ukho_time_mode: as_is`.
+- If all UK tide heights are consistently high or low, use `height_offset`.
+- If a secondary station needs a consistent timing correction, use `time_offset_minutes`.
 
 ## Beach / Surf Forecast Area
 
@@ -554,7 +605,7 @@ Try:
 
 If HACS still shows an old README, the installed card file may still be current while the HACS display cache is stale.
 
-If HACS shows a short value like `214b6c2` instead of `v0.9.2`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
+If HACS shows a short value like `214b6c2` instead of `v0.9.3`, that is a GitHub commit hash. HACS shows commit hashes when a repository has tags but no full GitHub Release yet. Publishing a full GitHub Release makes HACS show the release version instead.
 
 ### Card does not show up
 

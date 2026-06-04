@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.9.3
+
+### Added
+
+- Added UKHO integration-sensor time handling mode (`uk_local` or `as_is`) in YAML and the visual editor.
+- Added manual UKHO time offsets in minutes for secondary-station timing corrections.
+- Added manual UKHO height offsets for stations where highs/lows are consistently high or low.
+
+### Fixed
+
+- Made UKHO/BST workflows clearer for users whose UKHO integration sensor exposes GMT/UTC events versus already-local clock times.
+
+### Changed
+
+- Updated README and visual editor guidance for UKHO secondary-station corrections.
+
 ## 0.9.2
 
 ### Added

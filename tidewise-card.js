@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.9.2
+ * TideWise Card v0.9.3
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.9.2";
+const CARD_VERSION = "0.9.3";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const TIDEWISE_PROVIDERS = {
   noaa_coops: { label: "US NOAA CO-OPS", stationLabel: "NOAA" },
@@ -338,6 +338,9 @@ class TideWiseCard extends HTMLElement {
       provider: "noaa_coops",
       station: "8661070",
       ukho_entity: "",
+      ukho_time_mode: "uk_local",
+      time_offset_minutes: 0,
+      height_offset: 0,
       units: "english",
       wind_units: "auto",
       mode: "general",
@@ -378,6 +381,9 @@ class TideWiseCard extends HTMLElement {
       ca_station_code: String(config.ca_station_code || ""),
       ca_series_code: String(config.ca_series_code || ""),
       ukho_entity: String(config.ukho_entity || ""),
+      ukho_time_mode: this._normalizeUkhoTimeMode(config.ukho_time_mode),
+      time_offset_minutes: Number(config.time_offset_minutes) || 0,
+      height_offset: Number(config.height_offset) || 0,
       units: config.units || "english",
       wind_units: this._normalizeWindUnits(config.wind_units),
       weather_entity: config.weather_entity || "",
@@ -406,7 +412,7 @@ class TideWiseCard extends HTMLElement {
       debug: this._normalizeDebugConfig(config.debug)
     };
     this.setAttribute("theme-mode", this._config.theme_mode);
-    if (previousConfig.provider !== this._config.provider || previousConfig.station !== this._config.station || previousConfig.ca_station !== this._config.ca_station || previousConfig.ca_series_code !== this._config.ca_series_code || previousConfig.ukho_entity !== this._config.ukho_entity || previousConfig.beach_area !== this._config.beach_area || previousConfig.surf_zone !== this._config.surf_zone || previousConfig.mode !== this._config.mode) this._fishBand = null;
+    if (previousConfig.provider !== this._config.provider || previousConfig.station !== this._config.station || previousConfig.ca_station !== this._config.ca_station || previousConfig.ca_series_code !== this._config.ca_series_code || previousConfig.ukho_entity !== this._config.ukho_entity || previousConfig.ukho_time_mode !== this._config.ukho_time_mode || previousConfig.time_offset_minutes !== this._config.time_offset_minutes || previousConfig.height_offset !== this._config.height_offset || previousConfig.beach_area !== this._config.beach_area || previousConfig.surf_zone !== this._config.surf_zone || previousConfig.mode !== this._config.mode) this._fishBand = null;
     this._render();
     this._fetchData();
   }
@@ -425,6 +431,11 @@ class TideWiseCard extends HTMLElement {
   _normalizeWindUnits(value) {
     const unit = String(value || "auto").toLowerCase();
     return ["auto", "mph", "kmh", "knots", "beaufort"].includes(unit) ? unit : "auto";
+  }
+
+  _normalizeUkhoTimeMode(value) {
+    const mode = String(value || "uk_local").toLowerCase();
+    return mode === "as_is" ? "as_is" : "uk_local";
   }
 
   _normalizeDebugConfig(value) {
@@ -528,9 +539,9 @@ class TideWiseCard extends HTMLElement {
         const heightRaw = Array.isArray(row)
           ? row[1]
           : row?.Height ?? row?.height ?? row?.value;
-        const time = this._parseUkhoEntityTime(timeRaw);
+        const time = this._applyTimeOffset(this._parseUkhoEntityTime(timeRaw));
         const metres = this._parseUkhoEntityHeightMetres(heightRaw);
-        const value = this._config.units === "metric" ? metres : metres * 3.28084;
+        const value = (this._config.units === "metric" ? metres : metres * 3.28084) + this._heightOffset();
         return { time, value };
       })
       .filter((item) => Number.isFinite(item.time.getTime()) && Number.isFinite(item.value))
@@ -560,12 +571,17 @@ class TideWiseCard extends HTMLElement {
   }
 
   _parseUkhoEntityTime(value) {
-    if (value instanceof Date) return this._dateInTimeZone(value, "Europe/London");
+    if (value instanceof Date) {
+      return this._config.ukho_time_mode === "as_is" ? new Date(value) : this._dateInTimeZone(value, "Europe/London");
+    }
     const raw = String(value || "").trim();
     if (!raw) return new Date(NaN);
     const ukDate = raw.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$/);
     if (ukDate) {
       const [, day, month, year, hour, minute, second] = ukDate;
+      if (this._config.ukho_time_mode === "as_is") {
+        return new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second || 0));
+      }
       return this._dateInTimeZone(new Date(Date.UTC(
         Number(year),
         Number(month) - 1,
@@ -577,9 +593,24 @@ class TideWiseCard extends HTMLElement {
     }
     const hasZone = /(?:z|[+-]\d{2}:?\d{2})$/i.test(raw);
     const isoLike = raw.includes("T") ? raw : raw.replace(" ", "T");
+    if (this._config.ukho_time_mode === "as_is" && !hasZone) {
+      const localInstant = new Date(isoLike);
+      if (Number.isFinite(localInstant.getTime())) return localInstant;
+    }
     const instant = new Date(hasZone ? isoLike : `${isoLike}Z`);
     if (!Number.isFinite(instant.getTime())) return new Date(raw);
-    return this._dateInTimeZone(instant, "Europe/London");
+    return this._config.ukho_time_mode === "as_is" ? instant : this._dateInTimeZone(instant, "Europe/London");
+  }
+
+  _applyTimeOffset(date) {
+    if (!(date instanceof Date) || !Number.isFinite(date.getTime())) return date;
+    const minutes = Number(this._config.time_offset_minutes) || 0;
+    return minutes ? new Date(date.getTime() + minutes * 60000) : date;
+  }
+
+  _heightOffset() {
+    const value = Number(this._config.height_offset);
+    return Number.isFinite(value) ? value : 0;
   }
 
   _dateInTimeZone(date, timeZone) {
@@ -2375,6 +2406,9 @@ class TideWiseCardEditor extends HTMLElement {
       ca_station_code: "",
       ca_series_code: "",
       ukho_entity: "",
+      ukho_time_mode: "uk_local",
+      time_offset_minutes: 0,
+      height_offset: 0,
       srf_region: "",
       beach_state: "",
       beach_area: "",
@@ -2393,6 +2427,7 @@ class TideWiseCardEditor extends HTMLElement {
     this._config.provider = this._normalizeProvider(this._config.provider);
     this._config.theme_mode = this._normalizeThemeMode(this._config.theme_mode);
     this._config.wind_units = this._normalizeWindUnits(this._config.wind_units);
+    this._config.ukho_time_mode = this._normalizeUkhoTimeMode(this._config.ukho_time_mode);
     this._applyDefaultForecastPoint();
     this._syncMapCenterToConfig(this._config);
     this._render();
@@ -2614,6 +2649,11 @@ class TideWiseCardEditor extends HTMLElement {
   _normalizeWindUnits(value) {
     const unit = String(value || "auto").toLowerCase();
     return ["auto", "mph", "kmh", "knots", "beaufort"].includes(unit) ? unit : "auto";
+  }
+
+  _normalizeUkhoTimeMode(value) {
+    const mode = String(value || "uk_local").toLowerCase();
+    return mode === "as_is" ? "as_is" : "uk_local";
   }
 
   _normalizeProvider(value) {
@@ -2955,6 +2995,7 @@ class TideWiseCardEditor extends HTMLElement {
     const forecastAreas = this._forecastAreasForState(beachState);
     const selectedForecastArea = this._selectedForecastAreaValue();
     const mapState = this._mapState();
+    const tideOffsetUnit = config.units === "metric" ? "m" : "ft";
     if (provider === "chs_iwls" && !this._canadaStations && !this._canadaStationsLoading) {
       setTimeout(() => this._loadCanadaStations(), 0);
     }
@@ -3169,9 +3210,25 @@ class TideWiseCardEditor extends HTMLElement {
               Manual UKHO entity ID
               <input id="ukhoEntityManual" value="${this._escape(config.ukho_entity || "")}" placeholder="sensor.portsmouth_tide">
             </label>
+            <label>
+              UK time handling
+              <select id="ukhoTimeMode">
+                <option value="uk_local" ${config.ukho_time_mode !== "as_is" ? "selected" : ""}>UK local time (GMT/BST)</option>
+                <option value="as_is" ${config.ukho_time_mode === "as_is" ? "selected" : ""}>Use sensor times as-is</option>
+              </select>
+            </label>
+            <label>
+              Time offset (minutes)
+              <input id="timeOffsetMinutes" type="number" step="1" value="${config.time_offset_minutes ?? 0}" placeholder="0">
+            </label>
+            <label>
+              Height offset (${tideOffsetUnit})
+              <input id="heightOffset" type="number" step="0.01" value="${config.height_offset ?? 0}" placeholder="0">
+            </label>
           </div>
           ${ukhoEntityOptions.length ? "" : `<div class="hint"><strong>No UKHO Tides sensors found yet.</strong> Install and configure the UKHO Tides Home Assistant integration first, then reopen this editor or enter the sensor entity ID manually.</div>`}
           <div class="hint"><strong>Required for UK:</strong> TideWise reads a sensor from the separate UKHO Tides Home Assistant integration. Add your UKHO API key and station in that integration first, then choose the created sensor here. The API key stays in Home Assistant instead of browser/dashboard YAML.</div>
+          <div class="hint"><strong>UK corrections:</strong> Use UK local time for normal GMT/BST conversion. If the integration already emits local clock times, choose as-is. Use time offset for secondary-station timing corrections and height offset when all tide heights are consistently high or low; height offset uses the selected tide display unit.</div>
           ` : `
           <div class="grid">
             <label>
@@ -3372,6 +3429,9 @@ class TideWiseCardEditor extends HTMLElement {
     this.shadowRoot.getElementById("station")?.addEventListener("change", (event) => this._setValue("station", String(event.target.value || "").trim()));
     this.shadowRoot.getElementById("ukhoEntitySelect")?.addEventListener("change", (event) => this._applyUkhoEntity(event.target.value));
     this.shadowRoot.getElementById("ukhoEntityManual")?.addEventListener("change", (event) => this._applyUkhoEntity(event.target.value));
+    this.shadowRoot.getElementById("ukhoTimeMode")?.addEventListener("change", (event) => this._setValue("ukho_time_mode", this._normalizeUkhoTimeMode(event.target.value)));
+    this.shadowRoot.getElementById("timeOffsetMinutes")?.addEventListener("change", (event) => this._setNumber("time_offset_minutes", event.target.value));
+    this.shadowRoot.getElementById("heightOffset")?.addEventListener("change", (event) => this._setNumber("height_offset", event.target.value));
     this.shadowRoot.getElementById("latitude")?.addEventListener("change", (event) => this._setNumber("latitude", event.target.value));
     this.shadowRoot.getElementById("longitude")?.addEventListener("change", (event) => this._setNumber("longitude", event.target.value));
     const forecastMap = this.shadowRoot.getElementById("forecastMap");
