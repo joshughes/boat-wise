@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.9.3
+ * TideWise Card v0.9.4
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.9.3";
+const CARD_VERSION = "0.9.4";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const TIDEWISE_PROVIDERS = {
   noaa_coops: { label: "US NOAA CO-OPS", stationLabel: "NOAA" },
@@ -1260,18 +1260,29 @@ class TideWiseCard extends HTMLElement {
     const direct = this._getNumericEntity(this._config.pressure_entity);
     if (direct) {
       const unit = String(direct.unit || "").toLowerCase();
-      if (unit.includes("inhg") || unit.includes("in hg")) return direct.value * 33.8639;
-      return direct.value;
+      return this._normalizePressureHpa(direct.value, unit);
     }
     const attrs = weather?.attributes || {};
     const raw = Number(attrs.pressure);
     const unit = String(attrs.pressure_unit || attrs.unit_of_measurement || "").toLowerCase();
-    if (Number.isFinite(raw)) {
-      if (unit.includes("inhg") || unit.includes("in hg")) return raw * 33.8639;
-      return raw;
-    }
+    if (Number.isFinite(raw)) return this._normalizePressureHpa(raw, unit);
     const autoPressure = this._parseAutoPressureHpa();
     return autoPressure;
+  }
+
+  _normalizePressureHpa(value, unit = "") {
+    const raw = Number(value);
+    if (!Number.isFinite(raw)) return null;
+    const label = String(unit || "").toLowerCase();
+    if (label.includes("inhg") || label.includes("in hg") || label.includes("inches")) return raw * 33.8639;
+    if (label.includes("kpa")) return raw * 10;
+    if (label === "pa" || label.includes(" pascal")) return raw / 100;
+    if (label.includes("hpa") || label.includes("mbar") || label.includes("millibar") || label.includes("mb")) return raw;
+    if (raw >= 25 && raw <= 35) return raw * 33.8639;
+    if (raw >= 85 && raw <= 115) return raw * 10;
+    if (raw >= 850 && raw <= 1100) return raw;
+    if (raw >= 85000 && raw <= 110000) return raw / 100;
+    return raw;
   }
 
   _getWaterTempF() {
@@ -1344,7 +1355,7 @@ class TideWiseCard extends HTMLElement {
   _parseAutoPressureHpa() {
     const val = Number(this._autoData?.coops?.pressure?.v);
     if (!Number.isFinite(val)) return null;
-    return this._config.units === "english" ? val * 33.8639 : val;
+    return this._normalizePressureHpa(val, "");
   }
 
   _parseNwsWindSpeedMph() {
@@ -1985,7 +1996,7 @@ class TideWiseCard extends HTMLElement {
               ["score after moon", detail?.scoreAfterMoon],
               ["active cap", detail?.cap],
               ["final current score", finalCurrentScore],
-              ["display score", displayScore],
+              ["display score (smoothed)", displayScore],
               ["reason", fish?.reason || "fishing score disabled"],
               ["best window", fish?.bestWindow || "none"],
               ["current tide", `${cur.toFixed(1)} ${unitLabel} ${rising ? "rising" : "falling"}`]

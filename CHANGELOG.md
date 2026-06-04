@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.4
+
+### Fixed
+
+- Fixed NOAA CO-OPS air pressure normalization so millibar/hPa values are not converted like inches of mercury when the card uses English tide units.
+- Corrected pressure scoring and debug output that could show impossible values such as `34585 hPa`.
+
+### Changed
+
+- Clarified the debug label for the smoothed display score.
+
 ## 0.9.3
 
 ### Added
