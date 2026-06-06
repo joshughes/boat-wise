@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9.5
+
+### Fixed
+
+- Fixed moon phase labels by anchoring lunar age to a known new moon instead of the J2000 epoch.
+- Corrected waning/waxing phase labels that could appear several days off.
+
+### Changed
+
+- Added a plain Buy Me a Coffee support link in README/info documentation.
+- Kept support information docs-only; no telemetry, tracking, popup, external script, or in-card donation UI was added.
+
 ## 0.9.4
 
 ### Fixed

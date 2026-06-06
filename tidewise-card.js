@@ -1,11 +1,11 @@
 /*
- * TideWise Card v0.9.4
+ * TideWise Card v0.9.5
  * NOAA tides with optional bite-window fishing quality scoring.
  *
  * Legacy alias: custom:cherry-grove-tides-card
  */
 
-const CARD_VERSION = "0.9.4";
+const CARD_VERSION = "0.9.5";
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const TIDEWISE_PROVIDERS = {
   noaa_coops: { label: "US NOAA CO-OPS", stationLabel: "NOAA" },
@@ -1429,7 +1429,12 @@ class TideWiseCard extends HTMLElement {
     return { HA: ((LMST - RA) % 24 + 24) % 24, dec };
   }
 
-  _moonAge(date) { const JD = date.getTime() / 86400000 + 2440587.5; return (((JD - 2451545.0) % 29.530588861) + 29.530588861) % 29.530588861; }
+  _moonAge(date) {
+    const synodicMonth = 29.530588861;
+    const knownNewMoonJd = 2451550.09765; // 2000-01-06 18:14 UTC
+    const jd = date.getTime() / 86400000 + 2440587.5;
+    return (((jd - knownNewMoonJd) % synodicMonth) + synodicMonth) % synodicMonth;
+  }
 
   _moonPhaseName(age) {
     if (age < 1.5) return "&#127761; New Moon";
