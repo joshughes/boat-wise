@@ -72,6 +72,8 @@ Helpful details include Home Assistant version, HACS version, TideWise version, 
 
 TideWise has no telemetry, ads, popups, tracking pixels, or in-card donation prompts. If it helps you and you want to support development, you can [buy me a coffee](https://buymeacoffee.com/thewillmiller).
 
+Available for custom Home Assistant dashboards, Lovelace cards, and kiosk interfaces. I take 2-3 commissions/month, typically $300-600 depending on scope.
+
 ## Visual Editor Quick Reference
 
 The visual editor is the recommended setup path. Start with **Tide provider**, then work down the form.
