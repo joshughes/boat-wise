@@ -6,6 +6,92 @@
  */
 
 const CARD_VERSION = "0.9.5";
+
+export function extractSafeWindows(predictions, threshold) {
+  const norm = (predictions || [])
+    .map((row) => {
+      if (row && row.time instanceof Date && typeof row.value === "number") {
+        return { time: row.time, value: row.value };
+      }
+      if (row && typeof row.t === "string" && (typeof row.v === "string" || typeof row.v === "number")) {
+        const [date, clock] = row.t.split(" ");
+        if (!date || !clock) return null;
+        const iso = `${date}T${clock}`;
+        return { time: new Date(iso), value: parseFloat(row.v) };
+      }
+      return null;
+    })
+    .filter((row) => row && Number.isFinite(row.time.getTime()) && Number.isFinite(row.value))
+    .sort((a, b) => a.time - b.time);
+
+  if (norm.length < 2) {
+    if (norm.length === 1 && norm[0].value >= threshold) {
+      return [{
+        start: norm[0].time,
+        end: norm[0].time,
+        duration_minutes: 0,
+        tide_direction_at_start: "rising",
+        tide_direction_at_end: "falling"
+      }];
+    }
+    return [];
+  }
+
+  const windows = [];
+  let openStart = null;
+  let openStartDirection = null;
+
+  const crossing = (a, b) => {
+    const ratio = (threshold - a.value) / (b.value - a.value);
+    return new Date(a.time.getTime() + ratio * (b.time.getTime() - a.time.getTime()));
+  };
+
+  for (let i = 0; i < norm.length - 1; i++) {
+    const a = norm[i];
+    const b = norm[i + 1];
+    const aSafe = a.value >= threshold;
+    const bSafe = b.value >= threshold;
+
+    if (i === 0 && aSafe && openStart === null) {
+      openStart = a.time;
+      openStartDirection = b.value >= a.value ? "rising" : "falling";
+    }
+
+    if (!aSafe && bSafe) {
+      openStart = crossing(a, b);
+      openStartDirection = "rising";
+    } else if (aSafe && !bSafe) {
+      const end = crossing(a, b);
+      if (openStart) {
+        windows.push({
+          start: openStart,
+          end,
+          duration_minutes: (end - openStart) / 60000,
+          tide_direction_at_start: openStartDirection,
+          tide_direction_at_end: "falling"
+        });
+        openStart = null;
+        openStartDirection = null;
+      }
+    }
+  }
+
+  if (openStart) {
+    const last = norm[norm.length - 1].time;
+    const lastVal = norm[norm.length - 1].value;
+    const prevVal = norm[norm.length - 2].value;
+    windows.push({
+      start: openStart,
+      end: last,
+      duration_minutes: (last - openStart) / 60000,
+      tide_direction_at_start: openStartDirection,
+      tide_direction_at_end: lastVal >= prevVal ? "rising" : "falling"
+    });
+  }
+
+  return windows;
+}
+
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const TIDEWISE_PROVIDERS = {
   noaa_coops: { label: "US NOAA CO-OPS", stationLabel: "NOAA" },
