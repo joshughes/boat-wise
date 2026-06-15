@@ -384,12 +384,15 @@ class TideWiseCard extends HTMLElement {
   static getStubConfig() {
     return {
       title: "TideWise",
-      station: "8661070",
+      station: "8441241",
       units: "english",
       wind_units: "auto",
       theme_mode: "tidewise",
       auto_sources: true,
-      debug: false
+      depth_threshold: 4.0,
+      wharf_buffer_minutes: 30,
+      marine_zone: "ANZ250",
+      forecast_horizon_hours: 72
     };
   }
 
@@ -413,10 +416,14 @@ class TideWiseCard extends HTMLElement {
       wind_speed_entity: config.wind_speed_entity || "",
       wind_direction_entity: config.wind_direction_entity || "",
       pressure_entity: config.pressure_entity || "",
-      latitude: Number(config.latitude) || 33.688,
-      longitude: Number(config.longitude) || -78.886,
+      latitude: Number(config.latitude) || 42.755,
+      longitude: Number(config.longitude) || -70.806,
       theme_mode: this._normalizeThemeMode(config.theme_mode),
       auto_sources: config.auto_sources !== false,
+      depth_threshold: Number.isFinite(Number(config.depth_threshold)) ? Number(config.depth_threshold) : 4.0,
+      wharf_buffer_minutes: this._normalizeWharfBuffer(config.wharf_buffer_minutes),
+      marine_zone: String(config.marine_zone || "").trim().toUpperCase(),
+      forecast_horizon_hours: this._normalizeHorizon(config.forecast_horizon_hours),
       debug: this._normalizeDebugConfig(config.debug)
     };
     this.setAttribute("theme-mode", this._config.theme_mode);
@@ -431,6 +438,18 @@ class TideWiseCard extends HTMLElement {
   _normalizeWindUnits(value) {
     const unit = String(value || "auto").toLowerCase();
     return ["auto", "mph", "kmh", "knots", "beaufort"].includes(unit) ? unit : "auto";
+  }
+
+  _normalizeWharfBuffer(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return 30;
+    return Math.max(0, Math.min(180, Math.round(n)));
+  }
+
+  _normalizeHorizon(value) {
+    const n = Number(value);
+    if (n === 24 || n === 48 || n === 72) return n;
+    return 72;
   }
 
   _normalizeDebugConfig(value) {
@@ -454,15 +473,17 @@ class TideWiseCard extends HTMLElement {
 
   async _fetchData() {
     const { station, units } = this._config;
+    const horizonHours = this._config.forecast_horizon_hours || 72;
+    const horizonDays = Math.ceil(horizonHours / 24);
     const today = this._dateStr(0);
-    const tomorrow = this._dateStr(1);
+    const endDate = this._dateStr(horizonDays);
     const base = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter";
     const cp = `station=${station}&datum=MLLW&time_zone=lst_ldt&units=${units}&application=tidewise_card&format=json`;
     try {
       const autoPromise = this._config.auto_sources ? this._fetchAutoSources().catch((err) => ({ error: err.message })) : Promise.resolve({});
       const [cr, hr, autoData] = await Promise.all([
-        fetch(`${base}?begin_date=${today}&end_date=${tomorrow}&${cp}&product=predictions&interval=6`),
-        fetch(`${base}?begin_date=${today}&end_date=${tomorrow}&${cp}&product=predictions&interval=hilo`),
+        fetch(`${base}?begin_date=${today}&end_date=${endDate}&${cp}&product=predictions&interval=6`),
+        fetch(`${base}?begin_date=${today}&end_date=${endDate}&${cp}&product=predictions&interval=hilo`),
         autoPromise
       ]);
       const cj = await cr.json();
@@ -1523,6 +1544,7 @@ class TideWiseCardEditor extends HTMLElement {
     const selectedPreset = this._presetForStation(config.station) ? String(config.station) : "custom";
     const grid = config.grid_options || {};
     const mapState = this._mapState();
+    const tideOffsetUnit = config.units === "metric" ? "m" : "ft";
     this.shadowRoot.innerHTML = `
       <style>
         :host {
@@ -1736,6 +1758,29 @@ class TideWiseCardEditor extends HTMLElement {
         </div>
 
         <div class="section">
+          <div class="title">Boating Window</div>
+          <div class="grid">
+            <label>
+              Depth threshold (${tideOffsetUnit})
+              <input id="depthThreshold" type="number" step="0.1" value="${config.depth_threshold ?? 4.0}" placeholder="4.0">
+            </label>
+            <label>
+              Wharf buffer (minutes)
+              <input id="wharfBuffer" type="number" min="0" max="180" step="5" value="${config.wharf_buffer_minutes ?? 30}" placeholder="30">
+            </label>
+            <label class="wide">
+              NWS marine zone
+              <input id="marineZone" value="${this._escape(config.marine_zone || "")}" placeholder="ANZ250">
+            </label>
+          </div>
+          <div class="hint">
+            Depth threshold: tide height below which the river is too shallow to safely transit. Start at 4 ft and tune from experience.
+            Marine zone ID lets BoatWise show NWS Small Craft Advisories and offshore wind/seas.
+            <a href="https://www.weather.gov/marine_charts" target="_blank" rel="noopener">Find your marine zone</a>.
+          </div>
+        </div>
+
+        <div class="section">
           <div class="title">Card</div>
           <div class="grid">
             <label class="wide">
@@ -1816,6 +1861,9 @@ class TideWiseCardEditor extends HTMLElement {
     this.shadowRoot.getElementById("windUnits")?.addEventListener("change", (event) => this._setValue("wind_units", this._normalizeWindUnits(event.target.value)));
     this.shadowRoot.getElementById("themeMode")?.addEventListener("change", (event) => this._setValue("theme_mode", this._normalizeThemeMode(event.target.value)));
     this.shadowRoot.getElementById("autoSources")?.addEventListener("change", (event) => this._setValue("auto_sources", event.target.checked));
+    this.shadowRoot.getElementById("depthThreshold")?.addEventListener("change", (event) => this._setNumber("depth_threshold", event.target.value));
+    this.shadowRoot.getElementById("wharfBuffer")?.addEventListener("change", (event) => this._setNumber("wharf_buffer_minutes", event.target.value));
+    this.shadowRoot.getElementById("marineZone")?.addEventListener("change", (event) => this._setValue("marine_zone", String(event.target.value || "").trim().toUpperCase()));
     this.shadowRoot.getElementById("gridRows")?.addEventListener("change", (event) => this._setGridValue("rows", event.target.value));
     this.shadowRoot.getElementById("gridColumns")?.addEventListener("change", (event) => this._setGridValue("columns", event.target.value));
     requestAnimationFrame(() => this._renderForecastMapTiles());
