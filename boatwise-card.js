@@ -959,10 +959,52 @@ class TideWiseCard extends HTMLElement {
     const stationLabel = this._config.station;
     const root = this.shadowRoot.getElementById("root");
 
+    const horizonMs = (this._config.forecast_horizon_hours || 72) * 3600000;
+    const horizonCutoff = new Date(now.getTime() + horizonMs);
+    const seriesForWindows = predictions.filter((p) => {
+      const tMs = this._parsePredictionTime(p.t).getTime();
+      return Number.isFinite(tMs) && tMs >= now.getTime() - 6 * 60 * 1000 && tMs <= horizonCutoff.getTime();
+    });
+    const windows = extractSafeWindows(
+      seriesForWindows.map((p) => ({ time: this._parsePredictionTime(p.t), value: parseFloat(p.v) })),
+      this._config.depth_threshold
+    );
+    this._lastWindows = windows;
+
+    const alerts = (this._autoData?.alerts || []).map((a) => ({
+      ...a,
+      expires: a.expires instanceof Date ? a.expires : (typeof a.expires === "string" ? new Date(a.expires) : null)
+    }));
+    const chip = statusChipState({
+      windows,
+      alerts,
+      now,
+      bufferMinutes: this._config.wharf_buffer_minutes,
+      formatClock: (d) => this._formatClock(d)
+    });
+
+    const chipClass = {
+      ADVISORY: "chip-advisory",
+      GO_NOW: "chip-go",
+      GET_TO_WHARF: "chip-arrive",
+      TOO_SHALLOW: "chip-shallow"
+    }[chip.status] || "chip-shallow";
+
+    const chipLabel = {
+      ADVISORY: "ADVISORY",
+      GO_NOW: "GO NOW",
+      GET_TO_WHARF: "GET TO WHARF NOW",
+      TOO_SHALLOW: "TOO SHALLOW"
+    }[chip.status] || "TOO SHALLOW";
+
     root.innerHTML = `
       <div class="header">
         <div class="title">${this._config.title}</div>
         <div class="subtitle">NOAA ${stationLabel}</div>
+      </div>
+      <div class="status-row">
+        <span class="status-chip ${chipClass}">${chipLabel}</span>
+        <span class="status-summary">${this._escape(chip.summary)}</span>
       </div>
       <div class="current-row">
         <div class="current-icon">&#127754;</div>
