@@ -379,6 +379,7 @@ class TideWiseCard extends HTMLElement {
     this._refreshInterval = null;
     this._clockInterval = null;
     this._chartCanvas = null;
+    this._cache = new Map();
   }
 
   static getStubConfig() {
@@ -546,15 +547,88 @@ class TideWiseCard extends HTMLElement {
   }
 
   async _fetchAutoSources() {
-    const [coops, nws] = await Promise.all([
+    const [coops, nws, alerts, marine] = await Promise.all([
       this._fetchCoopsObservations().catch((err) => ({ error: err.message })),
-      this._fetchNwsForecast().catch((err) => ({ error: err.message }))
+      this._fetchNwsForecast().catch((err) => ({ error: err.message })),
+      this._fetchMarineAlerts().catch((err) => { console.warn("BoatWise: marine alerts fetch failed:", err); return []; }),
+      this._fetchMarineZoneForecast().catch((err) => { console.warn("BoatWise: marine forecast fetch failed:", err); return null; })
     ]);
     return {
       coops: coops || {},
       nws: nws || {},
+      alerts: Array.isArray(alerts) ? alerts : [],
+      marine: marine || null,
       updated: new Date().toISOString()
     };
+  }
+
+  _getCached(key, ttlMs) {
+    if (!this._cache) this._cache = new Map();
+    const hit = this._cache.get(key);
+    if (hit && Date.now() - hit.fetchedAt < ttlMs) return hit.value;
+    return null;
+  }
+
+  _setCached(key, value) {
+    if (!this._cache) this._cache = new Map();
+    this._cache.set(key, { value, fetchedAt: Date.now() });
+  }
+
+  async _fetchMarineAlerts() {
+    const zone = this._config.marine_zone;
+    if (!zone) return [];
+    const cached = this._getCached(`alerts:${zone}`, 5 * 60 * 1000);
+    if (cached) return cached;
+    const headers = { Accept: "application/geo+json", "User-Agent": "boatwise-card (homeassistant)" };
+    const res = await fetch(`https://api.weather.gov/alerts/active/zone/${zone}`, { headers });
+    if (!res.ok) {
+      if (res.status === 404) this._marineZoneError = `Marine zone ${zone} not found.`;
+      return [];
+    }
+    this._marineZoneError = null;
+    const json = await res.json();
+    const features = Array.isArray(json.features) ? json.features : [];
+    const relevantEvents = [
+      "small craft advisory",
+      "gale warning", "gale watch",
+      "storm warning", "storm watch",
+      "hurricane warning", "hurricane watch",
+      "special marine warning",
+      "marine weather statement",
+      "hazardous seas warning", "hazardous seas watch"
+    ];
+    const alerts = features
+      .map((f) => ({
+        event: f?.properties?.event || "",
+        severity: f?.properties?.severity || "Unknown",
+        headline: f?.properties?.headline || "",
+        expires: f?.properties?.expires ? new Date(f.properties.expires) : null
+      }))
+      .filter((a) => {
+        const ev = a.event.toLowerCase();
+        if (!relevantEvents.some((re) => ev.startsWith(re))) return false;
+        if (!["Severe", "Moderate"].includes(a.severity)) return false;
+        return true;
+      });
+    this._setCached(`alerts:${zone}`, alerts);
+    return alerts;
+  }
+
+  async _fetchMarineZoneForecast() {
+    const zone = this._config.marine_zone;
+    if (!zone) return null;
+    const cached = this._getCached(`forecast:${zone}`, 30 * 60 * 1000);
+    if (cached) return cached;
+    const headers = { Accept: "application/geo+json", "User-Agent": "boatwise-card (homeassistant)" };
+    const res = await fetch(`https://api.weather.gov/zones/forecast/${zone}/forecast`, { headers });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const periods = json?.properties?.periods || [];
+    const current = periods[0] || null;
+    const parsed = current ? parseMarineForecastPeriod(current.detailedForecast || current.shortForecast || "") : null;
+    const result = { current, parsed, allPeriods: periods };
+    this._setCached(`forecast:${zone}`, result);
+    return result;
   }
 
   async _fetchCoopsObservations() {
@@ -701,6 +775,8 @@ class TideWiseCard extends HTMLElement {
     if (Number.isFinite(raw)) return raw;
     const coopsWind = this._parseCoopsWindSpeedMph();
     if (coopsWind !== null) return coopsWind;
+    const marineWindKt = Number(this._autoData?.marine?.parsed?.wind?.max);
+    if (Number.isFinite(marineWindKt)) return marineWindKt * 1.15078;
     return this._parseNwsWindSpeedMph();
   }
 
@@ -710,7 +786,10 @@ class TideWiseCard extends HTMLElement {
     const bearing = Number(weather?.attributes?.wind_bearing);
     if (Number.isFinite(bearing)) return bearing;
     const coopsBearing = Number(this._autoData?.coops?.wind?.d);
-    return Number.isFinite(coopsBearing) ? coopsBearing : this._parseNwsWindDirection();
+    if (Number.isFinite(coopsBearing)) return coopsBearing;
+    const marineBearing = this._compassToBearing(this._autoData?.marine?.parsed?.wind?.direction);
+    if (Number.isFinite(marineBearing)) return marineBearing;
+    return this._parseNwsWindDirection();
   }
 
   _formatWind(speedMph, bearing) {
@@ -742,6 +821,11 @@ class TideWiseCard extends HTMLElement {
     if (!Number.isFinite(b)) return "";
     const dirs = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
     return dirs[Math.round((((b % 360) + 360) % 360) / 22.5) % 16];
+  }
+
+  _compassToBearing(dir) {
+    const map = { N: 0, NNE: 22.5, NE: 45, ENE: 67.5, E: 90, ESE: 112.5, SE: 135, SSE: 157.5, S: 180, SSW: 202.5, SW: 225, WSW: 247.5, W: 270, WNW: 292.5, NW: 315, NNW: 337.5 };
+    return map[String(dir || "").toUpperCase()] ?? null;
   }
 
   _getPressureHpa(weather) {
