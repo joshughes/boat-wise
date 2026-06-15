@@ -997,6 +997,51 @@ class TideWiseCard extends HTMLElement {
       TOO_SHALLOW: "TOO SHALLOW"
     }[chip.status] || "TOO SHALLOW";
 
+    const windowsForPanel = windows
+      .filter((w) => w.end.getTime() > now.getTime())
+      .slice(0, 6);
+    const hasActiveAlert = chip.status === "ADVISORY";
+
+    const windowsHtml = windowsForPanel.length
+      ? `
+        <div class="windows-panel">
+          <div class="windows-title">Upcoming Boating Windows</div>
+          ${windowsForPanel.map((w) => {
+            const arriveBy = new Date(w.start.getTime() - this._config.wharf_buffer_minutes * 60000);
+            const dur = Math.round(w.duration_minutes);
+            const durLabel = dur >= 60 ? `${Math.floor(dur/60)}h ${dur%60}m` : `${dur}m`;
+            const dateLabel = this._formatWindowDate(w.start);
+            const startClock = this._formatClock(w.start);
+            const endClock = this._formatClock(w.end);
+            const arriveClock = this._formatClock(arriveBy);
+            const isOpenNow = w.start.getTime() <= now.getTime() && now.getTime() < w.end.getTime();
+            const rowClass = isOpenNow ? "window-row open-now" : "window-row";
+            const prefix = hasActiveAlert ? `<span class="warn-prefix">&#9888;</span>` : "";
+            return `<div class="${rowClass}">${prefix}<span class="window-date">${dateLabel}</span><span class="window-times">${startClock} &rarr; ${endClock}</span><span class="window-dur">${durLabel}</span><span class="window-arrive">arrive ${arriveClock}</span></div>`;
+          }).join("")}
+        </div>
+      `
+      : `<div class="windows-panel windows-empty">No safe windows in the next ${this._config.forecast_horizon_hours} h.</div>`;
+
+    const waterTempLabel = this._formatWaterTemp(this._getWaterTempF());
+    const seasLabel = (this._autoData?.marine?.parsed?.seas)
+      ? (() => {
+          const s = this._autoData.marine.parsed.seas;
+          return s.min === s.max ? `Seas ${s.min} ft` : `Seas ${s.min}-${s.max} ft`;
+        })()
+      : "";
+    const pressureHpa = this._getPressureHpa(weather);
+    const pressureLabel = Number.isFinite(pressureHpa) ? `${pressureHpa.toFixed(0)} hPa` : "";
+
+    const conditionsHtml = `
+      <div class="conditions-row">
+        ${windLabel ? `<span class="condition-chip">${windLabel}</span>` : ""}
+        ${seasLabel ? `<span class="condition-chip">${seasLabel}</span>` : ""}
+        ${waterTempLabel ? `<span class="condition-chip">Water ${waterTempLabel}</span>` : ""}
+        ${pressureLabel ? `<span class="condition-chip">${pressureLabel}</span>` : ""}
+      </div>
+    `;
+
     root.innerHTML = `
       <div class="header">
         <div class="title">${this._config.title}</div>
@@ -1026,6 +1071,8 @@ class TideWiseCard extends HTMLElement {
         <div class="chart-wrap"><canvas id="tideCanvas"></canvas></div>
         ${this._xAxisHtml(chartPredictions)}
       </div>
+      ${conditionsHtml}
+      ${windowsHtml}
       <div class="tides-grid">
         ${this._pillHtml("low", nextLow, unitLabel)}
         ${this._pillHtml("high", nextHigh, unitLabel)}
@@ -1292,6 +1339,17 @@ class TideWiseCard extends HTMLElement {
     const m = date.getMinutes().toString().padStart(2, "0");
     const ap = h >= 12 ? "PM" : "AM";
     return `${((h % 12) || 12)}:${m} ${ap}`;
+  }
+
+  _formatWindowDate(date) {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const isToday = date.toDateString() === today.toDateString();
+    const isTomorrow = date.toDateString() === tomorrow.toDateString();
+    if (isToday) return "Today";
+    if (isTomorrow) return "Tomorrow";
+    return date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
   }
 
   _escape(value) {
