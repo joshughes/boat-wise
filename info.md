@@ -1,11 +1,12 @@
-# TideWise
+# BoatWise
 
-Tide predictions with optional fishing bite-window scoring for Home Assistant.
+NOAA tide predictions with depth-threshold boating windows, NWS marine alerts, and zone forecasts for Home Assistant.
 
-TideWise shows current tide height, next high/low tide, a 24-hour tide chart, moon phase, and fishing quality bands using configurable local weather and marine entities. NOAA CO-OPS is the default provider, with early Canada CHS/DFO support and UK support through the UKHO Tides Home Assistant integration.
+Forked from [TideWise](https://github.com/TheWillMiller/tide-wise) — re-shaped for boaters who care about safe transit windows rather than fishing bite times.
 
-## Support
-
-TideWise has no telemetry, ads, popups, tracking pixels, or in-card donation prompts. If it helps you and you want to support development, you can buy me a coffee:
-
-https://buymeacoffee.com/thewillmiller
+- Tide-depth safe-window detection (configurable threshold)
+- Wharf prep buffer
+- NWS Marine Zone Small Craft Advisories, Gale and Storm Warnings
+- NWS Marine Zone forecast (offshore wind, seas)
+- 3-day forecast horizon
+- Single NOAA CO-OPS provider — US only

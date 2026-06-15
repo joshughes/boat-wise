@@ -1,11 +1,10 @@
 /*
- * TideWise Card v0.9.5
- * NOAA tides with optional bite-window fishing quality scoring.
- *
- * Legacy alias: custom:cherry-grove-tides-card
+ * BoatWise Card v1.0.0
+ * NOAA tides with depth-threshold boating windows and NWS marine alerts.
+ * Forked from TideWise v0.9.5 (TheWillMiller/tide-wise).
  */
 
-const CARD_VERSION = "0.9.5";
+const CARD_VERSION = "1.0.0";
 
 export function extractSafeWindows(predictions, threshold) {
   const norm = (predictions || [])
@@ -183,7 +182,7 @@ export function parseMarineForecastPeriod(text) {
   return { wind, gusts, seas, conditions: null, raw };
 }
 
-const CARD_TYPES = ["tidewise-card"];
+const CARD_TYPES = ["boatwise-card"];
 const STATION_PRESETS = [
   { station: "8410140", name: "Eastport, ME", lat: 44.9046, lon: -66.9829 },
   { station: "8418150", name: "Portland, ME", lat: 43.6581, lon: -70.2442 },
@@ -241,13 +240,13 @@ const STYLES = `
   :host {
     --wave: #2a7a94; --wave-dark: #1a5f72; --gold: #e8b84b;
     --low-color: #2a7a94; --high-color: #0a7a70; --text: #0a1e28; --text-muted: #1e4d5e;
-    --tw-panel-bg: rgba(255,255,255,0.35); --tw-panel-border: rgba(42,122,148,0.20);
-    --tw-chip-bg: rgba(255,255,255,0.48); --tw-chip-border: rgba(42,122,148,0.22);
-    --tw-chart-grid: rgba(10,30,45,0.15); --tw-chart-axis: rgba(10,30,45,0.65);
-    --tw-chart-label-bg: rgba(255,255,255,0.88); --tw-chart-now-label-bg: rgba(255,255,255,0.92);
-    --tw-chart-label-border: rgba(42,122,148,0.45); --tw-chart-now-label-border: rgba(42,122,148,0.55);
-    --tw-chart-label-text: #0a1e28; --tw-tide-line: #2a7a94;
-    --tw-marker-stroke: rgba(255,255,255,0.9); --tw-now-marker-stroke: rgba(255,255,255,0.92);
+    --bw-panel-bg: rgba(255,255,255,0.35); --bw-panel-border: rgba(42,122,148,0.20);
+    --bw-chip-bg: rgba(255,255,255,0.48); --bw-chip-border: rgba(42,122,148,0.22);
+    --bw-chart-grid: rgba(10,30,45,0.15); --bw-chart-axis: rgba(10,30,45,0.65);
+    --bw-chart-label-bg: rgba(255,255,255,0.88); --bw-chart-now-label-bg: rgba(255,255,255,0.92);
+    --bw-chart-label-border: rgba(42,122,148,0.45); --bw-chart-now-label-border: rgba(42,122,148,0.55);
+    --bw-chart-label-text: #0a1e28; --bw-tide-line: #2a7a94;
+    --bw-marker-stroke: rgba(255,255,255,0.9); --bw-now-marker-stroke: rgba(255,255,255,0.92);
     --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Arial, sans-serif;
     --font-mono: "SF Mono", "Roboto Mono", "Courier New", monospace;
     display: block; font-family: var(--font-main); color: var(--text); container-type: inline-size;
@@ -256,20 +255,20 @@ const STYLES = `
     --wave: var(--accent-color, #2a7a94); --wave-dark: var(--primary-color, var(--accent-color, #1a5f72));
     --low-color: var(--accent-color, #2a7a94); --high-color: var(--primary-color, #0a7a70);
     --text: var(--primary-text-color, #0a1e28); --text-muted: var(--secondary-text-color, #1e4d5e);
-    --tw-panel-bg: var(--secondary-background-color, rgba(255,255,255,0.35));
-    --tw-panel-border: var(--divider-color, rgba(42,122,148,0.20));
-    --tw-chip-bg: var(--card-background-color, rgba(255,255,255,0.48));
-    --tw-chip-border: var(--divider-color, rgba(42,122,148,0.22));
-    --tw-chart-grid: var(--divider-color, rgba(10,30,45,0.15));
-    --tw-chart-axis: var(--secondary-text-color, rgba(10,30,45,0.65));
-    --tw-chart-label-bg: var(--card-background-color, rgba(255,255,255,0.88));
-    --tw-chart-now-label-bg: var(--card-background-color, rgba(255,255,255,0.92));
-    --tw-chart-label-border: var(--divider-color, rgba(42,122,148,0.45));
-    --tw-chart-now-label-border: var(--divider-color, rgba(42,122,148,0.55));
-    --tw-chart-label-text: var(--primary-text-color, #0a1e28);
-    --tw-tide-line: var(--accent-color, #2a7a94);
-    --tw-marker-stroke: var(--card-background-color, rgba(255,255,255,0.9));
-    --tw-now-marker-stroke: var(--card-background-color, rgba(255,255,255,0.92));
+    --bw-panel-bg: var(--secondary-background-color, rgba(255,255,255,0.35));
+    --bw-panel-border: var(--divider-color, rgba(42,122,148,0.20));
+    --bw-chip-bg: var(--card-background-color, rgba(255,255,255,0.48));
+    --bw-chip-border: var(--divider-color, rgba(42,122,148,0.22));
+    --bw-chart-grid: var(--divider-color, rgba(10,30,45,0.15));
+    --bw-chart-axis: var(--secondary-text-color, rgba(10,30,45,0.65));
+    --bw-chart-label-bg: var(--card-background-color, rgba(255,255,255,0.88));
+    --bw-chart-now-label-bg: var(--card-background-color, rgba(255,255,255,0.92));
+    --bw-chart-label-border: var(--divider-color, rgba(42,122,148,0.45));
+    --bw-chart-now-label-border: var(--divider-color, rgba(42,122,148,0.55));
+    --bw-chart-label-text: var(--primary-text-color, #0a1e28);
+    --bw-tide-line: var(--accent-color, #2a7a94);
+    --bw-marker-stroke: var(--card-background-color, rgba(255,255,255,0.9));
+    --bw-now-marker-stroke: var(--card-background-color, rgba(255,255,255,0.92));
   }
   .card-outer {
     background: linear-gradient(135deg, rgba(255,255,255,0.70), rgba(222,244,248,0.58));
@@ -288,14 +287,14 @@ const STYLES = `
   .header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 5px; flex-wrap: wrap; }
   .title { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1.05; letter-spacing: 0; overflow-wrap: anywhere; min-width: 0; max-width: 100%; }
   .subtitle { font-size: 13px; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; font-weight: 650; white-space: nowrap; padding-top: 8px; }
-  .current-row { display: flex; align-items: center; gap: 13px; flex-wrap: wrap; background: var(--tw-panel-bg); border: 1px solid var(--tw-panel-border); border-radius: 14px; padding: 7px 13px; margin-bottom: 6px; }
+  .current-row { display: flex; align-items: center; gap: 13px; flex-wrap: wrap; background: var(--bw-panel-bg); border: 1px solid var(--bw-panel-border); border-radius: 14px; padding: 7px 13px; margin-bottom: 6px; }
   .current-icon { font-size: 22px; animation: bob 3s ease-in-out infinite; flex-shrink: 0; }
   @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
   .current-label { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--wave-dark); margin-bottom: 2px; font-weight: 750; }
   .current-value { font-family: var(--font-mono); font-size: 36px; font-weight: 800; color: var(--text); line-height: 1; }
   .current-unit { font-size: 18px; color: var(--text-muted); font-weight: 650; }
   .direction-chip { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 18px; color: var(--wave-dark); font-weight: 750; flex-shrink: 0; }
-  .condition-chip { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--wave-dark); background: var(--tw-chip-bg); border: 1px solid var(--tw-chip-border); border-radius: 99px; padding: 4px 10px; white-space: nowrap; font-weight: 800; flex-shrink: 0; }
+  .condition-chip { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--wave-dark); background: var(--bw-chip-bg); border: 1px solid var(--bw-chip-border); border-radius: 99px; padding: 4px 10px; white-space: nowrap; font-weight: 800; flex-shrink: 0; }
   .status-row {
     display: flex; align-items: center; gap: 10px; margin: 4px 0 8px;
     flex-wrap: wrap;
@@ -312,8 +311,8 @@ const STYLES = `
   .conditions-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
   .windows-panel {
     margin: 8px 0;
-    background: var(--tw-panel-bg);
-    border: 1px solid var(--tw-panel-border);
+    background: var(--bw-panel-bg);
+    border: 1px solid var(--bw-panel-border);
     border-radius: 12px;
     padding: 8px 12px;
   }
@@ -348,7 +347,7 @@ const STYLES = `
   .x-row { display: flex; justify-content: space-between; margin-top: 2px; padding: 0 2px; }
   .x-tick { font-size: 13px; font-weight: 650; color: var(--text-muted); }
   .tides-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
-  .tide-pill { background: var(--tw-panel-bg); border: 1px solid var(--tw-panel-border); border-radius: 12px; padding: 5px 12px; }
+  .tide-pill { background: var(--bw-panel-bg); border: 1px solid var(--bw-panel-border); border-radius: 12px; padding: 5px 12px; }
   .pill-label { font-size: 13px; letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 3px; font-weight: 750; }
   .pill-label.low{color:var(--low-color)} .pill-label.high{color:var(--high-color)}
   .pill-main { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
@@ -411,7 +410,7 @@ const STYLES = `
   @keyframes spin { to{transform:rotate(360deg)} }
 `;
 
-class TideWiseCard extends HTMLElement {
+class BoatWiseCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
@@ -427,11 +426,11 @@ class TideWiseCard extends HTMLElement {
 
   static getStubConfig() {
     return {
-      title: "TideWise",
+      title: "BoatWise",
       station: "8441241",
       units: "english",
       wind_units: "auto",
-      theme_mode: "tidewise",
+      theme_mode: "boatwise",
       auto_sources: true,
       depth_threshold: 4.0,
       wharf_buffer_minutes: 30,
@@ -441,7 +440,7 @@ class TideWiseCard extends HTMLElement {
   }
 
   static getConfigElement() {
-    return document.createElement("tidewise-card-editor");
+    return document.createElement("boatwise-card-editor");
   }
 
   set hass(hass) {
@@ -449,9 +448,9 @@ class TideWiseCard extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config.station) throw new Error("TideWise requires a NOAA station ID.");
+    if (!config.station) throw new Error("BoatWise requires a NOAA station ID.");
     this._config = {
-      title: config.title || "TideWise",
+      title: config.title || "BoatWise",
       station: String(config.station || "8661070"),
       units: config.units || "english",
       wind_units: this._normalizeWindUnits(config.wind_units),
@@ -476,7 +475,7 @@ class TideWiseCard extends HTMLElement {
   }
 
   _normalizeThemeMode(value) {
-    return value === "auto" ? "auto" : "tidewise";
+    return value === "auto" ? "auto" : "boatwise";
   }
 
   _normalizeWindUnits(value) {
@@ -522,7 +521,7 @@ class TideWiseCard extends HTMLElement {
     const today = this._dateStr(0);
     const endDate = this._dateStr(horizonDays);
     const base = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter";
-    const cp = `station=${station}&datum=MLLW&time_zone=lst_ldt&units=${units}&application=tidewise_card&format=json`;
+    const cp = `station=${station}&datum=MLLW&time_zone=lst_ldt&units=${units}&application=boatwise_card&format=json`;
     try {
       const autoPromise = this._config.auto_sources ? this._fetchAutoSources().catch((err) => ({ error: err.message })) : Promise.resolve({});
       const [cr, hr, autoData] = await Promise.all([
@@ -677,7 +676,7 @@ class TideWiseCard extends HTMLElement {
   async _fetchCoopsObservations() {
     const { station, units } = this._config;
     const base = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter";
-    const common = `station=${station}&time_zone=lst_ldt&units=${units}&application=tidewise_card&format=json&date=latest`;
+    const common = `station=${station}&time_zone=lst_ldt&units=${units}&application=boatwise_card&format=json&date=latest`;
     const products = [
       ["water_temperature", "waterTemp"],
       ["wind", "wind"],
@@ -921,7 +920,7 @@ class TideWiseCard extends HTMLElement {
     const period = this._autoData?.nws?.period;
     if (!period) return null;
     return {
-      entity_id: "tidewise.nws_hourly",
+      entity_id: "boatwise.nws_hourly",
       state: this._normalizeNwsShortForecast(period.shortForecast),
       attributes: {
         wind_speed: this._parseNwsWindSpeedMph(),
@@ -1227,19 +1226,19 @@ class TideWiseCard extends HTMLElement {
       };
     }
     return {
-      grid: this._themeColor("--tw-chart-grid", "rgba(10,30,45,0.15)"),
-      axis: this._themeColor("--tw-chart-axis", "rgba(10,30,45,0.65)"),
-      labelBg: this._themeColor("--tw-chart-label-bg", "rgba(255,255,255,0.88)"),
-      nowLabelBg: this._themeColor("--tw-chart-now-label-bg", "rgba(255,255,255,0.92)"),
-      labelBorder: this._themeColor("--tw-chart-label-border", "rgba(42,122,148,0.45)"),
-      nowLabelBorder: this._themeColor("--tw-chart-now-label-border", "rgba(42,122,148,0.55)"),
-      labelText: this._themeColor("--tw-chart-label-text", "#0a1e28"),
-      tideLine: this._themeColor("--tw-tide-line", "#2a7a94"),
+      grid: this._themeColor("--bw-chart-grid", "rgba(10,30,45,0.15)"),
+      axis: this._themeColor("--bw-chart-axis", "rgba(10,30,45,0.65)"),
+      labelBg: this._themeColor("--bw-chart-label-bg", "rgba(255,255,255,0.88)"),
+      nowLabelBg: this._themeColor("--bw-chart-now-label-bg", "rgba(255,255,255,0.92)"),
+      labelBorder: this._themeColor("--bw-chart-label-border", "rgba(42,122,148,0.45)"),
+      nowLabelBorder: this._themeColor("--bw-chart-now-label-border", "rgba(42,122,148,0.55)"),
+      labelText: this._themeColor("--bw-chart-label-text", "#0a1e28"),
+      tideLine: this._themeColor("--bw-tide-line", "#2a7a94"),
       highMarker: this._themeColor("--high-color", "#0a7a70"),
       lowMarker: this._themeColor("--low-color", "#2a7a94"),
       nowMarker: this._themeColor("--gold", "#e8b84b"),
-      markerStroke: this._themeColor("--tw-marker-stroke", "rgba(255,255,255,0.9)"),
-      nowMarkerStroke: this._themeColor("--tw-now-marker-stroke", "rgba(255,255,255,0.92)")
+      markerStroke: this._themeColor("--bw-marker-stroke", "rgba(255,255,255,0.9)"),
+      nowMarkerStroke: this._themeColor("--bw-now-marker-stroke", "rgba(255,255,255,0.92)")
     };
   }
 
@@ -1458,7 +1457,7 @@ class TideWiseCard extends HTMLElement {
   getCardSize() { return 5; }
 }
 
-class TideWiseCardEditor extends HTMLElement {
+class BoatWiseCardEditor extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
@@ -1479,11 +1478,11 @@ class TideWiseCardEditor extends HTMLElement {
 
   setConfig(config) {
     this._config = {
-      title: "TideWise",
+      title: "BoatWise",
       station: "8661070",
       units: "english",
       wind_units: "auto",
-      theme_mode: "tidewise",
+      theme_mode: "boatwise",
       auto_sources: true,
       grid_options: { rows: "full", columns: 18 },
       ...config
@@ -1641,12 +1640,12 @@ class TideWiseCardEditor extends HTMLElement {
   _isGeneratedTitle(title) {
     const value = String(title || "").trim();
     return value === ""
-      || value === "TideWise"
+      || value === "BoatWise"
       || STATION_PRESETS.some((item) => value === `${item.name} Tides`);
   }
 
   _normalizeThemeMode(value) {
-    return value === "auto" ? "auto" : "tidewise";
+    return value === "auto" ? "auto" : "boatwise";
   }
 
   _normalizeWindUnits(value) {
@@ -2060,7 +2059,7 @@ class TideWiseCardEditor extends HTMLElement {
           <div class="grid">
             <label class="wide">
               Title
-              <input id="title" value="${this._escape(config.title || "")}" placeholder="TideWise">
+              <input id="title" value="${this._escape(config.title || "")}" placeholder="BoatWise">
             </label>
             <label>
               Units
@@ -2082,7 +2081,7 @@ class TideWiseCardEditor extends HTMLElement {
             <label>
               Theme
               <select id="themeMode">
-                <option value="tidewise" ${config.theme_mode !== "auto" ? "selected" : ""}>TideWise</option>
+                <option value="boatwise" ${config.theme_mode !== "auto" ? "selected" : ""}>BoatWise</option>
                 <option value="auto" ${config.theme_mode === "auto" ? "selected" : ""}>Home Assistant theme</option>
               </select>
             </label>
@@ -2131,7 +2130,7 @@ class TideWiseCardEditor extends HTMLElement {
     this.shadowRoot.getElementById("mapZoomIn")?.addEventListener("click", () => this._zoomMap(1));
     this.shadowRoot.getElementById("mapCenter")?.addEventListener("click", () => this._centerMapOnPoint());
     this.shadowRoot.getElementById("stationLocation")?.addEventListener("click", () => this._useNoaaStationLocation());
-    this.shadowRoot.getElementById("title")?.addEventListener("change", (event) => this._setValue("title", event.target.value || "TideWise"));
+    this.shadowRoot.getElementById("title")?.addEventListener("change", (event) => this._setValue("title", event.target.value || "BoatWise"));
     this.shadowRoot.getElementById("units")?.addEventListener("change", (event) => this._setValue("units", event.target.value));
     this.shadowRoot.getElementById("windUnits")?.addEventListener("change", (event) => this._setValue("wind_units", this._normalizeWindUnits(event.target.value)));
     this.shadowRoot.getElementById("themeMode")?.addEventListener("change", (event) => this._setValue("theme_mode", this._normalizeThemeMode(event.target.value)));
@@ -2156,20 +2155,20 @@ class TideWiseCardEditor extends HTMLElement {
 
 }
 
-if (!customElements.get(CARD_TYPES[0])) customElements.define(CARD_TYPES[0], TideWiseCard);
-if (!customElements.get("tidewise-card-editor")) customElements.define("tidewise-card-editor", TideWiseCardEditor);
+if (!customElements.get(CARD_TYPES[0])) customElements.define(CARD_TYPES[0], BoatWiseCard);
+if (!customElements.get("boatwise-card-editor")) customElements.define("boatwise-card-editor", BoatWiseCardEditor);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: "tidewise-card",
-  name: "TideWise",
-  description: "Tide predictions with optional bite-window fishing quality scoring",
+  type: "boatwise-card",
+  name: "BoatWise",
+  description: "Tide-depth boating windows with NWS marine alerts",
   preview: true
 });
 
 console.info(
-  `%c TIDEWISE CARD %c v${CARD_VERSION} `,
+  `%c BOATWISE CARD %c v${CARD_VERSION} `,
   "background:#0d3a5c;color:#7ecbca;font-weight:bold;padding:2px 4px;border-radius:3px 0 0 3px",
   "background:#7ecbca;color:#0d3a5c;font-weight:bold;padding:2px 4px;border-radius:0 3px 3px 0"
 );
-console.info(`TideWise v${CARD_VERSION} loaded`);
+console.info(`BoatWise v${CARD_VERSION} loaded`);

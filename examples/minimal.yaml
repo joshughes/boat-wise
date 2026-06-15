@@ -1,10 +1,7 @@
-type: custom:tidewise-card
-title: Local Tides
-station: "8661070"
+type: custom:boatwise-card
+title: Local Boating Windows
+station: "8441241"
+depth_threshold: 4.0
+wharf_buffer_minutes: 30
+marine_zone: ANZ250
 units: english
-mode: general
-auto_sources: true
-auto_surf_forecast: true
-grid_options:
-  rows: full
-  columns: 18

@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.0.0 — 2026-06-14
+
+Initial BoatWise release. Forked from TideWise v0.9.5.
+
+### Added
+- Depth-threshold safe-window detection (`depth_threshold`, default 4.0 ft).
+- Wharf prep buffer (`wharf_buffer_minutes`, default 30 min).
+- NWS marine zone active alerts (`marine_zone`, e.g. `ANZ250`).
+- NWS marine zone forecast — offshore wind and seas override land-point values.
+- 3-day forecast horizon (`forecast_horizon_hours`, default 72).
+- Status chip: GO NOW / GET TO WHARF NOW / TOO SHALLOW / ADVISORY.
+- Upcoming-windows panel with arrival-time hints.
+- Threshold-shaded tide chart.
+- Unit-tested pure functions (`extractSafeWindows`, `statusChipState`, `parseMarineForecastPeriod`).
+
+### Removed (vs. TideWise)
+- Fishing bite-window scoring, modes, solunar/moon scoring.
+- Surf Zone Forecast parsing, rip-current logic.
+- Water-temperature, wave-height, rain-today, rip-risk scoring helpers.
+- Canada CHS / DFO provider.
+- UK UKHO Tides integration provider.
+- `cherry-grove-tides-card` legacy alias.
+
 ## 0.9.5
 
 ### Fixed

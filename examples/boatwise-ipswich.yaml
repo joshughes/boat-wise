@@ -1,0 +1,12 @@
+type: custom:boatwise-card
+title: Ipswich River
+station: "8441241"            # Plum Island Sound, Ipswich Bay
+depth_threshold: 4.0          # tune from experience
+wharf_buffer_minutes: 30
+marine_zone: ANZ250           # Cape Ann to Marblehead
+units: english
+wind_units: mph
+auto_sources: true
+grid_options:
+  rows: full
+  columns: 18
