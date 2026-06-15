@@ -52,6 +52,8 @@ side-by-side install).
 
 - Config field: `depth_threshold` (numeric). Default `4.0`.
 - Units: feet when `units: english`, meters when `units: metric`.
+- Switching `units` does **not** auto-convert the stored `depth_threshold`
+  value; the user must re-enter it after a unit change.
 - Compared directly against NOAA's predicted tide height in the station's
   native datum (MLLW for US stations). No datum conversion.
 - A point in the tide series is `safe` iff `tide_height >= depth_threshold`.
@@ -146,6 +148,10 @@ side-by-side install).
   numbers, fall back to "unknown" on parse failure.
 - Marine-zone wind values **override** the land-point NWS wind when both are
   available (offshore wind is the relevant signal for boaters).
+- Override precedence (highest to lowest): HA entity (`wind_speed_entity` /
+  `wind_direction_entity`) → marine zone forecast → land-point NWS forecast.
+  A user-configured HA entity always wins, mirroring TideWise's
+  manual-entity-takes-priority convention.
 
 ### Caching & failure modes
 
@@ -231,8 +237,9 @@ Remove:
 `beach_state`, `beach_area`, `nws_office`, `surf_zone`, `wave_height_entity`,
 `rip_current_risk_entity`, `unsafe_to_swim_entity`, `rain_today_entity`,
 `pressure_trend_entity`, `ca_region`, `ca_station`, `ca_station_code`,
-`provider`, all `ukho_*` fields, `time_offset_minutes`, `height_offset`,
-`debug` (or repurposed — see Open Questions).
+`provider`, all `ukho_*` fields, `time_offset_minutes`, `height_offset`.
+
+`debug` is kept and repurposed (see "Debug panel" under Open Questions).
 
 ### Editor layout (top to bottom)
 
@@ -322,11 +329,12 @@ extracted to separate modules; otherwise tests remain inline / manual.
 1. **Exact NOAA station for Ipswich River.** Candidates: 8441241 (Plum
    Island Sound), 8443970 (Boston). To be confirmed by the user during
    implementation. Default config example uses 8443970 as a placeholder.
-2. **Debug panel.** TideWise has a hidden YAML-only debug panel for fishing
-   inputs. Drop it, or repurpose it to dump tide series + window
-   extraction details for threshold-tuning support? Recommendation:
-   **repurpose** — it's cheap and useful for tuning the threshold during
-   the first month.
+2. **Debug panel.** Decision: **repurpose**. The existing hidden YAML-only
+   debug panel becomes a window/threshold diagnostic surface — dumps recent
+   tide series samples, extracted windows, threshold value, and the
+   resolved status chip state. Useful for tuning the depth threshold during
+   the first month of use. Same `debug: { enabled: true, panel: true }`
+   YAML-only activation.
 3. **Icon.** TideWise's wave icon is generic enough to reuse as a placeholder.
    A boat-themed replacement can come later.
 4. **Folder/repo rename.** User opted to keep the folder as `tide-wise`.
