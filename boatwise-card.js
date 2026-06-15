@@ -182,6 +182,96 @@ export function parseMarineForecastPeriod(text) {
   return { wind, gusts, seas, conditions: null, raw };
 }
 
+export function boatingQualityScore({ windKt, seasFt, alerts, conditions }) {
+  const reasons = [];
+
+  const relevantAlertEvents = [
+    "small craft advisory",
+    "gale warning", "gale watch",
+    "storm warning", "storm watch",
+    "hurricane warning", "hurricane watch",
+    "special marine warning",
+    "hazardous seas warning", "hazardous seas watch"
+  ];
+  const activeAlert = (alerts || []).find((a) => {
+    if (!a) return false;
+    const ev = String(a.event || "").toLowerCase();
+    return relevantAlertEvents.some((re) => ev.startsWith(re));
+  });
+  if (activeAlert) {
+    reasons.push(`${activeAlert.event} active`);
+    return { label: "BAD", score: 0, reasons };
+  }
+
+  const windScore = (kt) => {
+    if (!Number.isFinite(kt)) return null;
+    if (kt <= 10) return 4;
+    if (kt <= 15) return 3;
+    if (kt <= 20) return 2;
+    if (kt <= 25) return 1;
+    return 0;
+  };
+  const seasScore = (ft) => {
+    if (!Number.isFinite(ft)) return null;
+    if (ft <= 2) return 4;
+    if (ft <= 3) return 3;
+    if (ft <= 4) return 2;
+    if (ft <= 6) return 1;
+    return 0;
+  };
+
+  const ws = windKt == null ? null : windScore(Number(windKt));
+  const ss = seasFt == null ? null : seasScore(Number(seasFt));
+
+  if (ws === null && ss === null) {
+    reasons.push("wind and seas unknown");
+    return { label: "FAIR", score: 2, reasons };
+  }
+
+  const components = [];
+  if (ws !== null) components.push({ kind: "wind", score: ws, value: windKt });
+  if (ss !== null) components.push({ kind: "seas", score: ss, value: seasFt });
+  components.sort((a, b) => a.score - b.score);
+  let score = components[0].score;
+  const dominant = components[0];
+
+  const cond = String(conditions || "").toLowerCase();
+  const isThunder = /(thunder|lightning|storm)/.test(cond);
+  const isHeavyRain = /(heavy rain|pouring|downpour)/.test(cond);
+  const isFog = /(fog|mist)/.test(cond);
+
+  if (isThunder && score > 2) {
+    reasons.push("thunderstorms — caps quality");
+    score = 2;
+  } else if (isHeavyRain && score > 2) {
+    reasons.push("heavy rain — caps quality");
+    score = 2;
+  } else if (isFog && score > 2) {
+    reasons.push("low visibility — caps quality");
+    score = 2;
+  }
+
+  if (dominant.kind === "wind") {
+    if (dominant.score === 4) reasons.push(`light wind (${Math.round(dominant.value)} kt)`);
+    else if (dominant.score === 3) reasons.push(`moderate wind (${Math.round(dominant.value)} kt)`);
+    else if (dominant.score === 2) reasons.push(`brisk wind (${Math.round(dominant.value)} kt)`);
+    else if (dominant.score === 1) reasons.push(`strong wind (${Math.round(dominant.value)} kt)`);
+    else reasons.push(`very strong wind (${Math.round(dominant.value)} kt)`);
+  } else {
+    if (dominant.score === 4) reasons.push(`flat seas (${dominant.value} ft)`);
+    else if (dominant.score === 3) reasons.push(`light chop (${dominant.value} ft)`);
+    else if (dominant.score === 2) reasons.push(`choppy seas (${dominant.value} ft)`);
+    else if (dominant.score === 1) reasons.push(`rough seas (${dominant.value} ft)`);
+    else reasons.push(`very rough seas (${dominant.value} ft)`);
+  }
+
+  if (ws === null) reasons.push("wind unknown");
+  if (ss === null) reasons.push("seas unknown");
+
+  const label = score >= 4 ? "GREAT" : score === 3 ? "GOOD" : score === 2 ? "FAIR" : "BAD";
+  return { label, score, reasons };
+}
+
 const CARD_TYPES = ["boatwise-card"];
 const STATION_PRESETS = [
   { station: "8410140", name: "Eastport, ME", lat: 44.9046, lon: -66.9829 },
@@ -309,34 +399,65 @@ const STYLES = `
   .chip-advisory { background: rgba(192,80,48,0.20); color: #8a3018; }
   .status-summary { font-size: 13px; color: var(--text-muted); font-weight: 700; line-height: 1.3; min-width: 0; }
   .marine-zone-error { font-size: 12px; color: #8a3018; background: rgba(192,80,48,0.10); border: 1px solid rgba(192,80,48,0.30); border-radius: 6px; padding: 4px 8px; margin: -4px 0 8px; font-weight: 700; }
-  .conditions-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
-  .windows-panel {
-    margin: 8px 0;
+  .chip-cluster { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+  .quality-chip { font-size: 13px; font-weight: 850; padding: 3px 10px; border-radius: 99px; letter-spacing: 0.05em; white-space: nowrap; }
+  .quality-chip-great { background: rgba(60,170,110,0.20); color: #0f7a38; }
+  .quality-chip-good { background: rgba(96,188,152,0.22); color: #157754; }
+  .quality-chip-fair { background: rgba(232,184,75,0.24); color: #8a6a10; }
+  .quality-chip-bad { background: rgba(192,80,48,0.20); color: #8a3018; }
+  .band-legend { display: flex; align-items: center; gap: 14px; margin: 6px 2px 2px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 750; color: var(--text-muted); white-space: nowrap; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06); }
+  .legend-dot.quality-great { background: #3caa6e; }
+  .legend-dot.quality-good { background: #60bc98; }
+  .legend-dot.quality-fair { background: #e8b84b; }
+  .legend-dot.quality-bad { background: #c05030; }
+  .legend-dot.shallow { background: #8c8c8c; }
+  .legend-reason { font-size: 11.5px; color: var(--text-muted); font-weight: 650; font-style: italic; margin-left: auto; line-height: 1.3; max-width: 60%; text-align: right; }
+  .windows-section { margin: 10px 0 6px; }
+  .windows-section .section-label { display: block; margin-bottom: 6px; }
+  .windows-scroll {
+    display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px;
+    scroll-snap-type: x mandatory; scrollbar-width: thin;
+  }
+  .windows-scroll::-webkit-scrollbar { height: 6px; }
+  .windows-scroll::-webkit-scrollbar-thumb { background: rgba(42,122,148,0.30); border-radius: 99px; }
+  .window-card {
+    flex: 0 0 auto;
+    min-width: 168px; max-width: 220px;
     background: var(--bw-panel-bg);
     border: 1px solid var(--bw-panel-border);
+    border-left: 4px solid var(--wave);
     border-radius: 12px;
-    padding: 8px 12px;
+    padding: 8px 11px 9px;
+    display: grid; gap: 4px;
+    scroll-snap-align: start;
+    position: relative;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
   }
-  .windows-title {
-    font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--text-muted); font-weight: 800; margin-bottom: 6px;
+  .window-card:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(10,50,70,0.10); }
+  .window-card.open-now {
+    border-left-color: #3caa6e;
+    background: linear-gradient(135deg, rgba(60,170,110,0.14), rgba(255,255,255,0.50));
   }
-  .window-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto auto;
-    gap: 8px; padding: 4px 0;
-    font-size: 13px; color: var(--text);
-    border-top: 1px solid rgba(42,122,148,0.10);
-    align-items: baseline;
+  .window-card.open-now.quality-great { border-left-color: #3caa6e; }
+  .window-card.open-now.quality-good { border-left-color: #60bc98; }
+  .window-card.open-now.quality-fair { border-left-color: #e8b84b; background: linear-gradient(135deg, rgba(232,184,75,0.18), rgba(255,255,255,0.50)); }
+  .window-card.open-now.quality-bad { border-left-color: #c05030; background: linear-gradient(135deg, rgba(192,80,48,0.16), rgba(255,255,255,0.50)); }
+  .window-card.advisory {
+    border-left-color: #a51f1f;
+    background: linear-gradient(135deg, rgba(192,80,48,0.14), rgba(255,255,255,0.45));
   }
-  .window-row:first-of-type { border-top: none; }
-  .window-row.open-now { background: rgba(30,160,100,0.07); border-radius: 6px; padding: 4px 6px; }
-  .window-date { font-weight: 750; color: var(--wave-dark); }
-  .window-times { font-family: var(--font-mono); font-weight: 700; }
-  .window-dur { font-size: 12px; color: var(--text-muted); font-weight: 700; }
-  .window-arrive { font-size: 12px; color: var(--text-muted); font-weight: 650; }
-  .warn-prefix { color: #a51f1f; margin-right: 4px; font-weight: 900; }
-  .windows-empty { font-size: 12px; color: var(--text-muted); padding: 10px 12px; }
+  .card-warn { position: absolute; top: 6px; right: 8px; color: #a51f1f; font-weight: 900; font-size: 14px; }
+  .card-day { font-size: 11px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--wave-dark); font-weight: 800; display: flex; align-items: center; gap: 6px; }
+  .card-open-badge { background: rgba(60,170,110,0.30); color: #0f7a38; font-size: 9px; letter-spacing: 0.10em; padding: 1px 5px; border-radius: 4px; font-weight: 900; }
+  .card-time { font-family: var(--font-mono); font-size: 15px; font-weight: 800; color: var(--text); line-height: 1.15; }
+  .card-arrow { color: var(--text-muted); margin: 0 1px; }
+  .card-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 2px; }
+  .card-dur { font-family: var(--font-mono); font-size: 13px; font-weight: 800; color: var(--wave-dark); }
+  .card-arrive { font-size: 11px; color: var(--text-muted); font-weight: 650; }
+  .windows-empty { padding: 8px 4px; }
+  .windows-empty .empty-note { font-size: 12px; color: var(--text-muted); padding: 8px 12px; background: var(--bw-panel-bg); border: 1px dashed var(--bw-panel-border); border-radius: 10px; }
   .condition-spacer { flex: 1 1 auto; min-width: 12px; }
   .pulse-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--wave); box-shadow: 0 0 0 3px rgba(42,122,148,0.25); animation: pulse 2s ease-in-out infinite; flex-shrink: 0; }
   @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.75)} }
@@ -394,8 +515,10 @@ const STYLES = `
     .pill-main { gap: 6px; flex-wrap: wrap; }
     .pill-time { font-size: 22px; line-height: 1.05; }
     .pill-ft { font-size: 14px; }
-    .window-row { grid-template-columns: 1fr; gap: 2px; }
-    .window-dur, .window-arrive { font-size: 11px; }
+    .window-card { min-width: 156px; padding: 7px 10px 8px; }
+    .card-time { font-size: 14px; }
+    .card-dur { font-size: 12px; }
+    .legend-reason { display: none; }
   }
   @container (max-width: 390px) {
     .title { font-size: 22px; }
@@ -1040,48 +1163,82 @@ class BoatWiseCard extends HTMLElement {
       TOO_SHALLOW: "TOO SHALLOW"
     }[chip.status] || "TOO SHALLOW";
 
+    // Quality assessment (Bad / Fair / Good / Great)
+    const windMph = this._getWindSpeedMph(weather);
+    const windKt = Number.isFinite(windMph) ? windMph / 1.15078 : null;
+    const seasObj = this._autoData?.marine?.parsed?.seas;
+    const seasFt = seasObj ? (seasObj.max ?? seasObj.min) : null;
+    const conditionText = weather?.state || this._autoData?.marine?.current?.shortForecast || null;
+    const quality = boatingQualityScore({
+      windKt,
+      seasFt,
+      alerts,
+      conditions: conditionText
+    });
+
     const windowsForPanel = windows
       .filter((w) => w.end.getTime() > now.getTime())
-      .slice(0, 6);
+      .slice(0, 8);
     const hasActiveAlert = chip.status === "ADVISORY";
 
     const windowsHtml = windowsForPanel.length
       ? `
-        <div class="windows-panel">
-          <div class="windows-title">Upcoming Boating Windows</div>
-          ${windowsForPanel.map((w) => {
-            const arriveBy = new Date(w.start.getTime() - this._config.wharf_buffer_minutes * 60000);
-            const dur = Math.round(w.duration_minutes);
-            const durLabel = dur >= 60 ? `${Math.floor(dur/60)}h ${dur%60}m` : `${dur}m`;
-            const dateLabel = this._formatWindowDate(w.start);
-            const startClock = this._formatClock(w.start);
-            const endClock = this._formatClock(w.end);
-            const arriveClock = this._formatClock(arriveBy);
-            const isOpenNow = w.start.getTime() <= now.getTime() && now.getTime() < w.end.getTime();
-            const rowClass = isOpenNow ? "window-row open-now" : "window-row";
-            const prefix = hasActiveAlert ? `<span class="warn-prefix">&#9888;</span>` : "";
-            return `<div class="${rowClass}">${prefix}<span class="window-date">${dateLabel}</span><span class="window-times">${startClock} &rarr; ${endClock}</span><span class="window-dur">${durLabel}</span><span class="window-arrive">arrive ${arriveClock}</span></div>`;
-          }).join("")}
+        <div class="windows-section">
+          <div class="section-label">Upcoming Boating Windows</div>
+          <div class="windows-scroll">
+            ${windowsForPanel.map((w) => {
+              const arriveBy = new Date(w.start.getTime() - this._config.wharf_buffer_minutes * 60000);
+              const dur = Math.round(w.duration_minutes);
+              const durLabel = dur >= 60 ? `${Math.floor(dur/60)}h ${dur%60}m` : `${dur}m`;
+              const dateLabel = this._formatWindowDate(w.start);
+              const startClock = this._formatClock(w.start);
+              const endClock = this._formatClock(w.end);
+              const arriveClock = this._formatClock(arriveBy);
+              const isOpenNow = w.start.getTime() <= now.getTime() && now.getTime() < w.end.getTime();
+              const qualityClass = `quality-${(isOpenNow ? quality.label : "GOOD").toLowerCase()}`;
+              const stateClass = hasActiveAlert ? "advisory" : isOpenNow ? "open-now" : "upcoming";
+              return `
+                <div class="window-card ${stateClass} ${qualityClass}">
+                  ${hasActiveAlert ? `<span class="card-warn">&#9888;</span>` : ""}
+                  <div class="card-day">${dateLabel}${isOpenNow ? ' <span class="card-open-badge">OPEN</span>' : ""}</div>
+                  <div class="card-time">${startClock} <span class="card-arrow">&rarr;</span> ${endClock}</div>
+                  <div class="card-meta">
+                    <span class="card-dur">&#9201; ${durLabel}</span>
+                    <span class="card-arrive">arrive ${arriveClock}</span>
+                  </div>
+                </div>
+              `;
+            }).join("")}
+          </div>
         </div>
       `
-      : `<div class="windows-panel windows-empty">No safe windows in the next ${this._config.forecast_horizon_hours} h.</div>`;
+      : `<div class="windows-section windows-empty">
+          <div class="section-label">Upcoming Boating Windows</div>
+          <div class="empty-note">No safe windows in the next ${this._config.forecast_horizon_hours} h.</div>
+        </div>`;
 
     const waterTempLabel = this._formatWaterTemp(this._getWaterTempF());
-    const seasLabel = (this._autoData?.marine?.parsed?.seas)
-      ? (() => {
-          const s = this._autoData.marine.parsed.seas;
-          return s.min === s.max ? `Seas ${s.min} ft` : `Seas ${s.min}-${s.max} ft`;
-        })()
+    const seasLabel = seasObj
+      ? (seasObj.min === seasObj.max ? `Seas ${seasObj.min} ft` : `Seas ${seasObj.min}-${seasObj.max} ft`)
       : "";
     const pressureHpa = this._getPressureHpa(weather);
     const pressureLabel = Number.isFinite(pressureHpa) ? `${pressureHpa.toFixed(0)} hPa` : "";
 
-    const conditionsHtml = `
-      <div class="conditions-row">
-        ${windLabel ? `<span class="condition-chip">${windLabel}</span>` : ""}
-        ${seasLabel ? `<span class="condition-chip">${seasLabel}</span>` : ""}
-        ${waterTempLabel ? `<span class="condition-chip">Water ${waterTempLabel}</span>` : ""}
-        ${pressureLabel ? `<span class="condition-chip">${pressureLabel}</span>` : ""}
+    const qualityClass = `quality-chip-${quality.label.toLowerCase()}`;
+    const qualityChipHtml = `<span class="quality-chip ${qualityClass}">${quality.label}</span>`;
+
+    const chartChipsHtml = [
+      seasLabel ? `<span class="condition-chip">${seasLabel}</span>` : "",
+      waterTempLabel ? `<span class="condition-chip">Water ${waterTempLabel}</span>` : "",
+      pressureLabel ? `<span class="condition-chip">${pressureLabel}</span>` : "",
+      qualityChipHtml
+    ].filter(Boolean).join("");
+
+    const legendHtml = `
+      <div class="band-legend">
+        <span class="legend-item"><span class="legend-dot quality-${quality.label.toLowerCase()}"></span>${quality.label.charAt(0) + quality.label.slice(1).toLowerCase()}</span>
+        <span class="legend-item"><span class="legend-dot shallow"></span>Too Shallow</span>
+        ${quality.reasons.length ? `<span class="legend-reason">${this._escape(quality.reasons.slice(0, 2).join(" · "))}</span>` : ""}
       </div>
     `;
 
@@ -1102,6 +1259,7 @@ class BoatWiseCard extends HTMLElement {
           <div class="current-value">${cur.toFixed(1)}<span class="current-unit"> ${unitLabel}</span></div>
         </div>
         <div class="condition-spacer"></div>
+        ${windLabel ? `<div class="condition-chip">${windLabel}</div>` : ""}
         <div class="direction-chip">
           <div class="pulse-dot"></div>
           <span>${rising ? "▲ Rising" : "▼ Falling"}</span>
@@ -1109,12 +1267,13 @@ class BoatWiseCard extends HTMLElement {
       </div>
       <div class="chart-section">
         <div class="chart-header">
-          <div class="section-label">Tide Forecast</div>
+          <div class="section-label">Tide &amp; Quality</div>
+          ${chartChipsHtml ? `<div class="chip-cluster">${chartChipsHtml}</div>` : ""}
         </div>
         <div class="chart-wrap"><canvas id="tideCanvas"></canvas></div>
         ${this._xAxisHtml(chartPredictions)}
+        ${legendHtml}
       </div>
-      ${conditionsHtml}
       ${windowsHtml}
       <div class="tides-grid">
         ${this._pillHtml("low", nextLow, unitLabel)}
@@ -1125,7 +1284,7 @@ class BoatWiseCard extends HTMLElement {
 
     requestAnimationFrame(() => {
       this._chartCanvas = this.shadowRoot.getElementById("tideCanvas");
-      this._drawChart(chartPredictions, now, cur, unitLabel, this._config.depth_threshold, [nextHigh, nextLow].filter(Boolean));
+      this._drawChart(chartPredictions, now, cur, unitLabel, this._config.depth_threshold, [nextHigh, nextLow].filter(Boolean), quality.label);
     });
   }
 
@@ -1244,7 +1403,7 @@ class BoatWiseCard extends HTMLElement {
     };
   }
 
-  _drawChart(predictions, now, cur, unitLabel, threshold, tideEvents = []) {
+  _drawChart(predictions, now, cur, unitLabel, threshold, tideEvents = [], qualityLabel = "GOOD") {
     const canvas = this._chartCanvas;
     if (!canvas) return;
     const theme = this._chartColors();
@@ -1285,15 +1444,67 @@ class BoatWiseCard extends HTMLElement {
       ctx.fillText(v.toFixed(1), padL - 3, y + 3);
     }
 
-    // Shade below-threshold region
-    if (Number.isFinite(threshold) && threshold >= minV) {
+    // Color bands: safe segments fill in quality color, shallow segments fill amber/gray.
+    const qualityFill = ({
+      GREAT: "rgba(60,170,110,0.55)",
+      GOOD: "rgba(96,188,152,0.50)",
+      FAIR: "rgba(232,184,75,0.55)",
+      BAD: "rgba(192,80,48,0.50)"
+    })[qualityLabel] || "rgba(96,188,152,0.50)";
+    const shallowFill = "rgba(140,140,140,0.36)";
+    const baselineY = H - padB;
+    const hasThreshold = Number.isFinite(threshold);
+
+    const fillTrapezoid = (x1, y1, x2, y2, color) => {
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.lineTo(x2, baselineY);
+      ctx.lineTo(x1, baselineY);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+    };
+
+    for (let i = 0; i < predictions.length - 1; i++) {
+      const v1 = parseFloat(predictions[i].v);
+      const v2 = parseFloat(predictions[i + 1].v);
+      const x1 = toX(predictions[i]);
+      const x2 = toX(predictions[i + 1]);
+      const y1 = toY(v1);
+      const y2 = toY(v2);
+
+      if (!hasThreshold) {
+        fillTrapezoid(x1, y1, x2, y2, qualityFill);
+        continue;
+      }
+      const aSafe = v1 >= threshold;
+      const bSafe = v2 >= threshold;
+      if (aSafe && bSafe) {
+        fillTrapezoid(x1, y1, x2, y2, qualityFill);
+      } else if (!aSafe && !bSafe) {
+        fillTrapezoid(x1, y1, x2, y2, shallowFill);
+      } else {
+        // crossing — interpolate
+        const ratio = (threshold - v1) / (v2 - v1);
+        const xc = x1 + ratio * (x2 - x1);
+        const yc = toY(threshold);
+        if (aSafe) {
+          fillTrapezoid(x1, y1, xc, yc, qualityFill);
+          fillTrapezoid(xc, yc, x2, y2, shallowFill);
+        } else {
+          fillTrapezoid(x1, y1, xc, yc, shallowFill);
+          fillTrapezoid(xc, yc, x2, y2, qualityFill);
+        }
+      }
+    }
+
+    // Threshold reference line (drawn over the bands).
+    if (hasThreshold && threshold >= minV) {
       const thresholdY = toY(Math.min(threshold, maxV));
-      ctx.fillStyle = "rgba(192,80,48,0.10)";
-      ctx.fillRect(padL, thresholdY, cW, H - padB - thresholdY);
-      // Dashed line at threshold
       ctx.setLineDash([4, 3]);
-      ctx.strokeStyle = "rgba(192,80,48,0.55)";
-      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = "rgba(180,100,70,0.62)";
+      ctx.lineWidth = 1.1;
       ctx.beginPath();
       ctx.moveTo(padL, thresholdY);
       ctx.lineTo(W - padR, thresholdY);
