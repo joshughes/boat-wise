@@ -92,6 +92,47 @@ export function extractSafeWindows(predictions, threshold) {
   return windows;
 }
 
+export function statusChipState({ windows, alerts, now, bufferMinutes, formatClock }) {
+  const activeAlerts = (alerts || []).filter((a) => {
+    if (!a) return false;
+    if (a.expires instanceof Date && a.expires.getTime() <= now.getTime()) return false;
+    return true;
+  });
+
+  if (activeAlerts.length) {
+    const severityRank = { Severe: 3, Moderate: 2, Minor: 1, Unknown: 0 };
+    activeAlerts.sort((a, b) => (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0));
+    const top = activeAlerts[0];
+    const expiry = top.expires instanceof Date ? ` · expires ${formatClock(top.expires)}` : "";
+    return { status: "ADVISORY", summary: `${top.event}${expiry}` };
+  }
+
+  const currentWindow = (windows || []).find((w) => w.start.getTime() <= now.getTime() && now.getTime() < w.end.getTime());
+  if (currentWindow) {
+    return { status: "GO_NOW", summary: `Open until ${formatClock(currentWindow.end)}` };
+  }
+
+  const upcoming = (windows || [])
+    .filter((w) => w.start.getTime() > now.getTime())
+    .sort((a, b) => a.start - b.start);
+
+  const bufferMs = (bufferMinutes || 0) * 60000;
+
+  if (upcoming.length) {
+    const next = upcoming[0];
+    const arriveBy = new Date(next.start.getTime() - bufferMs);
+    if (now.getTime() >= arriveBy.getTime()) {
+      return { status: "GET_TO_WHARF", summary: `Window opens ${formatClock(next.start)}` };
+    }
+    return {
+      status: "TOO_SHALLOW",
+      summary: `Next window: ${formatClock(next.start)} (arrive ${formatClock(arriveBy)})`
+    };
+  }
+
+  return { status: "TOO_SHALLOW", summary: "No window in next 72h" };
+}
+
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const TIDEWISE_PROVIDERS = {
   noaa_coops: { label: "US NOAA CO-OPS", stationLabel: "NOAA" },
