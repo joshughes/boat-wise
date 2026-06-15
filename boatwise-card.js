@@ -1035,7 +1035,7 @@ class TideWiseCard extends HTMLElement {
 
     requestAnimationFrame(() => {
       this._chartCanvas = this.shadowRoot.getElementById("tideCanvas");
-      this._drawChart(chartPredictions, now, cur, unitLabel, null, null, [nextHigh, nextLow].filter(Boolean));
+      this._drawChart(chartPredictions, now, cur, unitLabel, this._config.depth_threshold, [nextHigh, nextLow].filter(Boolean));
     });
   }
 
@@ -1103,7 +1103,7 @@ class TideWiseCard extends HTMLElement {
     };
   }
 
-  _drawChart(predictions, now, cur, unitLabel, fishScores, fishDetails, tideEvents = []) {
+  _drawChart(predictions, now, cur, unitLabel, threshold, tideEvents = []) {
     const canvas = this._chartCanvas;
     if (!canvas) return;
     const theme = this._chartColors();
@@ -1144,22 +1144,20 @@ class TideWiseCard extends HTMLElement {
       ctx.fillText(v.toFixed(1), padL - 3, y + 3);
     }
 
-    const fillColor = theme.tideLine;
-    for (let i = 0; i < predictions.length - 1; i++) {
-      const x1 = toX(predictions[i]);
-      const x2 = toX(predictions[i + 1]);
-      const y1 = toY(parseFloat(predictions[i].v));
-      const y2 = toY(parseFloat(predictions[i + 1].v));
+    // Shade below-threshold region
+    if (Number.isFinite(threshold) && threshold >= minV) {
+      const thresholdY = toY(Math.min(threshold, maxV));
+      ctx.fillStyle = "rgba(192,80,48,0.10)";
+      ctx.fillRect(padL, thresholdY, cW, H - padB - thresholdY);
+      // Dashed line at threshold
+      ctx.setLineDash([4, 3]);
+      ctx.strokeStyle = "rgba(192,80,48,0.55)";
+      ctx.lineWidth = 1.2;
       ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.lineTo(x2, H - padB);
-      ctx.lineTo(x1, H - padB);
-      ctx.closePath();
-      ctx.fillStyle = fillColor;
-      ctx.globalAlpha = 0.18;
-      ctx.fill();
-      ctx.globalAlpha = 1;
+      ctx.moveTo(padL, thresholdY);
+      ctx.lineTo(W - padR, thresholdY);
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
 
     tideEvents.forEach((ev) => {
