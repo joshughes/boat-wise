@@ -1058,7 +1058,6 @@ class TideWiseCard extends HTMLElement {
           <div class="current-value">${cur.toFixed(1)}<span class="current-unit"> ${unitLabel}</span></div>
         </div>
         <div class="condition-spacer"></div>
-        ${windLabel ? `<div class="condition-chip">${windLabel}</div>` : ""}
         <div class="direction-chip">
           <div class="pulse-dot"></div>
           <span>${rising ? "▲ Rising" : "▼ Falling"}</span>
