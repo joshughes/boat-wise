@@ -257,7 +257,7 @@ Remove:
 ```yaml
 type: custom:boatwise-card
 title: Ipswich River
-station: "8443970"        # placeholder — actual Ipswich-area station TBD
+station: "8441241"        # Plum Island Sound, Ipswich Bay
 depth_threshold: 4.0
 wharf_buffer_minutes: 30
 marine_zone: ANZ250
@@ -326,9 +326,8 @@ extracted to separate modules; otherwise tests remain inline / manual.
 
 ## Open Questions
 
-1. **Exact NOAA station for Ipswich River.** Candidates: 8441241 (Plum
-   Island Sound), 8443970 (Boston). To be confirmed by the user during
-   implementation. Default config example uses 8443970 as a placeholder.
+1. **Exact NOAA station for Ipswich River.** Confirmed: **8441241 Plum
+   Island Sound, Ipswich Bay**. Marine zone confirmed: **ANZ250**.
 2. **Debug panel.** Decision: **repurpose**. The existing hidden YAML-only
    debug panel becomes a window/threshold diagnostic surface — dumps recent
    tide series samples, extracted windows, threshold value, and the
