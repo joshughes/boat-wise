@@ -133,6 +133,56 @@ export function statusChipState({ windows, alerts, now, bufferMinutes, formatClo
   return { status: "TOO_SHALLOW", summary: "No window in next 72h" };
 }
 
+export function parseMarineForecastPeriod(text) {
+  const raw = typeof text === "string" ? text : "";
+  const empty = { wind: null, gusts: null, seas: null, conditions: null, raw };
+  if (!raw.trim()) return empty;
+
+  const lower = raw.toLowerCase();
+
+  const dirMap = {
+    n: "N", s: "S", e: "E", w: "W",
+    ne: "NE", nw: "NW", se: "SE", sw: "SW",
+    nne: "NNE", ene: "ENE", ese: "ESE", sse: "SSE",
+    ssw: "SSW", wsw: "WSW", wnw: "WNW", nnw: "NNW",
+    north: "N", south: "S", east: "E", west: "W",
+    northeast: "NE", northwest: "NW", southeast: "SE", southwest: "SW"
+  };
+
+  // Wind: "<dir> winds A to B kt", "winds <dir> A to B kt", "wind <dir> A kt"
+  let wind = null;
+  const windRange = lower.match(/(?:^|\b)([a-z]{1,3}|north[a-z]*|south[a-z]*|east|west)\s+winds?\s+(\d+)(?:\s+to\s+(\d+))?\s*kt/);
+  const altWindRange = lower.match(/winds?\s+([a-z]{1,3}|north[a-z]*|south[a-z]*|east|west)\s+(\d+)(?:\s+to\s+(\d+))?\s*kt/);
+  const m = windRange || altWindRange;
+  if (m) {
+    const dirKey = m[1].toLowerCase();
+    const dir = dirMap[dirKey] || null;
+    const min = parseInt(m[2], 10);
+    const max = m[3] ? parseInt(m[3], 10) : min;
+    if (Number.isFinite(min) && Number.isFinite(max)) {
+      wind = { min, max, unit: "kt", direction: dir };
+    }
+  }
+
+  // Gusts: "gusts up to N kt", "gusts to N kt", "gusting to N kt"
+  let gusts = null;
+  const gm = lower.match(/gust(?:s|ing)?\s+(?:up\s+)?to\s+(\d+)\s*kt/);
+  if (gm) gusts = parseInt(gm[1], 10);
+
+  // Seas: "seas A to B ft" or "seas A ft"
+  let seas = null;
+  const sm = lower.match(/seas\s+(\d+)(?:\s+to\s+(\d+))?\s*(?:ft|feet)/);
+  if (sm) {
+    const min = parseInt(sm[1], 10);
+    const max = sm[2] ? parseInt(sm[2], 10) : min;
+    if (Number.isFinite(min) && Number.isFinite(max)) {
+      seas = { min, max, unit: "ft" };
+    }
+  }
+
+  return { wind, gusts, seas, conditions: null, raw };
+}
+
 const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
 const TIDEWISE_PROVIDERS = {
   noaa_coops: { label: "US NOAA CO-OPS", stationLabel: "NOAA" },
