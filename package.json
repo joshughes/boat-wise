@@ -1,17 +1,18 @@
 {
-  "name": "tidewise-card",
-  "version": "0.9.5",
-  "description": "Tide predictions with optional bite-window fishing quality scoring for Home Assistant.",
+  "name": "boatwise-card",
+  "version": "1.0.0",
+  "description": "Tide-depth boating windows, NWS marine alerts and zone forecasts for Home Assistant.",
   "type": "module",
   "files": [
-    "tidewise-card.js",
+    "boatwise-card.js",
     "README.md",
     "info.md",
     "hacs.json",
     "examples"
   ],
   "scripts": {
-    "check": "node --check tidewise-card.js"
+    "check": "node --check boatwise-card.js",
+    "test": "TZ=UTC node --test test/"
   },
   "keywords": [
     "home-assistant",
@@ -22,7 +23,8 @@
     "noaa",
     "tide",
     "tides",
-    "fishing",
+    "boating",
+    "marine",
     "weather"
   ],
   "license": "PolyForm-Noncommercial-1.0.0",

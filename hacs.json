@@ -1,7 +1,7 @@
 {
-  "name": "TideWise",
+  "name": "BoatWise",
   "country": "US",
   "content_in_root": true,
   "render_readme": true,
-  "filename": "tidewise-card.js"
+  "filename": "boatwise-card.js"
 }

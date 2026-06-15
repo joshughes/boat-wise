@@ -20,4 +20,4 @@ jobs:
           node-version: "20"
 
       - name: JavaScript syntax check
-        run: node --check tidewise-card.js
+        run: node --check boatwise-card.js
