@@ -1000,6 +1000,10 @@ Editor:
 
 Renderer (`_renderData`): remove the `fish` variable computation, `scoreInfo`, `phaseName`, `headerBadges` content for fish badges, `<div class="fish-footer">...</div>`, `<div class="fish-legend">...</div>`, `_safetyBadgeHtml` calls. Pass `null` for `fish` parameters into `_drawChart`. (Task 10 wires in the new boating UI.)
 
+**Helpers to KEEP (do NOT delete — they're used by the new boating UI):** `_xAxisHtml`, `_pillHtml`, `_interpolateHeight`, `_parseHiloTime`, `_parsePredictionTime`, `_rollingPredictions`, `_formatClock`, `_escape`, `_getWeatherState`, `_getForecastLatLon`, `_getWindSpeedMph`, `_getWindBearing`, `_formatWind`, `_beaufortFromMph`, `_formatWindDirection`, `_getPressureHpa`, `_normalizePressureHpa`, `_getWaterTempF`, `_formatWaterTemp`, `_getEntity`, `_parseNumericState`, `_getNumericEntity`, `_dateStr`, `_formatNoaaTime`, `_themeColor`, `_chartColors`, `_roundedRect`, `_updateLive`, `_normalizeWindUnits`, `_normalizeThemeMode`, `_normalizeDebugConfig`, `_fetchAutoSources`, `_fetchCoopsObservations`, `_fetchNwsForecast`, `_parseCoopsWaterTempF`, `_parseCoopsWindSpeedMph`, `_parseAutoPressureHpa`, `_parseNwsWindSpeedMph`, `_parseNwsWindDirection`, `_getAutoWeatherState`, `_normalizeNwsShortForecast`.
+
+When in doubt about whether a helper is still used, grep for callers before deleting.
+
 `_drawChart`: remove `fishScores`-driven coloring (lines ~2209–2244). Replace with the existing tide-line drawing only. (Task 11 adds threshold shading.)
 
 CherryGroveTidesCard: remove the class.
@@ -1307,8 +1311,11 @@ Note: any field referencing the old `surf` key in the renderer must be updated i
 In `_getWindSpeedMph(weather)` and `_getWindBearing(weather)`, the precedence should become:
 
 1. HA entity (`wind_speed_entity` / `wind_direction_entity`) — already handled
-2. Marine zone forecast value (`this._autoData.marine?.parsed?.wind?.max` for speed, `direction` parsed string for bearing)
-3. NWS land forecast (existing fallback)
+2. NOAA CO-OPS observation at the tide station (`this._autoData?.coops?.wind`) — "what the buoy at the station is reading right now" is the strongest real signal when available; existing code path stays
+3. Marine zone forecast value (`this._autoData.marine?.parsed?.wind?.max` for speed, `direction` parsed string for bearing) — offshore forecast, replaces the inland NWS point forecast
+4. NWS land point forecast (existing fallback) — last resort if station obs and marine zone aren't available
+
+Rationale: CO-OPS station obs are "now" measurements at the actual tide gauge — most relevant for actual on-the-water decisions. The marine zone forecast is the next-best signal because it's offshore-oriented, but it's a forecast, not an observation. Land-point NWS stays as last-resort fallback only.
 
 For wind speed, marine forecast values are in knots. The card's `_getWindSpeedMph` returns MPH. Convert: `kt * 1.15078`.
 
