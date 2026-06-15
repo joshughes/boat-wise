@@ -308,6 +308,7 @@ const STYLES = `
   .chip-shallow { background: rgba(120,130,140,0.18); color: #4a5560; }
   .chip-advisory { background: rgba(192,80,48,0.20); color: #8a3018; }
   .status-summary { font-size: 13px; color: var(--text-muted); font-weight: 700; line-height: 1.3; min-width: 0; }
+  .marine-zone-error { font-size: 12px; color: #8a3018; background: rgba(192,80,48,0.10); border: 1px solid rgba(192,80,48,0.30); border-radius: 6px; padding: 4px 8px; margin: -4px 0 8px; font-weight: 700; }
   .conditions-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
   .windows-panel {
     margin: 8px 0;
@@ -648,9 +649,9 @@ class BoatWiseCard extends HTMLElement {
       }))
       .filter((a) => {
         const ev = a.event.toLowerCase();
-        if (!relevantEvents.some((re) => ev.startsWith(re))) return false;
-        if (!["Severe", "Moderate"].includes(a.severity)) return false;
-        return true;
+        const eventMatches = relevantEvents.some((re) => ev.startsWith(re));
+        const severityRelevant = ["Severe", "Moderate"].includes(a.severity);
+        return eventMatches && (severityRelevant || ev.startsWith("special marine warning"));
       });
     this._setCached(`alerts:${zone}`, alerts);
     return alerts;
@@ -1093,6 +1094,7 @@ class BoatWiseCard extends HTMLElement {
         <span class="status-chip ${chipClass}">${chipLabel}</span>
         <span class="status-summary">${this._escape(chip.summary)}</span>
       </div>
+      ${this._marineZoneError ? `<div class="marine-zone-error">${this._escape(this._marineZoneError)}</div>` : ""}
       <div class="current-row">
         <div class="current-icon">&#127754;</div>
         <div>
