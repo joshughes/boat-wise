@@ -183,53 +183,7 @@ export function parseMarineForecastPeriod(text) {
   return { wind, gusts, seas, conditions: null, raw };
 }
 
-const CARD_TYPES = ["tidewise-card", "cherry-grove-tides-card"];
-const NWS_BEACH_AREAS = [
-  { id: "sc-horry", state: "SC", name: "Horry County / Grand Strand", office: "ILM", zone: "SCZ054", lat: 33.838489, lon: -78.603644 },
-  { id: "sc-georgetown", state: "SC", name: "Georgetown County Beaches", office: "ILM", zone: "SCZ056", lat: 33.3490, lon: -79.1880 },
-  { id: "nc-brunswick", state: "NC", name: "Brunswick County Beaches", office: "ILM", zone: "NCZ110", lat: 33.9020, lon: -78.3850 },
-  { id: "nc-new-hanover", state: "NC", name: "New Hanover County Beaches", office: "ILM", zone: "NCZ108", lat: 34.1940, lon: -77.8010 },
-  { id: "nc-pender", state: "NC", name: "Pender County Beaches", office: "ILM", zone: "NCZ106", lat: 34.4300, lon: -77.5500 }
-];
-const NWS_SRF_OFFICES = [
-  { region: "Atlantic/Gulf/Caribbean", state: "AL", area: "Mobile", nws: "MOB", srf: "SRFMOB" },
-  { region: "Atlantic/Gulf/Caribbean", state: "FL", area: "Jacksonville", nws: "JAX", srf: "SRFJAX" },
-  { region: "Atlantic/Gulf/Caribbean", state: "FL", area: "Melbourne", nws: "MLB", srf: "SRFMLB" },
-  { region: "Atlantic/Gulf/Caribbean", state: "FL", area: "Miami / South Florida", nws: "MFL", srf: "SRFMFL" },
-  { region: "Atlantic/Gulf/Caribbean", state: "FL", area: "Tallahassee", nws: "TAE", srf: "SRFTAE" },
-  { region: "Atlantic/Gulf/Caribbean", state: "FL", area: "Tampa Bay", nws: "TBW", srf: "SRFTBW" },
-  { region: "Atlantic/Gulf/Caribbean", state: "MA", area: "Boston / Norton", nws: "BOX", srf: "SRFBOX" },
-  { region: "Atlantic/Gulf/Caribbean", state: "ME", area: "Caribou", nws: "CAR", srf: "SRFCAR" },
-  { region: "Atlantic/Gulf/Caribbean", state: "ME", area: "Portland / Gray", nws: "GYX", srf: "SRFGYX" },
-  { region: "Atlantic/Gulf/Caribbean", state: "NC", area: "Morehead City", nws: "MHX", srf: "SRFMHX" },
-  { region: "Atlantic/Gulf/Caribbean", state: "NC", area: "Wilmington", nws: "ILM", srf: "SRFILM" },
-  { region: "Atlantic/Gulf/Caribbean", state: "NY", area: "New York City / Upton", nws: "OKX", srf: "SRFOKX" },
-  { region: "Atlantic/Gulf/Caribbean", state: "PA/NJ", area: "Philadelphia / Mount Holly", nws: "PHI", srf: "SRFPHI" },
-  { region: "Atlantic/Gulf/Caribbean", state: "PR/VI", area: "San Juan / Puerto Rico / U.S. Virgin Islands", nws: "SJU", srf: "SRFSJU" },
-  { region: "Atlantic/Gulf/Caribbean", state: "SC", area: "Charleston", nws: "CHS", srf: "SRFCHS" },
-  { region: "Atlantic/Gulf/Caribbean", state: "TX", area: "Brownsville", nws: "BRO", srf: "SRFBRO" },
-  { region: "Atlantic/Gulf/Caribbean", state: "TX", area: "Corpus Christi", nws: "CRP", srf: "SRFCRP" },
-  { region: "Atlantic/Gulf/Caribbean", state: "VA", area: "Wakefield", nws: "AKQ", srf: "SRFAKQ" },
-  { region: "Great Lakes", state: "IL", area: "Chicago", nws: "LOT", srf: "SRFLOT" },
-  { region: "Great Lakes", state: "IN", area: "Northern Indiana / Syracuse", nws: "IWX", srf: "SRFIWX" },
-  { region: "Great Lakes", state: "MI", area: "Detroit", nws: "DTX", srf: "SRFDTX" },
-  { region: "Great Lakes", state: "MI", area: "Gaylord", nws: "APX", srf: "SRFAPX" },
-  { region: "Great Lakes", state: "MI", area: "Grand Rapids", nws: "GRR", srf: "SRFGRR" },
-  { region: "Great Lakes", state: "MI", area: "Marquette", nws: "MQT", srf: "SRFMQT" },
-  { region: "Great Lakes", state: "MN", area: "Duluth", nws: "DLH", srf: "SRFDLH" },
-  { region: "Great Lakes", state: "NY", area: "Buffalo", nws: "BUF", srf: "SRFBUF" },
-  { region: "Great Lakes", state: "OH", area: "Cleveland", nws: "CLE", srf: "SRFCLE" },
-  { region: "Great Lakes", state: "WI", area: "Green Bay", nws: "GRB", srf: "SRFGRB" },
-  { region: "Great Lakes", state: "WI", area: "Milwaukee", nws: "MKX", srf: "SRFMKX" },
-  { region: "West Coast", state: "CA", area: "Eureka", nws: "EKA", srf: "SRFEKA" },
-  { region: "West Coast", state: "CA", area: "Los Angeles / Oxnard", nws: "LOX", srf: "SRFLOX" },
-  { region: "West Coast", state: "CA", area: "San Francisco / Monterey", nws: "MTR", srf: "SRFMTR" },
-  { region: "West Coast", state: "CA", area: "San Diego", nws: "SGX", srf: "SRFSGX" },
-  { region: "West Coast", state: "OR", area: "Medford", nws: "MFR", srf: "SRFMFR" },
-  { region: "West Coast", state: "OR", area: "Portland", nws: "PQR", srf: "SRFPQR" },
-  { region: "Pacific", state: "GU/MP", area: "Guam / Marianas", nws: "GUM", srf: "SRFGUM" },
-  { region: "Pacific", state: "HI", area: "Honolulu", nws: "HFO", srf: "SRFHFO" }
-];
+const CARD_TYPES = ["tidewise-card"];
 const STATION_PRESETS = [
   { station: "8410140", name: "Eastport, ME", lat: 44.9046, lon: -66.9829 },
   { station: "8418150", name: "Portland, ME", lat: 43.6581, lon: -70.2442 },
@@ -287,7 +241,6 @@ const STYLES = `
   :host {
     --wave: #2a7a94; --wave-dark: #1a5f72; --gold: #e8b84b;
     --low-color: #2a7a94; --high-color: #0a7a70; --text: #0a1e28; --text-muted: #1e4d5e;
-    --elite: #16a34a; --prime: #2563eb; --good: #0891b2; --fair: #f59e0b; --slow: #dc2626;
     --tw-panel-bg: rgba(255,255,255,0.35); --tw-panel-border: rgba(42,122,148,0.20);
     --tw-chip-bg: rgba(255,255,255,0.48); --tw-chip-border: rgba(42,122,148,0.22);
     --tw-chart-grid: rgba(10,30,45,0.15); --tw-chart-axis: rgba(10,30,45,0.65);
@@ -349,28 +302,10 @@ const STYLES = `
   .chart-section { margin-bottom: 5px; }
   .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 8px; }
   .section-label { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); font-weight: 750; white-space: nowrap; }
-  .fish-badge-row { display: flex; align-items: center; gap: 7px; min-width: 0; }
-  .fish-score { font-size: 13px; font-weight: 850; padding: 2px 9px; border-radius: 99px; white-space: nowrap; }
-  .score-elite { background: rgba(30,160,100,0.18); color: #0d8050; }
-  .score-prime { background: rgba(42,122,148,0.18); color: var(--wave-dark); }
-  .score-good { background: rgba(42,122,148,0.12); color: var(--wave-dark); }
-  .score-fair { background: rgba(232,184,75,0.20); color: #8a6a10; }
-  .score-slow { background: rgba(192,80,48,0.14); color: #8a3018; }
-  .water-temp-chip { font-size: 13px; color: var(--wave-dark); background: var(--tw-chip-bg); border: 1px solid var(--tw-chip-border); border-radius: 99px; padding: 2px 9px; white-space: nowrap; font-weight: 800; }
-  .fish-moon { font-size: 13px; color: var(--text-muted); font-weight: 650; white-space: nowrap; }
   .chart-wrap { position: relative; height: 95px; border-radius: 10px; overflow: hidden; }
   canvas { display: block; width: 100%; height: 100%; }
   .x-row { display: flex; justify-content: space-between; margin-top: 2px; padding: 0 2px; }
   .x-tick { font-size: 13px; font-weight: 650; color: var(--text-muted); }
-  .fish-footer { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-top: 2px; margin-bottom: 2px; }
-  .fish-reason { font-size: 12px; color: var(--text-muted); font-weight: 650; line-height: 1.3; max-height: 34px; overflow-y: auto; scrollbar-width: thin; min-width: 0; flex: 1 1 auto; }
-  .safety-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #8a3018; background: rgba(192,80,48,0.12); border: 1px solid rgba(192,80,48,0.18); border-radius: 99px; padding: 2px 8px; font-weight: 850; white-space: nowrap; flex-shrink: 0; }
-  .fish-next { font-size: 12px; color: var(--wave-dark); font-weight: 800; white-space: nowrap; flex-shrink: 0; }
-  .fish-legend { display: flex; align-items: center; gap: 12px; margin: 2px 0 6px; padding-left: 2px; min-width: 0; flex-wrap: nowrap; }
-  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--text-muted); font-weight: 750; white-space: nowrap; }
-  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .legend-dot.elite{background:var(--elite)} .legend-dot.prime{background:var(--prime)} .legend-dot.good{background:var(--good)} .legend-dot.fair{background:var(--fair)} .legend-dot.slow{background:var(--slow)}
-  .legend-item.elite{color:#0f7a38} .legend-item.prime{color:#1d4ed8} .legend-item.good{color:#0e7490} .legend-item.fair{color:#9a5b00} .legend-item.slow{color:#a51f1f}
   .tides-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
   .tide-pill { background: var(--tw-panel-bg); border: 1px solid var(--tw-panel-border); border-radius: 12px; padding: 5px 12px; }
   .pill-label { font-size: 13px; letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 3px; font-weight: 750; }
@@ -410,16 +345,8 @@ const STYLES = `
     .pulse-dot { width: 10px; height: 10px; }
     .chart-header { align-items: flex-start; flex-wrap: wrap; gap: 6px; }
     .section-label { font-size: 12px; }
-    .fish-badge-row { justify-content: flex-start; flex-wrap: wrap; gap: 5px; }
-    .water-temp-chip, .fish-moon, .fish-score { font-size: 12px; }
     .chart-wrap { height: 92px; }
     .x-tick { font-size: 12px; }
-    .fish-footer { flex-wrap: wrap; gap: 5px 8px; }
-    .fish-reason { flex: 1 0 100%; max-height: 38px; font-size: 11.5px; }
-    .safety-badge { font-size: 10.5px; padding: 2px 7px; }
-    .fish-next { margin-left: auto; font-size: 11.5px; }
-    .fish-legend { gap: 8px; flex-wrap: wrap; margin-top: 4px; }
-    .legend-item { font-size: 11.5px; gap: 4px; }
     .tides-grid { gap: 8px; }
     .tide-pill { padding: 8px 10px; }
     .pill-label { font-size: 11.5px; letter-spacing: 0.06em; }
@@ -431,7 +358,6 @@ const STYLES = `
     .title { font-size: 22px; }
     .current-value { font-size: 30px; }
     .chart-wrap { height: 86px; }
-    .fish-next { flex: 1 0 100%; margin-left: 0; }
     .tides-grid { grid-template-columns: 1fr; }
     .pill-main { justify-content: space-between; }
     .pill-time { font-size: 24px; }
@@ -453,7 +379,6 @@ class TideWiseCard extends HTMLElement {
     this._refreshInterval = null;
     this._clockInterval = null;
     this._chartCanvas = null;
-    this._fishBand = null;
   }
 
   static getStubConfig() {
@@ -462,15 +387,8 @@ class TideWiseCard extends HTMLElement {
       station: "8661070",
       units: "english",
       wind_units: "auto",
-      mode: "general",
       theme_mode: "tidewise",
-      show_fishing_score: true,
       auto_sources: true,
-      auto_surf_forecast: true,
-      srf_region: "",
-      beach_state: "",
-      beach_area: "",
-      surf_zone: "",
       debug: false
     };
   }
@@ -485,7 +403,6 @@ class TideWiseCard extends HTMLElement {
 
   setConfig(config) {
     if (!config.station) throw new Error("TideWise requires a NOAA station ID.");
-    const previousConfig = this._config || {};
     this._config = {
       title: config.title || "TideWise",
       station: String(config.station || "8661070"),
@@ -493,31 +410,16 @@ class TideWiseCard extends HTMLElement {
       wind_units: this._normalizeWindUnits(config.wind_units),
       weather_entity: config.weather_entity || "",
       water_temp_entity: config.water_temp_entity || "",
-      wave_height_entity: config.wave_height_entity || "",
-      rain_today_entity: config.rain_today_entity || "",
-      pressure_trend_entity: config.pressure_trend_entity || "",
       wind_speed_entity: config.wind_speed_entity || "",
       wind_direction_entity: config.wind_direction_entity || "",
       pressure_entity: config.pressure_entity || "",
-      cloud_cover_entity: config.cloud_cover_entity || "",
-      rip_current_risk_entity: config.rip_current_risk_entity || "",
-      unsafe_to_swim_entity: config.unsafe_to_swim_entity || "",
       latitude: Number(config.latitude) || 33.688,
       longitude: Number(config.longitude) || -78.886,
-      mode: String(config.mode || "general").toLowerCase(),
       theme_mode: this._normalizeThemeMode(config.theme_mode),
-      show_fishing_score: config.show_fishing_score !== false,
       auto_sources: config.auto_sources !== false,
-      auto_surf_forecast: config.auto_surf_forecast !== false,
-      srf_region: String(config.srf_region || ""),
-      beach_state: String(config.beach_state || ""),
-      beach_area: String(config.beach_area || ""),
-      surf_zone: String(config.surf_zone || "").trim().toUpperCase(),
-      nws_office: String(config.nws_office || "").trim().toUpperCase(),
       debug: this._normalizeDebugConfig(config.debug)
     };
     this.setAttribute("theme-mode", this._config.theme_mode);
-    if (previousConfig.station !== this._config.station || previousConfig.beach_area !== this._config.beach_area || previousConfig.surf_zone !== this._config.surf_zone || previousConfig.mode !== this._config.mode) this._fishBand = null;
     this._render();
     this._fetchData();
   }
@@ -627,11 +529,9 @@ class TideWiseCard extends HTMLElement {
       this._fetchCoopsObservations().catch((err) => ({ error: err.message })),
       this._fetchNwsForecast().catch((err) => ({ error: err.message }))
     ]);
-    const surf = this._config.auto_surf_forecast ? await this._fetchNwsSurfForecast(nws).catch((err) => ({ error: err.message })) : {};
     return {
       coops: coops || {},
       nws: nws || {},
-      surf: surf || {},
       updated: new Date().toISOString()
     };
   }
@@ -670,272 +570,6 @@ class TideWiseCard extends HTMLElement {
     const hourly = await hourlyRes.json();
     const period = hourly?.properties?.periods?.[0] || null;
     return { point: point.properties || {}, period };
-  }
-
-  async _fetchNwsSurfForecast(nwsData) {
-    const beachArea = this._selectedNwsBeachArea();
-    const office = this._config.nws_office || beachArea?.office || String(nwsData?.point?.cwa || "").toUpperCase();
-    if (!office) return {};
-    const zoneId = this._config.surf_zone || beachArea?.zone || this._nwsForecastZoneId(nwsData?.point?.forecastZone);
-    const productText = await this._fetchLegacyNwsSurfProduct(office);
-    if (productText) return this._parseSurfForecastText(productText, office, zoneId);
-    const headers = { Accept: "application/geo+json" };
-    const listRes = await fetch(`https://api.weather.gov/products/types/SRF/locations/${office}`, { headers });
-    if (!listRes.ok) return {};
-    const list = await listRes.json();
-    const first = list?.["@graph"]?.[0] || list?.features?.[0] || null;
-    const productUrl = first?.["@id"] || first?.id || first?.properties?.["@id"] || first?.properties?.id;
-    if (!productUrl) return {};
-    const productRes = await fetch(productUrl, { headers });
-    if (!productRes.ok) return {};
-    const product = await productRes.json();
-    const text = product?.productText || product?.properties?.productText || "";
-    return this._parseSurfForecastText(text, office, zoneId);
-  }
-
-  _selectedNwsBeachArea() {
-    return NWS_BEACH_AREAS.find((area) => area.id === this._config.beach_area) || null;
-  }
-
-  _selectedNwsSrfOffice() {
-    return NWS_SRF_OFFICES.find((office) => office.nws === this._config.nws_office) || null;
-  }
-
-  async _fetchLegacyNwsSurfProduct(office) {
-    const url = `https://forecast.weather.gov/product.php?site=${office}&issuedby=${office}&product=SRF&format=TXT`;
-    const res = await fetch(url);
-    if (!res.ok) return "";
-    return res.text();
-  }
-
-  _nwsForecastZoneId(zoneUrl) {
-    const match = String(zoneUrl || "").match(/([A-Z]{2}Z[0-9]{3})/i);
-    return match ? match[1].toUpperCase() : "";
-  }
-
-  _parseSurfForecastText(text, office, zoneId = "") {
-    const raw = String(text || "");
-    if (!raw.trim()) return {};
-    const normalized = raw.replace(/\r/g, "");
-    const scoped = this._scopeSurfForecastText(normalized, zoneId);
-    const forecastText = scoped.text;
-    const ripPeriods = this._parseSurfRipRiskPeriods(forecastText);
-    const activeRip = this._activeRipPeriod(ripPeriods, new Date());
-    const fallbackRip = ripPeriods.length ? null : this._parseSurfRipRisk(forecastText);
-    return {
-      office,
-      zone: scoped.zone || zoneId || "",
-      ripRisk: activeRip?.risk || fallbackRip,
-      ripPeriods,
-      surfHeightFt: this._parseSurfHeightFt(forecastText),
-      waterTempF: this._parseSurfWaterTempF(forecastText),
-      source: "NWS SRF"
-    };
-  }
-
-  _scopeSurfForecastText(text, zoneId = "") {
-    const cleaned = this._stripSurfForecastDefinitions(text);
-    const zone = String(zoneId || "").toUpperCase();
-    if (!zone) return { text: cleaned, zone: "" };
-    const blocks = cleaned.split(/\n\s*\$\$\s*\n/g).map((block) => block.trim()).filter(Boolean);
-    const matched = blocks.find((block) => new RegExp(`(^|\\n)\\s*${zone}\\b`, "i").test(block));
-    return { text: matched || cleaned, zone };
-  }
-
-  _stripSurfForecastDefinitions(text) {
-    return String(text || "")
-      .replace(/\n&&\s*\n[\s\S]*?(?=\n\s*\$\$|\s*$)/g, "\n")
-      .replace(/\nRip Current Risk Category[\s\S]*?(?=\n\s*\$\$|\s*$)/gi, "\n");
-  }
-
-  _parseSurfRipRisk(text) {
-    const lower = text.toLowerCase();
-    const blockRisk = this._parseSurfRipRiskBlock(lower);
-    if (blockRisk) return blockRisk;
-    if (/(high\s+rip\s+current\s+risk|dangerous\s+rip\s+currents|high\s+surf\s+and\s+dangerous\s+rip\s+currents|rip\s+current\s+risk\s+is\s+high|rip\s+current\s+risk\.*\s*high)/i.test(lower)) return "high";
-    if (/(moderate\s+rip\s+current\s+risk|rip\s+current\s+risk\s+is\s+moderate|moderate\s+surf\s+and\s+rip\s+currents|rip\s+current\s+risk\.*\s*moderate)/i.test(lower)) return "moderate";
-    if (/(low\s+rip\s+current\s+risk|rip\s+current\s+risk\s+is\s+low|rip\s+current\s+risk\.*\s*low)/i.test(lower)) return "low";
-    return null;
-  }
-
-  _parseSurfRipRiskBlock(text) {
-    const match = String(text || "").match(/rip\s+current\s+risk\*?[\s.:\n-]*([\s\S]*?)(?=\n\s*(surf\s+height|thunderstorm|waterspout|uv\s+index|water\s+temperature|weather|high\s+temperature|winds|tides|remarks)\b|$)/i);
-    if (!match) return null;
-    const risks = [...match[1].matchAll(/\b(high|moderate|low)\b/gi)].map((item) => item[1].toLowerCase());
-    if (risks.includes("high")) return "high";
-    if (risks.includes("moderate")) return "moderate";
-    if (risks.includes("low")) return "low";
-    return null;
-  }
-
-  _parseSurfRipRiskPeriods(text) {
-    const sections = this._splitNwsForecastSections(text);
-    const periods = [];
-    sections.forEach((section) => {
-      const risk = this._parseSurfRipRisk(section.body);
-      if (!risk) return;
-      const window = this._periodWindowForLabel(section.label, section.body);
-      periods.push({ risk, label: section.label, start: window.start, end: window.end });
-    });
-    if (!periods.length) {
-      const risk = this._parseSurfRipRisk(this._stripSurfForecastDefinitions(text));
-      if (risk) {
-        const window = this._periodWindowForLabel("Current", text);
-        periods.push({ risk, label: "Current", start: window.start, end: window.end });
-      }
-    }
-    return periods;
-  }
-
-  _splitNwsForecastSections(text) {
-    const lines = String(text || "").split("\n");
-    const sections = [];
-    let current = null;
-    const headerPattern = /^\s*\.*\s*(rest of today|today|tonight|this afternoon|this evening|overnight|tomorrow|monday|monday night|tuesday|tuesday night|wednesday|wednesday night|thursday|thursday night|friday|friday night|saturday|saturday night|sunday|sunday night)\s*\.*\s*$/i;
-    lines.forEach((line) => {
-      const match = line.match(headerPattern);
-      if (match) {
-        if (current) sections.push(current);
-        current = { label: match[1], body: "" };
-      } else if (current) {
-        current.body += `${line}\n`;
-      }
-    });
-    if (current) sections.push(current);
-    return sections;
-  }
-
-  _activeRipPeriod(periods, date) {
-    if (!Array.isArray(periods) || !periods.length) return null;
-    const t = date instanceof Date ? date.getTime() : new Date(date).getTime();
-    if (!Number.isFinite(t)) return null;
-    return periods.find((item) => {
-      const start = new Date(item.start).getTime();
-      const end = new Date(item.end).getTime();
-      return Number.isFinite(start) && Number.isFinite(end) && t >= start && t <= end;
-    }) || null;
-  }
-
-  _periodWindowForLabel(label, body = "") {
-    const now = new Date();
-    const lowerLabel = String(label || "").toLowerCase();
-    const lowerBody = String(body || "").toLowerCase();
-    const start = new Date(now);
-    const end = new Date(now);
-    const setTime = (date, h, m = 0) => { date.setHours(h, m, 0, 0); return date; };
-    const addDays = (date, days) => { date.setDate(date.getDate() + days); return date; };
-    const nextDayOffset = (name) => {
-      const names = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-      const target = names.indexOf(name);
-      if (target < 0) return 0;
-      const diff = (target - now.getDay() + 7) % 7;
-      return diff === 0 && now.getHours() >= 18 ? 7 : diff;
-    };
-
-    if (lowerBody.includes("until") || lowerBody.includes("through")) {
-      const explicit = this._explicitRipEnd(now, lowerBody);
-      if (explicit) return { start: now, end: explicit };
-    }
-
-    if (lowerLabel.includes("tonight") || lowerLabel.includes("night") || lowerLabel.includes("evening") || lowerLabel.includes("overnight")) {
-      const dayName = lowerLabel.split(" ")[0];
-      const offset = nextDayOffset(dayName);
-      addDays(start, offset);
-      addDays(end, offset + (lowerLabel.includes("overnight") ? 1 : 0));
-      setTime(start, lowerLabel.includes("overnight") ? 0 : 18);
-      setTime(end, lowerLabel.includes("overnight") ? 6 : 6);
-      if (!lowerLabel.includes("overnight")) addDays(end, 1);
-      return { start, end };
-    }
-
-    if (lowerLabel.includes("tomorrow")) {
-      addDays(start, 1); addDays(end, 1);
-      setTime(start, 6); setTime(end, 18);
-      return { start, end };
-    }
-
-    const dayName = lowerLabel.split(" ")[0];
-    const offset = nextDayOffset(dayName);
-    addDays(start, offset); addDays(end, offset);
-    if (lowerLabel.includes("afternoon")) { setTime(start, 12); setTime(end, 18); }
-    else { setTime(start, 6); setTime(end, 18); }
-    if (lowerLabel === "current" || (offset === 0 && now > start)) start.setTime(now.getTime());
-    return { start, end };
-  }
-
-  _explicitRipEnd(now, text) {
-    const explicitTime = text.match(/(?:until|through)\s+(?:around\s+)?([0-9]{1,2})(?::([0-9]{2}))?\s*(am|pm)\b/i);
-    if (explicitTime) {
-      let hour = Number(explicitTime[1]);
-      const minute = Number(explicitTime[2] || 0);
-      const ap = explicitTime[3].toLowerCase();
-      if (ap === "pm" && hour < 12) hour += 12;
-      if (ap === "am" && hour === 12) hour = 0;
-      const end = new Date(now);
-      end.setHours(hour, minute, 0, 0);
-      if (end <= now) end.setDate(end.getDate() + 1);
-      return end;
-    }
-    const phraseHours = [
-      ["morning", 12],
-      ["afternoon", 18],
-      ["evening", 22],
-      ["tonight", 6],
-      ["overnight", 6],
-      ["today", 18]
-    ];
-    const phrase = phraseHours.find(([name]) => text.includes(name));
-    if (!phrase) return null;
-    const end = new Date(now);
-    end.setHours(phrase[1], 0, 0, 0);
-    if (phrase[0] === "tonight" || phrase[0] === "overnight" || end <= now) end.setDate(end.getDate() + 1);
-    return end;
-  }
-
-  _parseSurfHeightFt(text) {
-    const patterns = [
-      /surf\s+height\.+\s*([0-9]+)\s+to\s+([0-9]+)\s+feet/i,
-      /surf\s+height\s+([0-9]+)\s+to\s+([0-9]+)\s+feet/i,
-      /surf\s+height\.+\s*([0-9]+)\s+feet/i,
-      /surf\s+height\s+([0-9]+)\s+feet/i,
-      /surf\s+([0-9]+)\s+to\s+([0-9]+)\s+feet/i,
-      /surf\s+height:\s*([0-9]+)(?:\s*(?:to|-)\s*([0-9]+))?\s*ft/i
-    ];
-    return this._firstRangeAverage(text, patterns);
-  }
-
-  _parseSurfWaterTempF(text) {
-    const qualitative = text.match(/water\s+temperature\.*\s*in\s+the\s+(upper|mid|lower)\s+([0-9]+)s/i)
-      || text.match(/water\s+temperature\s+in\s+the\s+(upper|mid|lower)\s+([0-9]+)s/i);
-    if (qualitative) {
-      const band = qualitative[1].toLowerCase();
-      const base = Number(qualitative[2]);
-      if (Number.isFinite(base)) {
-        if (band === "upper") return (base + 5 + base + 9) / 2;
-        if (band === "mid") return (base + 3 + base + 7) / 2;
-        if (band === "lower") return (base + base + 4) / 2;
-      }
-    }
-    const patterns = [
-      /water\s+temperature\.+\s*around\s+([0-9]+)/i,
-      /water\s+temperature\s+around\s+([0-9]+)/i,
-      /water\s+temperature\.+\s*([0-9]+)\s*(?:degrees?|f)?/i,
-      /water\s+temp\.+\s*([0-9]+)\s*(?:degrees?|f)?/i,
-      /water\s+temperature\.*\s*([0-9]+)(?:\s*(?:to|-)\s*([0-9]+))?/i,
-      /water\s+temp\.*\s*([0-9]+)(?:\s*(?:to|-)\s*([0-9]+))?/i
-    ];
-    return this._firstRangeAverage(text, patterns);
-  }
-
-  _firstRangeAverage(text, patterns) {
-    for (const pattern of patterns) {
-      const match = text.match(pattern);
-      if (!match) continue;
-      const a = Number(match[1]);
-      const b = match[2] !== undefined ? Number(match[2]) : a;
-      if (Number.isFinite(a) && Number.isFinite(b)) return (a + b) / 2;
-    }
-    return null;
   }
 
   _parsePredictionTime(t) {
@@ -1019,15 +653,12 @@ class TideWiseCard extends HTMLElement {
   _getForecastLatLon() {
     const configLat = Number(this._config.latitude);
     const configLon = Number(this._config.longitude);
-    const beach = this._selectedNwsBeachArea();
     const preset = STATION_PRESETS.find((item) => item.station === String(this._config.station));
-    const fallbackLat = Number(beach?.lat);
-    const fallbackLon = Number(beach?.lon);
     const stationLat = Number(preset?.lat);
     const stationLon = Number(preset?.lon);
     return {
-      lat: Number.isFinite(configLat) ? configLat : Number.isFinite(fallbackLat) ? fallbackLat : Number.isFinite(stationLat) ? stationLat : 33.688,
-      lon: Number.isFinite(configLon) ? configLon : Number.isFinite(fallbackLon) ? fallbackLon : Number.isFinite(stationLon) ? stationLon : -78.886
+      lat: Number.isFinite(configLat) ? configLat : Number.isFinite(stationLat) ? stationLat : 33.688,
+      lon: Number.isFinite(configLon) ? configLon : Number.isFinite(stationLon) ? stationLon : -78.886
     };
   }
 
@@ -1129,8 +760,7 @@ class TideWiseCard extends HTMLElement {
     }
     const coopsTemp = this._parseCoopsWaterTempF();
     if (coopsTemp !== null) return coopsTemp;
-    const surfTemp = Number(this._autoData?.surf?.waterTempF);
-    return Number.isFinite(surfTemp) ? surfTemp : null;
+    return null;
   }
 
   _formatWaterTemp(tempF) {
@@ -1138,17 +768,6 @@ class TideWiseCard extends HTMLElement {
     if (this._config.units === "metric") return `${Math.round((tempF - 32) * 5 / 9)}°C`;
     return `${Math.round(tempF)}°F`;
   }
-
-  _getWaveHeightFt() {
-    const e = this._getNumericEntity(this._config.wave_height_entity);
-    if (e) {
-      const unit = String(e.unit || "").toLowerCase();
-      return unit.includes("m") ? e.value * 3.28084 : e.value;
-    }
-    const surfHeight = Number(this._autoData?.surf?.surfHeightFt);
-    return Number.isFinite(surfHeight) ? surfHeight : null;
-  }
-  _getRainTodayIn() { const e = this._getNumericEntity(this._config.rain_today_entity); if (!e) return null; const unit = String(e.unit || "").toLowerCase(); return unit.includes("mm") ? e.value / 25.4 : e.value; }
 
   _getAutoWeatherState() {
     const period = this._autoData?.nws?.period;
@@ -1208,448 +827,6 @@ class TideWiseCard extends HTMLElement {
     return map[raw] ?? NaN;
   }
 
-  _getPressureTrend() {
-    const ent = this._getEntity(this._config.pressure_trend_entity);
-    if (!ent) return null;
-    const raw = String(ent.state || "").toLowerCase();
-    if (raw.includes("fall")) return "falling";
-    if (raw.includes("rise")) return "rising";
-    if (raw.includes("steady") || raw.includes("stable")) return "steady";
-    const num = Number(ent.state);
-    if (Number.isFinite(num)) {
-      if (num <= -0.04) return "falling";
-      if (num >= 0.04) return "rising";
-      return "steady";
-    }
-    return null;
-  }
-
-  _getRipCurrentRisk(date = new Date()) {
-    const e = this._getEntity(this._config.rip_current_risk_entity);
-    if (e) return String(e.state || "").toLowerCase().trim();
-    const timed = this._ripRiskForTime(date);
-    return timed?.risk || this._autoData?.surf?.ripRisk || null;
-  }
-
-  _ripRiskForTime(date) {
-    const periods = this._autoData?.surf?.ripPeriods;
-    if (!Array.isArray(periods) || !periods.length) return null;
-    const t = date instanceof Date ? date.getTime() : new Date(date).getTime();
-    if (!Number.isFinite(t)) return null;
-    const period = periods.find((item) => {
-      const start = new Date(item.start).getTime();
-      const end = new Date(item.end).getTime();
-      return Number.isFinite(start) && Number.isFinite(end) && t >= start && t <= end;
-    });
-    return period || null;
-  }
-  _getUnsafeToSwim() { const e = this._getEntity(this._config.unsafe_to_swim_entity); if (!e) return null; const raw = String(e.state || "").toLowerCase().trim(); return raw === "on" || raw === "true" || raw === "unsafe" || raw === "dangerous"; }
-  _normalizeCondition(condition) { return String(condition || "").toLowerCase().replace(/[-_]/g, " ").trim(); }
-
-  _moonPosition(date, lat, lon) {
-    const JD = date.getTime() / 86400000 + 2440587.5;
-    const d = JD - 2451545.0;
-    const L = ((218.316 + 13.176396 * d) % 360 + 360) % 360;
-    const Mr = (((134.963 + 13.064993 * d) % 360 + 360) % 360) * Math.PI / 180;
-    const Fr = (((93.272 + 13.229350 * d) % 360 + 360) % 360) * Math.PI / 180;
-    const lam = (L + 6.289 * Math.sin(Mr)) * Math.PI / 180;
-    const beta = 5.128 * Math.sin(Fr) * Math.PI / 180;
-    const eps = (23.439 - 0.0000004 * d) * Math.PI / 180;
-    const sinDec = Math.sin(beta) * Math.cos(eps) + Math.cos(beta) * Math.sin(eps) * Math.sin(lam);
-    const dec = Math.asin(Math.max(-1, Math.min(1, sinDec)));
-    const cosA = Math.cos(lam) * Math.cos(beta);
-    const sinA = Math.sin(lam) * Math.cos(beta) * Math.cos(eps) - Math.sin(beta) * Math.sin(eps);
-    const RA = ((Math.atan2(sinA, cosA) * 12 / Math.PI) % 24 + 24) % 24;
-    const GMST = ((6.697375 + 0.0657098242 * d + date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600) % 24 + 24) % 24;
-    const LMST = ((GMST + lon / 15) % 24 + 24) % 24;
-    return { HA: ((LMST - RA) % 24 + 24) % 24, dec };
-  }
-
-  _moonAge(date) {
-    const synodicMonth = 29.530588861;
-    const knownNewMoonJd = 2451550.09765; // 2000-01-06 18:14 UTC
-    const jd = date.getTime() / 86400000 + 2440587.5;
-    return (((jd - knownNewMoonJd) % synodicMonth) + synodicMonth) % synodicMonth;
-  }
-
-  _moonPhaseName(age) {
-    if (age < 1.5) return "&#127761; New Moon";
-    if (age < 7.4) return "&#127762; Waxing Crescent";
-    if (age < 9.0) return "&#127763; First Quarter";
-    if (age < 14.8) return "&#127764; Waxing Gibbous";
-    if (age < 16.3) return "&#127765; Full Moon";
-    if (age < 22.1) return "&#127766; Waning Gibbous";
-    if (age < 23.6) return "&#127767; Last Quarter";
-    if (age < 28.0) return "&#127768; Waning Crescent";
-    return "&#127761; New Moon";
-  }
-
-  _solunarScore(HA) {
-    const H = ((HA % 24) + 24) % 24;
-    const major = Math.max(0, 1 - Math.min(Math.min(H, 24 - H), Math.abs(H - 12)) / 1.5);
-    const minor = Math.max(0, 0.55 * (1 - Math.min(Math.abs(H - 6), Math.abs(H - 18)) / 0.75));
-    return Math.max(major, minor);
-  }
-
-  _moonMultiplier(age) {
-    const c = Math.min(Math.min(age, 29.53 - age), Math.abs(age - 14.77));
-    return 1.0 + 0.15 * Math.max(0, 1 - c / 3.5);
-  }
-
-  _modeWeights() {
-    const mode = this._config.mode || "general";
-    const modes = {
-      general: { tide: 0.28, wind: 0.16, waterTemp: 0.14, weather: 0.12, clarity: 0.10, light: 0.09, solunar: 0.06, pressure: 0.05 },
-      surf: { tide: 0.22, wind: 0.20, waterTemp: 0.13, weather: 0.12, clarity: 0.16, light: 0.08, solunar: 0.05, pressure: 0.04 },
-      inlet: { tide: 0.34, wind: 0.14, waterTemp: 0.13, weather: 0.10, clarity: 0.10, light: 0.09, solunar: 0.06, pressure: 0.04 },
-      flounder: { tide: 0.34, wind: 0.12, waterTemp: 0.17, weather: 0.09, clarity: 0.14, light: 0.06, solunar: 0.04, pressure: 0.04 },
-      trout_redfish: { tide: 0.30, wind: 0.13, waterTemp: 0.15, weather: 0.10, clarity: 0.13, light: 0.12, solunar: 0.04, pressure: 0.03 },
-      sheepshead: { tide: 0.36, wind: 0.12, waterTemp: 0.10, weather: 0.10, clarity: 0.10, light: 0.04, solunar: 0.03, pressure: 0.05 }
-    };
-    return modes[mode] || modes.general;
-  }
-
-  _windScore(speedMph, bearing) {
-    if (speedMph === null || speedMph === undefined) return { score: 0.70, cap: 1.00, label: "wind unknown" };
-    let score;
-    let cap = 1.0;
-    if (speedMph <= 5) score = 0.95;
-    else if (speedMph <= 10) score = 0.85;
-    else if (speedMph <= 15) score = 0.65;
-    else if (speedMph <= 20) score = 0.42;
-    else if (speedMph <= 25) score = 0.25;
-    else score = 0.10;
-    if (speedMph >= 18) cap = Math.min(cap, 0.60);
-    if (speedMph >= 23) cap = Math.min(cap, 0.42);
-    if (speedMph >= 28) cap = Math.min(cap, 0.30);
-    const b = Number(bearing);
-    let dirNote = "";
-    if (Number.isFinite(b) && speedMph >= 9) {
-      const onshore = b >= 35 && b <= 145;
-      const offshore = b >= 220 && b <= 320;
-      if (onshore) { score -= 0.12; dirNote = "onshore wind"; }
-      else if (offshore) { score += 0.06; dirNote = "offshore wind"; }
-    }
-    return { score: Math.max(0, Math.min(1, score)), cap, label: dirNote || `${Math.round(speedMph)} mph wind` };
-  }
-
-  _weatherScore(weather) {
-    const condition = this._normalizeCondition(weather?.state);
-    if (!condition || condition === "unknown" || condition === "unavailable") return { score: 0.70, cap: 1.0, label: "weather unknown" };
-    let score = 0.75;
-    let cap = 1.0;
-    let label = "decent weather";
-    if (condition.includes("lightning") || condition.includes("thunder")) { score = 0.02; cap = 0.22; label = "storms nearby"; }
-    else if (condition.includes("pouring") || condition.includes("heavy rain")) { score = 0.20; cap = 0.40; label = "heavy rain"; }
-    else if (condition.includes("rain") || condition.includes("shower") || condition.includes("drizzle")) { score = 0.52; cap = 0.72; label = "rain around"; }
-    else if (condition.includes("fog") || condition.includes("mist")) { score = 0.45; cap = 0.70; label = "low visibility"; }
-    else if (condition.includes("clear") || condition.includes("sunny")) { score = 0.80; label = "clear weather"; }
-    else if (condition.includes("partly")) { score = 0.86; label = "partly cloudy"; }
-    else if (condition.includes("cloudy") || condition.includes("overcast")) { score = 0.78; label = "cloud cover helps"; }
-    return { score, cap, label };
-  }
-
-  _pressureScore(pressureHpa, trend) {
-    let score = 0.58;
-    let label = "pressure unknown";
-    if (pressureHpa !== null && pressureHpa !== undefined) {
-      if (pressureHpa >= 1008 && pressureHpa <= 1023) { score = 0.76; label = "pressure favorable"; }
-      else if (pressureHpa >= 1002 && pressureHpa < 1008) { score = 0.62; label = "lower pressure"; }
-      else if (pressureHpa > 1023 && pressureHpa <= 1029) { score = 0.60; label = "higher pressure"; }
-      else if (pressureHpa < 998) { score = 0.35; label = "very low pressure"; }
-      else if (pressureHpa > 1030) { score = 0.42; label = "very high pressure"; }
-    }
-    if (trend === "falling") { score += 0.10; label = "falling pressure"; }
-    else if (trend === "rising") { score -= 0.08; label = "rising pressure"; }
-    else if (trend === "steady") { score += 0.04; label = "steady pressure"; }
-    return { score: Math.max(0, Math.min(1, score)), label };
-  }
-
-  _lightScore(hour) {
-    if (hour >= 5.5 && hour <= 8.5) return { score: 0.92, label: "morning bite" };
-    if (hour >= 18.25 && hour <= 21.25) return { score: 0.88, label: "evening bite" };
-    if (hour >= 8.5 && hour <= 10.0) return { score: 0.65, label: "post sunrise" };
-    if (hour >= 16.5 && hour < 18.25) return { score: 0.62, label: "pre sunset" };
-    if (hour >= 10 && hour <= 15) return { score: 0.38, label: "midday lull" };
-    if (hour >= 22 || hour <= 4.5) return { score: 0.15, label: "overnight" };
-    return { score: 0.42, label: "off window" };
-  }
-
-  _waterTempScore(tempF) {
-    if (tempF === null || tempF === undefined) return { score: 0.68, cap: 1.0, label: "water temp unknown" };
-    let score = 0.60;
-    let cap = 1.0;
-    let label = `${Math.round(tempF)}° water`;
-    if (tempF >= 68 && tempF <= 82) { score = 0.92; label = "water temp prime"; }
-    else if (tempF >= 62 && tempF < 68) { score = 0.74; label = "cool but fishable"; }
-    else if (tempF > 82 && tempF <= 86) { score = 0.72; label = "warm water"; }
-    else if (tempF >= 55 && tempF < 62) { score = 0.52; cap = Math.min(cap, 0.72); label = "cold water"; }
-    else if (tempF > 86 && tempF <= 90) { score = 0.46; cap = Math.min(cap, 0.70); label = "hot water"; }
-    else if (tempF < 50) { score = 0.25; cap = Math.min(cap, 0.55); label = "very cold water"; }
-    else if (tempF > 90) { score = 0.24; cap = Math.min(cap, 0.55); label = "stressed hot water"; }
-    return { score, cap, label };
-  }
-
-  _waveScore(waveFt) {
-    if (waveFt === null || waveFt === undefined) return { score: 0.70, cap: 1.0, label: "waves unknown" };
-    let score = 0.75;
-    let cap = 1.0;
-    let label = `${waveFt.toFixed(1)} ft seas`;
-    if (waveFt <= 1.5) { score = 0.92; label = "calm surf"; }
-    else if (waveFt <= 2.5) { score = 0.78; label = "manageable surf"; }
-    else if (waveFt <= 3.5) { score = 0.55; cap = Math.min(cap, 0.72); label = "choppy surf"; }
-    else if (waveFt <= 5.0) { score = 0.32; cap = Math.min(cap, 0.48); label = "rough surf"; }
-    else { score = 0.12; cap = Math.min(cap, 0.32); label = "bad surf"; }
-    return { score, cap, label };
-  }
-
-  _rainScore(rainIn) {
-    if (rainIn === null || rainIn === undefined) return { score: 0.78, cap: 1.0, label: "rain total unknown" };
-    let score = 0.85;
-    let cap = 1.0;
-    let label = "little runoff";
-    if (rainIn >= 0.10 && rainIn < 0.35) { score = 0.72; label = "some runoff"; }
-    else if (rainIn >= 0.35 && rainIn < 0.75) { score = 0.52; cap = Math.min(cap, 0.72); label = "runoff penalty"; }
-    else if (rainIn >= 0.75 && rainIn < 1.50) { score = 0.36; cap = Math.min(cap, 0.58); label = "heavy runoff"; }
-    else if (rainIn >= 1.50) { score = 0.20; cap = Math.min(cap, 0.42); label = "muddy runoff"; }
-    return { score, cap, label };
-  }
-
-  _ripCurrentScore(risk, unsafeToSwim) {
-    if (unsafeToSwim === true) return { score: 0.18, cap: 0.35, label: "unsafe surf" };
-    if (!risk) return { score: 0.78, cap: 1.0, label: "rip risk unknown" };
-    if (risk.includes("high") || risk.includes("danger")) return { score: 0.18, cap: 0.38, label: "high rip risk" };
-    if (risk.includes("moderate")) return { score: 0.58, cap: 0.72, label: "moderate rip risk" };
-    if (risk.includes("low")) return { score: 0.88, cap: 1.0, label: "low rip risk" };
-    return { score: 0.72, cap: 1.0, label: `${risk} rip risk` };
-  }
-
-  _clarityScore(wind, wave, rain, weather) {
-    let score = 0.82;
-    let cap = 1.0;
-    const labels = [];
-    if (wind.label.includes("onshore")) { score -= 0.16; labels.push("onshore dirtying water"); }
-    if (wind.score < 0.50) { score -= 0.12; labels.push("wind-stirred water"); }
-    if (wave.score < 0.55) { score -= 0.16; cap = Math.min(cap, 0.72); labels.push("rough surf"); }
-    if (rain.score < 0.60) { score -= 0.18; cap = Math.min(cap, rain.cap); labels.push(rain.label); }
-    if (weather.label.includes("heavy rain") || weather.label.includes("rain around")) score -= 0.08;
-    return { score: Math.max(0, Math.min(1, score)), cap, label: labels[0] || "clarity likely decent" };
-  }
-
-  _tideScore(predictions, i) {
-    const steps = predictions.length;
-    const iA = Math.max(0, i - 4);
-    const iB = Math.min(steps - 1, i + 4);
-    const iPrev = Math.max(0, i - 1);
-    const iNext = Math.min(steps - 1, i + 1);
-    const current = parseFloat(predictions[i].v);
-    const previous = parseFloat(predictions[iPrev].v);
-    const next = parseFloat(predictions[iNext].v);
-    const tideRate = Math.abs(parseFloat(predictions[iB].v) - parseFloat(predictions[iA].v));
-    const movementScore = Math.min(tideRate / 2.2, 1.0);
-    const rising = next > previous;
-    const falling = next < previous;
-    let directionBonus = 0.55;
-    let directionLabel = "slack tide";
-    if (rising) { directionBonus = 0.82; directionLabel = "incoming tide"; }
-    else if (falling) { directionBonus = 0.74; directionLabel = "outgoing tide"; }
-    let score = movementScore * 0.72 + directionBonus * 0.28;
-    if (movementScore < 0.12) { score = Math.min(score, 0.36); directionLabel = "near slack tide"; }
-    else if (movementScore < 0.22) score = Math.min(score, 0.55);
-    return { score: Math.max(0, Math.min(1, score)), movementScore, rising, falling, label: directionLabel, height: current };
-  }
-
-  _scoreBand(score, previousBand = null) {
-    if (previousBand === "elite" && score >= 0.82) return "elite";
-    if (previousBand === "prime" && score >= 0.67 && score < 0.87) return "prime";
-    if (previousBand === "good" && score >= 0.52 && score < 0.72) return "good";
-    if (previousBand === "fair" && score >= 0.37 && score < 0.57) return "fair";
-    if (score >= 0.87) return "elite";
-    if (score >= 0.72) return "prime";
-    if (score >= 0.57) return "good";
-    if (score >= 0.42) return "fair";
-    return "slow";
-  }
-
-  _scoreLabel(score, previousBand = null) {
-    const band = this._scoreBand(score, previousBand);
-    const labels = {
-      elite: { text: "&#128293; Elite", cls: "score-elite", band },
-      prime: { text: "Prime", cls: "score-prime", band },
-      good: { text: "Good", cls: "score-good", band },
-      fair: { text: "Fair", cls: "score-fair", band },
-      slow: { text: "Slow", cls: "score-slow", band }
-    };
-    return labels[band];
-  }
-
-  _fishColor(score) {
-    const band = this._scoreBand(score);
-    if (band === "elite") return [22, 163, 74];
-    if (band === "prime") return [37, 99, 235];
-    if (band === "good") return [8, 145, 178];
-    if (band === "fair") return [245, 158, 11];
-    return [220, 38, 38];
-  }
-
-  _smoothScores(scores) {
-    return scores.map((score, i) => {
-      const prev = scores[Math.max(0, i - 1)];
-      const next = scores[Math.min(scores.length - 1, i + 1)];
-      return prev * 0.25 + score * 0.50 + next * 0.25;
-    });
-  }
-
-  _forecastConditionCap(cap, hoursAhead) {
-    const value = Number(cap);
-    if (!Number.isFinite(value) || value >= 1) return 1.0;
-    const hours = Math.max(0, Number(hoursAhead) || 0);
-    if (hours <= 3) return value;
-    const relaxed = Math.max(value, 0.86);
-    if (hours >= 8) return relaxed;
-    const f = (hours - 3) / 5;
-    return value + (relaxed - value) * f;
-  }
-
-  _buildFishingScores(predictions) {
-    const weights = this._modeWeights();
-    const { lat, lon } = this._getForecastLatLon();
-    const weather = this._getWeatherState();
-    const windMph = this._getWindSpeedMph(weather);
-    const windBearing = this._getWindBearing(weather);
-    const pressureHpa = this._getPressureHpa(weather);
-    const waterTempF = this._getWaterTempF();
-    const waveFt = this._getWaveHeightFt();
-    const rainIn = this._getRainTodayIn();
-    const pressureTrend = this._getPressureTrend();
-    const unsafeToSwim = this._getUnsafeToSwim();
-    const wind = this._windScore(windMph, windBearing);
-    const weatherScore = this._weatherScore(weather);
-    const pressure = this._pressureScore(pressureHpa, pressureTrend);
-    const waterTemp = this._waterTempScore(waterTempF);
-    const wave = this._waveScore(waveFt);
-    const rain = this._rainScore(rainIn);
-    const clarity = this._clarityScore(wind, wave, rain, weatherScore);
-    const age = this._moonAge(new Date());
-    const moonMult = this._moonMultiplier(age);
-    const now = new Date();
-    const nowMs = now.getTime();
-    const maxFutureMs = nowMs + 12 * 60 * 60 * 1000;
-    const steps = predictions.length;
-    const scores = [];
-    const details = [];
-    let bestIdx = null;
-    let bestScore = -1;
-    let currentIdx = 0;
-    let currentDistance = Infinity;
-
-    for (let i = 0; i < steps; i++) {
-      const t = this._parsePredictionTime(predictions[i].t);
-      const tMs = t.getTime();
-      const hour = t.getHours() + t.getMinutes() / 60;
-      const distance = Math.abs(tMs - nowMs);
-      if (distance < currentDistance) { currentDistance = distance; currentIdx = i; }
-      const moon = this._moonPosition(t, lat, lon);
-      const solunar = this._solunarScore(moon.HA);
-      const tide = this._tideScore(predictions, i);
-      const light = this._lightScore(hour);
-      const ripRiskRaw = this._getRipCurrentRisk(t);
-      const ripPeriod = this._ripRiskForTime(t);
-      const rip = this._ripCurrentScore(ripRiskRaw, unsafeToSwim);
-      const componentSum = tide.score * weights.tide + wind.score * weights.wind + waterTemp.score * weights.waterTemp + weatherScore.score * weights.weather + clarity.score * weights.clarity + light.score * weights.light + solunar * weights.solunar + pressure.score * weights.pressure;
-      const scoreAfterMoon = componentSum * moonMult;
-      const hoursAhead = Math.max(0, (tMs - nowMs) / 3600000);
-      const liveConditionCap = Math.min(wind.cap, weatherScore.cap, wave.cap, rain.cap, rip.cap, clarity.cap);
-      const forecastConditionCap = this._forecastConditionCap(liveConditionCap, hoursAhead);
-      let cap = Math.min(waterTemp.cap, forecastConditionCap);
-      if (tide.movementScore < 0.10) cap = Math.min(cap, 0.48);
-      if (tide.movementScore < 0.20) cap = Math.min(cap, 0.62);
-      if (hour >= 10 && hour <= 15) cap = Math.min(cap, 0.78);
-      const finalScore = Math.max(0, Math.min(1, Math.min(scoreAfterMoon, cap)));
-      scores.push(finalScore);
-      const detail = { time: t, score: finalScore, componentSum, scoreAfterMoon, finalScore, displayScore: finalScore, tide, wind, weather: weatherScore, waterTemp, wave, rain, rip, ripRiskRaw, ripPeriod, clarity, light, solunar, pressure, moonMult, cap, liveConditionCap, forecastConditionCap, hoursAhead };
-      details.push(detail);
-      if (tMs >= nowMs && tMs <= maxFutureMs && finalScore > bestScore) { bestScore = finalScore; bestIdx = i; }
-    }
-
-    const smoothedScores = this._smoothScores(scores);
-    details.forEach((detail, i) => {
-      detail.score = smoothedScores[i] ?? detail.score;
-      detail.displayScore = detail.score;
-    });
-    bestIdx = null;
-    bestScore = -1;
-    details.forEach((detail, i) => {
-      const tMs = detail.time.getTime();
-      if (tMs >= nowMs && tMs <= maxFutureMs && detail.score > bestScore) {
-        bestScore = detail.score;
-        bestIdx = i;
-      }
-    });
-    const currentScore = smoothedScores[currentIdx] || scores[currentIdx] || 0;
-    const currentDetail = details[currentIdx];
-    const bestWindow = this._buildBestWindow(details, bestIdx);
-    const reason = this._buildReason(currentDetail, bestWindow);
-    return { scores: smoothedScores, finalScores: scores, details, currentScore, currentDetail, age, bestWindow, reason };
-  }
-
-  _buildBestWindow(details, bestIdx) {
-    if (bestIdx === null || bestIdx === undefined || !details[bestIdx]) return "";
-    const peak = details[bestIdx];
-    const threshold = Math.max(0.40, peak.score - 0.10);
-    let start = bestIdx;
-    let end = bestIdx;
-    while (start > 0 && details[start - 1].score >= threshold) start--;
-    while (end < details.length - 1 && details[end + 1].score >= threshold) end++;
-    const maxSpanPoints = 15;
-    if (end - start > maxSpanPoints) {
-      start = Math.max(0, bestIdx - Math.floor(maxSpanPoints / 2));
-      end = Math.min(details.length - 1, bestIdx + Math.ceil(maxSpanPoints / 2));
-    }
-    return `${this._formatClock(details[start].time)}-${this._formatClock(details[end].time)}`;
-  }
-
-  _buildReason(detail, bestWindow = "") {
-    if (!detail) return "Waiting on fishing inputs";
-    const band = this._scoreBand(detail.score);
-    const label = band.charAt(0).toUpperCase() + band.slice(1);
-    const capReasons = [];
-    const negatives = [];
-    const positives = [];
-
-    if (detail.weather.cap <= 0.25) capReasons.push("storms nearby");
-    else if (detail.weather.cap <= 0.45) capReasons.push(detail.weather.label);
-    if (detail.rip && detail.rip.score < 0.65) {
-      capReasons.push(detail.rip.label.includes("high") ? "high rip risk cap" : detail.rip.label);
-    }
-    if (detail.wind.cap <= 0.42) capReasons.push("rough wind cap");
-    else if (detail.wind.score < 0.50) negatives.push("wind penalty");
-    if (detail.wave.score < 0.55) negatives.push(detail.wave.label);
-    if (detail.clarity.score < 0.60) negatives.push(detail.clarity.label);
-    if (detail.tide.movementScore < 0.12) negatives.push("near slack tide");
-    else positives.push(detail.tide.label);
-    if (detail.light.score < 0.30) negatives.push("poor light window");
-
-    if (detail.waterTemp.score >= 0.85) positives.push("prime water temp");
-    else if (detail.waterTemp.score < 0.55) negatives.push(detail.waterTemp.label);
-    if (detail.pressure.score >= 0.72) positives.push("favorable pressure");
-    if (detail.wind.score >= 0.80) positives.push("light wind");
-    if (detail.light.score >= 0.80) positives.push(detail.light.label);
-    if (detail.solunar >= 0.70) positives.push("moon window");
-
-    const limiting = [...capReasons, ...negatives].slice(0, 2);
-    const main = limiting.join(" + ") || "mixed signals";
-    const help = positives.length ? ` ${this._capitalize(positives[0])} helps.` : "";
-    const window = bestWindow ? ` Better bite window ${bestWindow}.` : "";
-    return `${label} now: ${main}.${help}${window}`;
-  }
-
-  _safetyBadgeHtml(detail) {
-    if (!detail?.rip || detail.rip.score >= 0.65) return "";
-    if (!String(detail.rip.label || "").includes("high")) return "";
-    return `<div class="safety-badge">&#9888; High rip risk active</div>`;
-  }
-
   _render() {
     this.shadowRoot.innerHTML = `<style>${STYLES}</style><ha-card><div class="card-outer" id="root"><div class="loading"><div class="spinner"></div>Fetching tide data...</div></div></ha-card>`;
   }
@@ -1672,19 +849,9 @@ class TideWiseCard extends HTMLElement {
     const nextLow = upcoming.find((p) => p.type === "L");
     const nextHigh = upcoming.find((p) => p.type === "H");
     const chartPredictions = this._rollingPredictions(predictions, now);
-    const fish = this._config.show_fishing_score ? this._buildFishingScores(chartPredictions) : null;
-    const scoreInfo = fish ? this._scoreLabel(fish.currentScore, this._fishBand) : null;
-    if (scoreInfo) this._fishBand = scoreInfo.band;
-    const phaseName = fish ? this._moonPhaseName(fish.age) : "";
-    const waterTempLabel = this._formatWaterTemp(this._getWaterTempF());
     const weather = this._getWeatherState();
     const windLabel = this._formatWind(this._getWindSpeedMph(weather), this._getWindBearing(weather));
     const stationLabel = this._config.station;
-    const headerBadges = [
-      waterTempLabel ? `<span class="water-temp-chip">Water ${waterTempLabel}</span>` : "",
-      fish ? `<span class="fish-moon">${phaseName}</span>` : "",
-      fish ? `<span class="fish-score ${scoreInfo.cls}">${scoreInfo.text}</span>` : ""
-    ].filter(Boolean).join("");
     const root = this.shadowRoot.getElementById("root");
 
     root.innerHTML = `
@@ -1707,35 +874,21 @@ class TideWiseCard extends HTMLElement {
       </div>
       <div class="chart-section">
         <div class="chart-header">
-          <div class="section-label">${this._config.show_fishing_score ? "&#127907; Tide &amp; Fishing" : "Tide Forecast"}</div>
-          ${headerBadges ? `<div class="fish-badge-row">${headerBadges}</div>` : ""}
+          <div class="section-label">Tide Forecast</div>
         </div>
         <div class="chart-wrap"><canvas id="tideCanvas"></canvas></div>
         ${this._xAxisHtml(chartPredictions)}
       </div>
-      ${fish ? `
-        <div class="fish-footer">
-          <div class="fish-reason">${this._escape(fish.reason)}</div>
-          ${this._safetyBadgeHtml(fish.currentDetail)}
-          <div class="fish-next">${fish.bestWindow ? "Best: " + fish.bestWindow : ""}</div>
-        </div>
-        <div class="fish-legend">
-          <div class="legend-item elite"><div class="legend-dot elite"></div>Elite</div>
-          <div class="legend-item prime"><div class="legend-dot prime"></div>Prime</div>
-          <div class="legend-item good"><div class="legend-dot good"></div>Good</div>
-          <div class="legend-item fair"><div class="legend-dot fair"></div>Fair</div>
-          <div class="legend-item slow"><div class="legend-dot slow"></div>Slow</div>
-        </div>` : ""}
       <div class="tides-grid">
         ${this._pillHtml("low", nextLow, unitLabel)}
         ${this._pillHtml("high", nextHigh, unitLabel)}
       </div>
-      ${this._config.debug?.enabled && this._config.debug?.panel ? this._debugHtml(fish, chartPredictions, cur, rising, unitLabel) : ""}
+      ${this._config.debug?.enabled && this._config.debug?.panel ? this._debugHtml(null, chartPredictions, cur, rising, unitLabel) : ""}
     `;
 
     requestAnimationFrame(() => {
       this._chartCanvas = this.shadowRoot.getElementById("tideCanvas");
-      this._drawChart(chartPredictions, now, cur, unitLabel, fish?.scores || null, fish?.details || null, [nextHigh, nextLow].filter(Boolean));
+      this._drawChart(chartPredictions, now, cur, unitLabel, null, null, [nextHigh, nextLow].filter(Boolean));
     });
   }
 
@@ -1757,192 +910,7 @@ class TideWiseCard extends HTMLElement {
   }
 
   _debugHtml(fish, predictions, cur, rising, unitLabel) {
-    const detail = fish?.currentDetail;
-    const { lat, lon } = this._getForecastLatLon();
-    const weather = this._getWeatherState();
-    const windMph = this._getWindSpeedMph(weather);
-    const windBearing = this._getWindBearing(weather);
-    const waterTempF = this._getWaterTempF();
-    const waveFt = this._getWaveHeightFt();
-    const rainIn = this._getRainTodayIn();
-    const pressureHpa = this._getPressureHpa(weather);
-    const ripRisk = this._getRipCurrentRisk();
-    const pressureTrend = this._getPressureTrend();
-    const weights = this._modeWeights();
-    const displayScore = fish?.currentScore ?? detail?.displayScore ?? null;
-    const finalCurrentScore = detail?.finalScore ?? null;
-    const band = displayScore !== null ? this._scoreBand(displayScore, this._fishBand) : "n/a";
-    const safetyWarning = detail?.rip?.score < 0.65 ? detail.rip.label : "none";
-    const ripWindow = detail?.ripPeriod
-      ? `${detail.ripPeriod.label || "timed"} ${this._formatDebugWindow(detail.ripPeriod.start, detail.ripPeriod.end)}`
-      : "not time-specific";
-    const capItems = detail ? [
-      ["current safety cap", `${this._fmtDebugNumber(detail.liveConditionCap)}, applied to Now`],
-      ["near-term safety cap", `${this._fmtDebugNumber(detail.liveConditionCap)}, applied for first 3 hours`],
-      ["future curve globally capped", "false"],
-      ["safety warning active", safetyWarning],
-      ["timed rip window", ripWindow],
-      ["active cap", detail.cap],
-      ["wind cap", detail.wind.cap],
-      ["weather cap", detail.weather.cap],
-      ["water cap", detail.waterTemp.cap],
-      ["wave cap", detail.wave.cap],
-      ["rain cap", detail.rain.cap],
-      ["rip cap", detail.rip.cap],
-      ["clarity cap", detail.clarity.cap],
-      ["tide movement", detail.tide.movementScore],
-      ["moon multiplier", detail.moonMult]
-    ] : [];
-    const componentItems = detail ? [
-      ["tide", detail.tide.score, weights.tide, detail.tide.label],
-      ["wind", detail.wind.score, weights.wind, detail.wind.label],
-      ["water", detail.waterTemp.score, weights.waterTemp, detail.waterTemp.label],
-      ["weather", detail.weather.score, weights.weather, detail.weather.label],
-      ["clarity", detail.clarity.score, weights.clarity, detail.clarity.label],
-      ["light", detail.light.score, weights.light, detail.light.label],
-      ["solunar", detail.solunar, weights.solunar, "moon window"],
-      ["pressure", detail.pressure.score, weights.pressure, detail.pressure.label]
-    ] : [];
-    const auto = this._autoData || {};
-    const rows = (items) => items.map(([key, value, extra, label]) => {
-      const shown = extra !== undefined && typeof extra === "number"
-        ? `${this._fmtDebugNumber(value)} x ${extra.toFixed(2)}${label ? " - " + label : ""}`
-        : this._fmtDebugValue(value);
-      const warn = key.toLowerCase().includes("cap") && Number(value) < 0.65 ? " debug-warn" : "";
-      return `<div class="debug-line"><span class="debug-key">${this._escape(key)}</span><span class="debug-value${warn}">${this._escape(shown)}</span></div>`;
-    }).join("");
-
-    return `
-      <details class="debug-panel">
-        <summary>
-          <span class="debug-title debug-title-main">TideWise Debug</span>
-          <span class="debug-note">shown because debug is enabled in YAML</span>
-        </summary>
-        <div class="debug-body">
-          <div class="debug-grid">
-          <div class="debug-section">
-            <div class="debug-section-title">Result</div>
-            ${rows([
-              ["debug target", "current point / Now"],
-              ["curve mode", "future bite potential"],
-              ["band", band],
-              ["component sum", detail?.componentSum],
-              ["pre-cap score", detail?.componentSum],
-              ["moon multiplier", detail?.moonMult],
-              ["score after moon", detail?.scoreAfterMoon],
-              ["active cap", detail?.cap],
-              ["final current score", finalCurrentScore],
-              ["display score (smoothed)", displayScore],
-              ["reason", fish?.reason || "fishing score disabled"],
-              ["best window", fish?.bestWindow || "none"],
-              ["current tide", `${cur.toFixed(1)} ${unitLabel} ${rising ? "rising" : "falling"}`]
-            ])}
-            <div class="debug-section-title">Sources</div>
-            ${rows([
-              ["provider", "noaa_coops"],
-              ["station", this._debugStationLabel()],
-              ["time zone", this._data?.timeZone || "browser/local"],
-              ["coords", `${lat.toFixed(4)}, ${lon.toFixed(4)}`],
-              ["predictions", `${predictions?.length || 0}${this._data?.intervalFallback ? " hilo fallback" : " interval"}`],
-              ["auto updated", auto.updated || "not fetched"],
-              ["CO-OPS", auto.coops?.error || (auto.coops && Object.keys(auto.coops).length ? "available" : "missing")],
-              ["NWS hourly", auto.nws?.error || (auto.nws?.period ? "available" : "missing")],
-              ["NWS surf/rip", auto.surf?.error || (auto.surf && Object.keys(auto.surf).length ? "available" : "missing")],
-              ["NWS beach area", this._selectedNwsBeachArea()?.name || "coordinate lookup"],
-              ["NWS SRF office", this._selectedNwsSrfOffice()?.area || "auto/manual"],
-              ["NWS SRF office/zone", auto.surf?.office ? `${auto.surf.office} ${auto.surf.zone || "unscoped"}` : "missing"]
-            ])}
-          </div>
-          <div class="debug-section">
-            <div class="debug-section-title">Inputs</div>
-            ${rows([
-              ["weather", `${weather?.state || "missing"} (${this._debugSource("weather")})`],
-              ["wind", `${this._fmtDebugNumber(windMph)} mph ${this._formatWindDirection(windBearing)} (${this._debugSource("wind")})`],
-              ["water temp", `${this._fmtDebugNumber(waterTempF)} F (${this._debugSource("waterTemp")})`],
-              ["surf/wave", `${this._fmtDebugNumber(waveFt)} ft (${this._debugSource("wave")})`],
-              ["rain", `${this._fmtDebugNumber(rainIn)} in (${this._debugSource("rain")})`],
-              ["rip risk", `${ripRisk || "missing"} (${this._debugSource("rip")})`],
-              ["pressure", `${this._fmtDebugNumber(pressureHpa)} hPa ${pressureTrend || ""} (${this._debugSource("pressure")})`]
-            ])}
-            <div class="debug-section-title">Components</div>
-            ${rows(componentItems)}
-            <div class="debug-section-title">Caps / Limits</div>
-            ${rows(capItems)}
-          </div>
-        </div>
-        </div>
-      </details>
-    `;
-  }
-
-  _fmtDebugNumber(value) {
-    const num = Number(value);
-    return Number.isFinite(num) ? num.toFixed(2) : "missing";
-  }
-
-  _fmtDebugValue(value) {
-    if (value === null || value === undefined || value === "") return "missing";
-    if (typeof value === "number") return this._fmtDebugNumber(value);
-    return String(value);
-  }
-
-  _formatDebugWindow(start, end) {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    if (!Number.isFinite(startDate.getTime()) || !Number.isFinite(endDate.getTime())) return "unknown window";
-    return `${this._formatClock(startDate)}-${this._formatClock(endDate)}`;
-  }
-
-  _debugStationLabel() {
-    return this._config.station;
-  }
-
-  _capitalize(text) {
-    const value = String(text || "");
-    return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
-  }
-
-  _debugSource(kind) {
-    const hasEntity = (id) => Boolean(id && this._getEntity(id));
-    const weatherState = this._getWeatherState();
-    const isNwsWeather = weatherState?.entity_id === "tidewise.nws_hourly";
-    if (kind === "weather") {
-      if (hasEntity(this._config.weather_entity)) return `entity ${this._config.weather_entity}`;
-      if (isNwsWeather) return "NWS hourly";
-      return weatherState ? "Home Assistant weather fallback" : "missing";
-    }
-    if (kind === "wind") {
-      if (hasEntity(this._config.wind_speed_entity)) return `entity ${this._config.wind_speed_entity}`;
-      if (isNwsWeather && weatherState?.attributes?.wind_speed !== undefined) return "NWS hourly";
-      if (weatherState?.attributes?.wind_speed !== undefined) return "weather entity";
-      if (this._autoData?.coops?.wind) return "NOAA CO-OPS";
-      if (this._autoData?.nws?.period?.windSpeed) return "NWS hourly";
-      return "missing";
-    }
-    if (kind === "waterTemp") {
-      if (hasEntity(this._config.water_temp_entity)) return `entity ${this._config.water_temp_entity}`;
-      if (this._autoData?.coops?.waterTemp) return "NOAA CO-OPS";
-      if (Number.isFinite(Number(this._autoData?.surf?.waterTempF))) return "NWS SRF";
-      return "missing";
-    }
-    if (kind === "wave") {
-      if (hasEntity(this._config.wave_height_entity)) return `entity ${this._config.wave_height_entity}`;
-      if (Number.isFinite(Number(this._autoData?.surf?.surfHeightFt))) return "NWS SRF";
-      return "missing";
-    }
-    if (kind === "rain") return hasEntity(this._config.rain_today_entity) ? `entity ${this._config.rain_today_entity}` : "missing";
-    if (kind === "rip") {
-      if (hasEntity(this._config.rip_current_risk_entity)) return `entity ${this._config.rip_current_risk_entity}`;
-      if (this._autoData?.surf?.ripRisk) return "NWS SRF";
-      return "missing";
-    }
-    if (kind === "pressure") {
-      if (hasEntity(this._config.pressure_entity)) return `entity ${this._config.pressure_entity}`;
-      if (weatherState?.attributes?.pressure !== undefined) return "weather entity";
-      if (this._autoData?.coops?.pressure) return "NOAA CO-OPS";
-      return "missing";
-    }
-    return "unknown";
+    return "";
   }
 
   _themeColor(name, fallback) {
@@ -2029,41 +997,22 @@ class TideWiseCard extends HTMLElement {
       ctx.fillText(v.toFixed(1), padL - 3, y + 3);
     }
 
+    const fillColor = theme.tideLine;
     for (let i = 0; i < predictions.length - 1; i++) {
       const x1 = toX(predictions[i]);
       const x2 = toX(predictions[i + 1]);
       const y1 = toY(parseFloat(predictions[i].v));
       const y2 = toY(parseFloat(predictions[i + 1].v));
-      const score = fishScores ? (fishScores[i] + fishScores[i + 1]) / 2 : 0.58;
-      const [r, g, b] = this._fishColor(score);
       ctx.beginPath();
       ctx.moveTo(x1, y1);
       ctx.lineTo(x2, y2);
       ctx.lineTo(x2, H - padB);
       ctx.lineTo(x1, H - padB);
       ctx.closePath();
-      ctx.fillStyle = `rgba(${r},${g},${b},${fishScores ? 0.68 : 0.42})`;
+      ctx.fillStyle = fillColor;
+      ctx.globalAlpha = 0.18;
       ctx.fill();
-    }
-
-    if (fishDetails && fishDetails.length) {
-      const nowMs = now.getTime();
-      const maxFutureMs = nowMs + 12 * 60 * 60 * 1000;
-      let bestIdx = 0;
-      let bestScore = -1;
-      fishDetails.forEach((d, i) => {
-        const tMs = d.time.getTime();
-        if (tMs >= nowMs && tMs <= maxFutureMs && d.score > bestScore) { bestScore = d.score; bestIdx = i; }
-      });
-      if (bestScore >= 0.55 && predictions[bestIdx]) {
-        const x = toX(predictions[bestIdx]);
-        const glow = ctx.createLinearGradient(x - 12, 0, x + 12, 0);
-        glow.addColorStop(0, "rgba(255,255,255,0)");
-        glow.addColorStop(0.5, "rgba(255,255,255,0.34)");
-        glow.addColorStop(1, "rgba(255,255,255,0)");
-        ctx.fillStyle = glow;
-        ctx.fillRect(x - 12, padT, 24, cH);
-      }
+      ctx.globalAlpha = 1;
     }
 
     tideEvents.forEach((ev) => {
@@ -2236,18 +1185,10 @@ class TideWiseCardEditor extends HTMLElement {
     this._config = {
       title: "TideWise",
       station: "8661070",
-      srf_region: "",
-      beach_state: "",
-      beach_area: "",
-      surf_zone: "",
-      nws_office: "",
       units: "english",
       wind_units: "auto",
-      mode: "general",
       theme_mode: "tidewise",
-      show_fishing_score: true,
       auto_sources: true,
-      auto_surf_forecast: true,
       grid_options: { rows: "full", columns: 18 },
       ...config
     };
@@ -2263,12 +1204,10 @@ class TideWiseCardEditor extends HTMLElement {
     const hasLat = Number.isFinite(Number(this._config.latitude));
     const hasLon = Number.isFinite(Number(this._config.longitude));
     if (hasLat && hasLon) return;
-    const beach = this._selectedBeachArea();
     const preset = this._presetForStation(this._config.station);
-    const point = beach || preset;
-    if (!point) return;
-    const lat = Number(point.lat);
-    const lon = Number(point.lon);
+    if (!preset) return;
+    const lat = Number(preset.lat);
+    const lon = Number(preset.lon);
     if (!hasLat && Number.isFinite(lat)) this._config.latitude = lat;
     if (!hasLon && Number.isFinite(lon)) this._config.longitude = lon;
   }
@@ -2277,11 +1216,9 @@ class TideWiseCardEditor extends HTMLElement {
     const lat = Number(this._config?.latitude);
     const lon = Number(this._config?.longitude);
     if (Number.isFinite(lat) && Number.isFinite(lon)) return { lat, lon };
-    const beach = this._selectedBeachArea();
     const preset = this._presetForStation(this._config?.station);
-    const point = beach || preset;
-    const fallbackLat = Number(point?.lat);
-    const fallbackLon = Number(point?.lon);
+    const fallbackLat = Number(preset?.lat);
+    const fallbackLon = Number(preset?.lon);
     return {
       lat: Number.isFinite(fallbackLat) ? fallbackLat : 33.688,
       lon: Number.isFinite(fallbackLon) ? fallbackLon : -78.886
@@ -2399,60 +1336,6 @@ class TideWiseCardEditor extends HTMLElement {
       this._mapRenderFrame = null;
       this._renderForecastMapTiles();
     });
-  }
-
-  _beachStates() {
-    return [...new Set([
-      ...NWS_BEACH_AREAS.map((area) => area.state),
-      ...NWS_SRF_OFFICES.flatMap((office) => office.state.split("/"))
-    ])].sort();
-  }
-
-  _beachAreasForState(state) {
-    return NWS_BEACH_AREAS.filter((area) => area.state === state).sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  _selectedBeachArea() {
-    return NWS_BEACH_AREAS.find((area) => area.id === this._config.beach_area) || null;
-  }
-
-  _srfRegions() {
-    return [...new Set(NWS_SRF_OFFICES.map((office) => office.region))].sort();
-  }
-
-  _srfOfficesForRegion(region) {
-    return NWS_SRF_OFFICES.filter((office) => office.region === region).sort((a, b) => `${a.state} ${a.area}`.localeCompare(`${b.state} ${b.area}`));
-  }
-
-  _selectedSrfOffice() {
-    return NWS_SRF_OFFICES.find((office) => office.nws === this._config.nws_office) || null;
-  }
-
-  _forecastAreasForState(state) {
-    const selectedState = String(state || "");
-    if (!selectedState) return [];
-    const preciseAreas = this._beachAreasForState(selectedState).map((area) => ({
-      kind: "beach",
-      value: `beach:${area.id}`,
-      label: `${area.name} (${area.office})`,
-      area
-    }));
-    const offices = NWS_SRF_OFFICES
-      .filter((office) => office.state.split("/").includes(selectedState))
-      .sort((a, b) => a.area.localeCompare(b.area))
-      .map((office) => ({
-        kind: "office",
-        value: `office:${office.nws}`,
-        label: `${office.area} (${office.nws})`,
-        office
-      }));
-    return [...preciseAreas, ...offices];
-  }
-
-  _selectedForecastAreaValue() {
-    if (this._config.beach_area) return `beach:${this._config.beach_area}`;
-    if (this._config.nws_office) return `office:${this._config.nws_office}`;
-    return "";
   }
 
   _presetForStation(station) {
@@ -2639,9 +1522,6 @@ class TideWiseCardEditor extends HTMLElement {
     const config = this._config || {};
     const selectedPreset = this._presetForStation(config.station) ? String(config.station) : "custom";
     const grid = config.grid_options || {};
-    const beachState = config.beach_state || "";
-    const forecastAreas = this._forecastAreasForState(beachState);
-    const selectedForecastArea = this._selectedForecastAreaValue();
     const mapState = this._mapState();
     this.shadowRoot.innerHTML = `
       <style>
@@ -2819,19 +1699,19 @@ class TideWiseCardEditor extends HTMLElement {
           </div>
           <div class="grid">
             <label>
-              Fishing / beach latitude
+              Forecast latitude
               <input id="latitude" type="number" step="0.000001" value="${config.latitude ?? ""}" placeholder="33.688">
             </label>
             <label>
-              Fishing / beach longitude
+              Forecast longitude
               <input id="longitude" type="number" step="0.000001" value="${config.longitude ?? ""}" placeholder="-78.886">
             </label>
           </div>
           <div class="map-card">
             <div class="map-head">
               <div>
-                <span class="map-title">Fishing point picker</span>
-                <span class="map-subtitle">Drag to pan, zoom in/out, then tap or click to set the point used for NWS weather, surf context, rain/runoff context, and moon timing.</span>
+                <span class="map-title">Forecast point picker</span>
+                <span class="map-subtitle">Drag to pan, zoom in/out, then tap or click to set the forecast/marine point used for NWS weather context.</span>
               </div>
               <div class="map-actions">
                 <button id="mapZoomOut" type="button" title="Zoom out">-</button>
@@ -2840,37 +1720,19 @@ class TideWiseCardEditor extends HTMLElement {
                 <button id="mapCenter" type="button">Center on pin</button>
               </div>
             </div>
-            <div id="forecastMap" class="map-picker" role="button" tabindex="0" aria-label="Tap or click to set fishing and beach coordinates">
+            <div id="forecastMap" class="map-picker" role="button" tabindex="0" aria-label="Tap or click to set forecast coordinates">
               <div id="mapTiles" class="map-tiles"></div>
               <div class="map-crosshair"></div>
               <div id="mapPin" class="map-pin"></div>
               <div id="mapCoords" class="map-coords">${this._escape(mapState.label)}</div>
               <div class="map-attribution">&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
             </div>
-            <div class="hint">This loads OpenStreetMap tiles only while the visual editor is open. Paste exact coordinates from Maps when precision matters, or use the map to move the fishing point away from the tide gauge.</div>
+            <div class="hint">This loads OpenStreetMap tiles only while the visual editor is open. Paste exact coordinates from Maps when precision matters, or use the map to move the forecast/marine point away from the tide gauge.</div>
           </div>
           <div class="row">
             <button id="stationLocation" type="button">Use NOAA station location</button>
-            <span class="hint">For best fishing scores, use the beach, pier, inlet, or fishing spot you actually care about. Pick a beach/surf area to fill nearby context automatically, or use the tide station location for station-based context.</span>
+            <span class="hint">Pick the marine/forecast point you care about, or use the tide station location for station-based context.</span>
           </div>
-          <div class="title">Beach / Surf Forecast</div>
-          <div class="grid">
-            <label>
-              State
-              <select id="beachState">
-                <option value="">Use coordinates</option>
-                ${this._beachStates().map((state) => `<option value="${state}" ${beachState === state ? "selected" : ""}>${state}</option>`).join("")}
-              </select>
-            </label>
-            <label>
-              Coastal county / beach area
-              <select id="beachArea">
-                <option value="">Use coordinates</option>
-                ${forecastAreas.map((item) => `<option value="${item.value}" ${selectedForecastArea === item.value ? "selected" : ""}>${item.label}</option>`).join("")}
-              </select>
-            </label>
-          </div>
-          <div class="hint">Beach area is used for NWS surf/rip risk. Tide height still comes from the tide station above. If no exact beach zone is listed yet, choose the closest NWS-listed forecast office.</div>
         </div>
 
         <div class="section">
@@ -2898,12 +1760,6 @@ class TideWiseCardEditor extends HTMLElement {
               </select>
             </label>
             <label>
-              Fishing mode
-              <select id="mode">
-                ${["general", "surf", "inlet", "flounder", "trout_redfish", "sheepshead"].map((mode) => `<option value="${mode}" ${config.mode === mode ? "selected" : ""}>${mode.replace("_", " / ")}</option>`).join("")}
-              </select>
-            </label>
-            <label>
               Theme
               <select id="themeMode">
                 <option value="tidewise" ${config.theme_mode !== "auto" ? "selected" : ""}>TideWise</option>
@@ -2912,16 +1768,8 @@ class TideWiseCardEditor extends HTMLElement {
             </label>
           </div>
           <label class="check">
-            <input id="showFishing" type="checkbox" ${config.show_fishing_score !== false ? "checked" : ""}>
-            Show fishing score
-          </label>
-          <label class="check">
             <input id="autoSources" type="checkbox" ${config.auto_sources !== false ? "checked" : ""}>
             Fetch NOAA/NWS auto sources
-          </label>
-          <label class="check">
-            <input id="autoSurfForecast" type="checkbox" ${config.auto_surf_forecast !== false ? "checked" : ""}>
-            Try NWS surf/rip forecast
           </label>
         </div>
 
@@ -2963,33 +1811,11 @@ class TideWiseCardEditor extends HTMLElement {
     this.shadowRoot.getElementById("mapZoomIn")?.addEventListener("click", () => this._zoomMap(1));
     this.shadowRoot.getElementById("mapCenter")?.addEventListener("click", () => this._centerMapOnPoint());
     this.shadowRoot.getElementById("stationLocation")?.addEventListener("click", () => this._useNoaaStationLocation());
-    this.shadowRoot.getElementById("beachState")?.addEventListener("change", (event) => {
-      const state = event.target.value;
-      const first = this._forecastAreasForState(state)[0];
-      const next = { ...this._config, beach_state: state, beach_area: "", surf_zone: "", nws_office: "", srf_region: "" };
-      if (first) this._applyForecastAreaToConfig(next, first);
-      this._emitConfig(next);
-    });
-    this.shadowRoot.getElementById("beachArea")?.addEventListener("change", (event) => {
-      const item = this._forecastAreasForState(this._config.beach_state).find((entry) => entry.value === event.target.value);
-      const next = { ...this._config };
-      if (item) this._applyForecastAreaToConfig(next, item);
-      else {
-        next.beach_area = "";
-        next.surf_zone = "";
-        next.nws_office = "";
-        next.srf_region = "";
-      }
-      this._emitConfig(next);
-    });
     this.shadowRoot.getElementById("title")?.addEventListener("change", (event) => this._setValue("title", event.target.value || "TideWise"));
     this.shadowRoot.getElementById("units")?.addEventListener("change", (event) => this._setValue("units", event.target.value));
     this.shadowRoot.getElementById("windUnits")?.addEventListener("change", (event) => this._setValue("wind_units", this._normalizeWindUnits(event.target.value)));
-    this.shadowRoot.getElementById("mode")?.addEventListener("change", (event) => this._setValue("mode", event.target.value));
     this.shadowRoot.getElementById("themeMode")?.addEventListener("change", (event) => this._setValue("theme_mode", this._normalizeThemeMode(event.target.value)));
-    this.shadowRoot.getElementById("showFishing")?.addEventListener("change", (event) => this._setValue("show_fishing_score", event.target.checked));
     this.shadowRoot.getElementById("autoSources")?.addEventListener("change", (event) => this._setValue("auto_sources", event.target.checked));
-    this.shadowRoot.getElementById("autoSurfForecast")?.addEventListener("change", (event) => this._setValue("auto_surf_forecast", event.target.checked));
     this.shadowRoot.getElementById("gridRows")?.addEventListener("change", (event) => this._setGridValue("rows", event.target.value));
     this.shadowRoot.getElementById("gridColumns")?.addEventListener("change", (event) => this._setGridValue("columns", event.target.value));
     requestAnimationFrame(() => this._renderForecastMapTiles());
@@ -3005,36 +1831,9 @@ class TideWiseCardEditor extends HTMLElement {
     }[char]));
   }
 
-  _applyBeachAreaToConfig(config, area) {
-    config.beach_state = area.state;
-    config.beach_area = area.id;
-    config.nws_office = area.office;
-    config.surf_zone = area.zone;
-    config.srf_region = NWS_SRF_OFFICES.find((office) => office.nws === area.office)?.region || config.srf_region || "";
-    config.latitude = area.lat;
-    config.longitude = area.lon;
-  }
-
-  _applyForecastAreaToConfig(config, item) {
-    if (item.kind === "beach") {
-      this._applyBeachAreaToConfig(config, item.area);
-      return;
-    }
-    if (item.kind === "office") {
-      const officeStates = item.office.state.split("/");
-      config.beach_state = officeStates.includes(config.beach_state) ? config.beach_state : officeStates[0];
-      config.beach_area = "";
-      config.surf_zone = "";
-      config.nws_office = item.office.nws;
-      config.srf_region = item.office.region;
-    }
-  }
 }
 
-class CherryGroveTidesCard extends TideWiseCard {}
-
 if (!customElements.get(CARD_TYPES[0])) customElements.define(CARD_TYPES[0], TideWiseCard);
-if (!customElements.get(CARD_TYPES[1])) customElements.define(CARD_TYPES[1], CherryGroveTidesCard);
 if (!customElements.get("tidewise-card-editor")) customElements.define("tidewise-card-editor", TideWiseCardEditor);
 
 window.customCards = window.customCards || [];
