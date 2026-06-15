@@ -1119,7 +1119,7 @@ class TideWiseCard extends HTMLElement {
         ${this._pillHtml("low", nextLow, unitLabel)}
         ${this._pillHtml("high", nextHigh, unitLabel)}
       </div>
-      ${this._config.debug?.enabled && this._config.debug?.panel ? this._debugHtml(null, chartPredictions, cur, rising, unitLabel) : ""}
+      ${this._config.debug?.enabled && this._config.debug?.panel ? this._debugHtml(windows, alerts, chip, chartPredictions, cur, unitLabel) : ""}
     `;
 
     requestAnimationFrame(() => {
@@ -1145,8 +1145,59 @@ class TideWiseCard extends HTMLElement {
       </div>`;
   }
 
-  _debugHtml(fish, predictions, cur, rising, unitLabel) {
-    return "";
+  _debugHtml(windows, alerts, chip, predictions, currentHeight, unitLabel) {
+    const threshold = this._config.depth_threshold;
+    const buffer = this._config.wharf_buffer_minutes;
+    const zone = this._config.marine_zone || "(unset)";
+    const horizon = this._config.forecast_horizon_hours;
+
+    const sampleRows = predictions.slice(0, 8).map((p) =>
+      `<div class="debug-line"><span class="debug-key">${this._escape(p.t)}</span><span class="debug-value">${parseFloat(p.v).toFixed(2)} ${unitLabel}</span></div>`
+    ).join("");
+
+    const windowRows = windows.map((w) =>
+      `<div class="debug-line"><span class="debug-key">${this._formatClock(w.start)} &rarr; ${this._formatClock(w.end)}</span><span class="debug-value">${Math.round(w.duration_minutes)} min</span></div>`
+    ).join("") || `<div class="debug-line"><span class="debug-key">(none)</span><span class="debug-value"></span></div>`;
+
+    const alertRows = alerts.map((a) =>
+      `<div class="debug-line"><span class="debug-key">${this._escape(a.event)} [${this._escape(a.severity)}]</span><span class="debug-value">${a.expires ? this._formatClock(a.expires) : ""}</span></div>`
+    ).join("") || `<div class="debug-line"><span class="debug-key">(no alerts)</span><span class="debug-value"></span></div>`;
+
+    return `
+      <details class="debug-panel">
+        <summary>
+          <div class="debug-title"><span class="debug-title-main">Debug</span></div>
+          <div class="debug-note">Disable with debug.panel: false</div>
+        </summary>
+        <div class="debug-body">
+          <div class="debug-section">
+            <div class="debug-section-title">Config</div>
+            <div class="debug-line"><span class="debug-key">depth_threshold</span><span class="debug-value">${threshold} ${unitLabel}</span></div>
+            <div class="debug-line"><span class="debug-key">wharf_buffer_minutes</span><span class="debug-value">${buffer}</span></div>
+            <div class="debug-line"><span class="debug-key">marine_zone</span><span class="debug-value">${this._escape(zone)}</span></div>
+            <div class="debug-line"><span class="debug-key">horizon</span><span class="debug-value">${horizon}h</span></div>
+          </div>
+          <div class="debug-section">
+            <div class="debug-section-title">Now</div>
+            <div class="debug-line"><span class="debug-key">current height</span><span class="debug-value">${currentHeight.toFixed(2)} ${unitLabel}</span></div>
+            <div class="debug-line"><span class="debug-key">chip status</span><span class="debug-value">${this._escape(chip.status)}</span></div>
+            <div class="debug-line"><span class="debug-key">chip summary</span><span class="debug-value">${this._escape(chip.summary)}</span></div>
+          </div>
+          <div class="debug-section">
+            <div class="debug-section-title">Extracted Windows (${windows.length})</div>
+            ${windowRows}
+          </div>
+          <div class="debug-section">
+            <div class="debug-section-title">Active Marine Alerts (${alerts.length})</div>
+            ${alertRows}
+          </div>
+          <div class="debug-section">
+            <div class="debug-section-title">Recent Predictions (first 8)</div>
+            ${sampleRows}
+          </div>
+        </div>
+      </details>
+    `;
   }
 
   _themeColor(name, fallback) {
