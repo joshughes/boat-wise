@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.0 — 2026-06-15
+
+Daylight-only window filtering.
+
+### Added
+- `daylight_only` (default `false`): when enabled, clips boating windows to between sunrise and sunset for the configured lat/lon. Windows that straddle night are split into separate daylight chunks; fully-night windows are dropped.
+- `dawn_offset_minutes` / `dusk_offset_minutes`: nudge the boundaries (negative = earlier / more permissive, positive = later / more restrictive). Useful for "off the water 30 min before sunset."
+- `sunriseSunset(date, lat, lon)` pure function — computes sunrise/sunset using the SunCalc astronomical algorithm. No external API or sensor required.
+- `clipWindowsToDaylight(windows, options)` pure function. 9 new unit tests.
+- Editor: daylight-only checkbox and dawn/dusk offset inputs.
+
+### Changed
+- The status chip and upcoming-windows panel both now use daylight-clipped windows when `daylight_only` is on, so the chip won't say "GO NOW" on a window that's already in twilight.
+
 ## 1.1.0 — 2026-06-15
 
 UI redesign to match TideWise's color-banded visual richness.

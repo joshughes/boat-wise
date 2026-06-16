@@ -4,6 +4,9 @@ station: "8441241"            # Plum Island Sound, Ipswich Bay
 depth_threshold: 4.0          # tune from experience
 wharf_buffer_minutes: 30
 marine_zone: ANZ250           # Cape Ann to Marblehead
+daylight_only: true           # only suggest windows between sunrise and sunset
+dawn_offset_minutes: 0        # negative = earlier, positive = later
+dusk_offset_minutes: -30      # off the water 30 min before sunset
 units: english
 wind_units: mph
 auto_sources: true

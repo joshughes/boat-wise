@@ -1,10 +1,10 @@
 /*
- * BoatWise Card v1.1.0
+ * BoatWise Card v1.2.0
  * NOAA tides with depth-threshold boating windows and NWS marine alerts.
  * Forked from TideWise v0.9.5 (TheWillMiller/tide-wise).
  */
 
-const CARD_VERSION = "1.1.0";
+const CARD_VERSION = "1.2.0";
 
 export function extractSafeWindows(predictions, threshold) {
   const norm = (predictions || [])
@@ -270,6 +270,87 @@ export function boatingQualityScore({ windKt, seasFt, alerts, conditions }) {
 
   const label = score >= 4 ? "GREAT" : score === 3 ? "GOOD" : score === 2 ? "FAIR" : "BAD";
   return { label, score, reasons };
+}
+
+export function sunriseSunset(date, lat, lon) {
+  const rad = Math.PI / 180;
+  const J1970 = 2440588;
+  const J2000 = 2451545;
+  const dayMs = 86400000;
+  const e = rad * 23.4397;
+
+  const toJulian = (d) => d.getTime() / dayMs - 0.5 + J1970;
+  const fromJulian = (j) => new Date((j + 0.5 - J1970) * dayMs);
+  const toDays = (d) => toJulian(d) - J2000;
+
+  const solarMeanAnomaly = (d) => rad * (357.5291 + 0.98560028 * d);
+  const eclipticLongitude = (M) => {
+    const C = rad * (1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M));
+    const P = rad * 102.9372;
+    return M + C + P + Math.PI;
+  };
+  const declination = (L) => Math.asin(Math.sin(e) * Math.sin(L));
+
+  const lw = rad * -lon;
+  const phi = rad * lat;
+  const d = toDays(date);
+  const n = Math.round(d - 0.0009 - lw / (2 * Math.PI));
+  const ds = 0.0009 + lw / (2 * Math.PI) + n;
+  const M = solarMeanAnomaly(ds);
+  const L = eclipticLongitude(M);
+  const dec = declination(L);
+  const Jnoon = J2000 + ds + 0.0053 * Math.sin(M) - 0.0069 * Math.sin(2 * L);
+
+  const h0 = rad * -0.833;
+  const H = Math.acos((Math.sin(h0) - Math.sin(phi) * Math.sin(dec)) / (Math.cos(phi) * Math.cos(dec)));
+  const Jset = Jnoon + H / (2 * Math.PI);
+  const Jrise = Jnoon - H / (2 * Math.PI);
+
+  return {
+    sunrise: fromJulian(Jrise),
+    sunset: fromJulian(Jset)
+  };
+}
+
+export function clipWindowsToDaylight(windows, options = {}) {
+  const {
+    daylightOnly = true,
+    lat,
+    lon,
+    dawnOffsetMinutes = 0,
+    duskOffsetMinutes = 0,
+    minDurationMinutes = 15
+  } = options;
+
+  if (!daylightOnly) return windows;
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return windows;
+
+  const result = [];
+  for (const w of windows || []) {
+    if (!(w?.start instanceof Date) || !(w?.end instanceof Date)) continue;
+    const startDate = new Date(w.start.getFullYear(), w.start.getMonth(), w.start.getDate());
+    const endDate = new Date(w.end.getFullYear(), w.end.getMonth(), w.end.getDate());
+    for (let d = new Date(startDate); d.getTime() <= endDate.getTime(); d.setDate(d.getDate() + 1)) {
+      const probe = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0);
+      const { sunrise, sunset } = sunriseSunset(probe, lat, lon);
+      const dayStart = new Date(sunrise.getTime() + dawnOffsetMinutes * 60000);
+      const dayEnd = new Date(sunset.getTime() + duskOffsetMinutes * 60000);
+      const clipStart = new Date(Math.max(w.start.getTime(), dayStart.getTime()));
+      const clipEnd = new Date(Math.min(w.end.getTime(), dayEnd.getTime()));
+      if (clipEnd.getTime() <= clipStart.getTime()) continue;
+      const durMin = (clipEnd - clipStart) / 60000;
+      if (durMin < minDurationMinutes) continue;
+      result.push({
+        start: clipStart,
+        end: clipEnd,
+        duration_minutes: durMin,
+        tide_direction_at_start: w.tide_direction_at_start,
+        tide_direction_at_end: w.tide_direction_at_end,
+        clipped: clipStart.getTime() !== w.start.getTime() || clipEnd.getTime() !== w.end.getTime()
+      });
+    }
+  }
+  return result;
 }
 
 const CARD_TYPES = ["boatwise-card"];
@@ -559,7 +640,10 @@ class BoatWiseCard extends HTMLElement {
       depth_threshold: 4.0,
       wharf_buffer_minutes: 30,
       marine_zone: "ANZ250",
-      forecast_horizon_hours: 72
+      forecast_horizon_hours: 72,
+      daylight_only: false,
+      dawn_offset_minutes: 0,
+      dusk_offset_minutes: 0
     };
   }
 
@@ -591,6 +675,9 @@ class BoatWiseCard extends HTMLElement {
       wharf_buffer_minutes: this._normalizeWharfBuffer(config.wharf_buffer_minutes),
       marine_zone: String(config.marine_zone || "").trim().toUpperCase(),
       forecast_horizon_hours: this._normalizeHorizon(config.forecast_horizon_hours),
+      daylight_only: config.daylight_only === true,
+      dawn_offset_minutes: Number.isFinite(Number(config.dawn_offset_minutes)) ? Number(config.dawn_offset_minutes) : 0,
+      dusk_offset_minutes: Number.isFinite(Number(config.dusk_offset_minutes)) ? Number(config.dusk_offset_minutes) : 0,
       debug: this._normalizeDebugConfig(config.debug)
     };
     this.setAttribute("theme-mode", this._config.theme_mode);
@@ -1131,10 +1218,17 @@ class BoatWiseCard extends HTMLElement {
       const tMs = this._parsePredictionTime(p.t).getTime();
       return Number.isFinite(tMs) && tMs >= now.getTime() - 6 * 60 * 1000 && tMs <= horizonCutoff.getTime();
     });
-    const windows = extractSafeWindows(
+    const rawWindows = extractSafeWindows(
       seriesForWindows.map((p) => ({ time: this._parsePredictionTime(p.t), value: parseFloat(p.v) })),
       this._config.depth_threshold
     );
+    const windows = clipWindowsToDaylight(rawWindows, {
+      daylightOnly: this._config.daylight_only,
+      lat: this._config.latitude,
+      lon: this._config.longitude,
+      dawnOffsetMinutes: this._config.dawn_offset_minutes,
+      duskOffsetMinutes: this._config.dusk_offset_minutes
+    });
     this._lastWindows = windows;
 
     const alerts = (this._autoData?.alerts || []).map((a) => ({
@@ -2260,10 +2354,25 @@ class BoatWiseCardEditor extends HTMLElement {
               <input id="marineZone" value="${this._escape(config.marine_zone || "")}" placeholder="ANZ250">
             </label>
           </div>
+          <label class="check">
+            <input id="daylightOnly" type="checkbox" ${config.daylight_only ? "checked" : ""}>
+            Daylight only (clip windows to dawn–dusk)
+          </label>
+          <div class="grid">
+            <label>
+              Dawn offset (minutes)
+              <input id="dawnOffset" type="number" step="5" value="${config.dawn_offset_minutes ?? 0}" placeholder="0">
+            </label>
+            <label>
+              Dusk offset (minutes)
+              <input id="duskOffset" type="number" step="5" value="${config.dusk_offset_minutes ?? 0}" placeholder="0">
+            </label>
+          </div>
           <div class="hint">
             Depth threshold: tide height below which the river is too shallow to safely transit. Start at 4 ft and tune from experience.
             Marine zone ID lets BoatWise show NWS Small Craft Advisories and offshore wind/seas.
             <a href="https://www.weather.gov/marine_charts" target="_blank" rel="noopener">Find your marine zone</a>.
+            Daylight offsets shift sunrise/sunset boundaries (negative = earlier / more permissive, positive = later / more restrictive).
           </div>
         </div>
 
@@ -2351,6 +2460,9 @@ class BoatWiseCardEditor extends HTMLElement {
     this.shadowRoot.getElementById("depthThreshold")?.addEventListener("change", (event) => this._setNumber("depth_threshold", event.target.value));
     this.shadowRoot.getElementById("wharfBuffer")?.addEventListener("change", (event) => this._setNumber("wharf_buffer_minutes", event.target.value));
     this.shadowRoot.getElementById("marineZone")?.addEventListener("change", (event) => this._setValue("marine_zone", String(event.target.value || "").trim().toUpperCase()));
+    this.shadowRoot.getElementById("daylightOnly")?.addEventListener("change", (event) => this._setValue("daylight_only", event.target.checked));
+    this.shadowRoot.getElementById("dawnOffset")?.addEventListener("change", (event) => this._setNumber("dawn_offset_minutes", event.target.value));
+    this.shadowRoot.getElementById("duskOffset")?.addEventListener("change", (event) => this._setNumber("dusk_offset_minutes", event.target.value));
     this.shadowRoot.getElementById("gridRows")?.addEventListener("change", (event) => this._setGridValue("rows", event.target.value));
     this.shadowRoot.getElementById("gridColumns")?.addEventListener("change", (event) => this._setGridValue("columns", event.target.value));
     requestAnimationFrame(() => this._renderForecastMapTiles());
