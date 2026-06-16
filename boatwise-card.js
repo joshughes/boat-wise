@@ -1,10 +1,10 @@
 /*
- * BoatWise Card v1.0.0
+ * BoatWise Card v1.1.0
  * NOAA tides with depth-threshold boating windows and NWS marine alerts.
  * Forked from TideWise v0.9.5 (TheWillMiller/tide-wise).
  */
 
-const CARD_VERSION = "1.0.0";
+const CARD_VERSION = "1.1.0";
 
 export function extractSafeWindows(predictions, threshold) {
   const norm = (predictions || [])

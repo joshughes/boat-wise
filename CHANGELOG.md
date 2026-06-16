@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.1.0 — 2026-06-15
+
+UI redesign to match TideWise's color-banded visual richness.
+
+### Added
+- `boatingQualityScore` pure function — assesses conditions as **GREAT** / **GOOD** / **FAIR** / **BAD** based on wind, seas, active marine alerts, and weather. 12 new unit tests.
+- Tide chart now color-bands time periods: safe segments fill with the current quality color (green/amber/red), shallow segments fill gray.
+- Color legend strip under the chart explaining the bands, with the dominant quality reason shown on the right.
+- Horizontal-scroll window cards replace the dense table. Each card shows day, time range, duration, and arrival hint. Open-now cards are tinted by current quality; advisory cards get a red warning treatment.
+- Chip cluster in the chart header: seas, water temp, pressure, and the new quality chip.
+
+### Changed
+- Wind chip moved back to the current-row (alongside the rising/falling indicator) to match TideWise placement.
+- `_drawChart` signature extended to accept `qualityLabel`.
+
+### Fixed
+- Threshold reference line is now drawn over the colored bands rather than under a generic fill, making it easier to read.
+
 ## 1.0.0 — 2026-06-14
 
 Initial BoatWise release. Forked from TideWise v0.9.5.
