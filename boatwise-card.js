@@ -1,10 +1,10 @@
 /*
- * BoatWise Card v1.2.0
+ * BoatWise Card v1.2.1
  * NOAA tides with depth-threshold boating windows and NWS marine alerts.
  * Forked from TideWise v0.9.5 (TheWillMiller/tide-wise).
  */
 
-const CARD_VERSION = "1.2.0";
+const CARD_VERSION = "1.2.1";
 
 export function extractSafeWindows(predictions, threshold) {
   const norm = (predictions || [])
@@ -251,18 +251,24 @@ export function boatingQualityScore({ windKt, seasFt, alerts, conditions }) {
     score = 2;
   }
 
-  if (dominant.kind === "wind") {
-    if (dominant.score === 4) reasons.push(`light wind (${Math.round(dominant.value)} kt)`);
-    else if (dominant.score === 3) reasons.push(`moderate wind (${Math.round(dominant.value)} kt)`);
-    else if (dominant.score === 2) reasons.push(`brisk wind (${Math.round(dominant.value)} kt)`);
-    else if (dominant.score === 1) reasons.push(`strong wind (${Math.round(dominant.value)} kt)`);
-    else reasons.push(`very strong wind (${Math.round(dominant.value)} kt)`);
-  } else {
-    if (dominant.score === 4) reasons.push(`flat seas (${dominant.value} ft)`);
-    else if (dominant.score === 3) reasons.push(`light chop (${dominant.value} ft)`);
-    else if (dominant.score === 2) reasons.push(`choppy seas (${dominant.value} ft)`);
-    else if (dominant.score === 1) reasons.push(`rough seas (${dominant.value} ft)`);
-    else reasons.push(`very rough seas (${dominant.value} ft)`);
+  const describeWind = (s, v) => {
+    if (s === 4) return `light wind (${Math.round(v)} kt)`;
+    if (s === 3) return `moderate wind (${Math.round(v)} kt)`;
+    if (s === 2) return `brisk wind (${Math.round(v)} kt)`;
+    if (s === 1) return `strong wind (${Math.round(v)} kt)`;
+    return `very strong wind (${Math.round(v)} kt)`;
+  };
+  const describeSeas = (s, v) => {
+    if (s === 4) return `flat seas (${v} ft)`;
+    if (s === 3) return `light chop (${v} ft)`;
+    if (s === 2) return `choppy seas (${v} ft)`;
+    if (s === 1) return `rough seas (${v} ft)`;
+    return `very rough seas (${v} ft)`;
+  };
+
+  for (const c of components) {
+    if (c.kind === "wind") reasons.push(describeWind(c.score, c.value));
+    else reasons.push(describeSeas(c.score, c.value));
   }
 
   if (ws === null) reasons.push("wind unknown");
@@ -494,7 +500,25 @@ const STYLES = `
   .legend-dot.quality-fair { background: #e8b84b; }
   .legend-dot.quality-bad { background: #c05030; }
   .legend-dot.shallow { background: #8c8c8c; }
-  .legend-reason { font-size: 11.5px; color: var(--text-muted); font-weight: 650; font-style: italic; margin-left: auto; line-height: 1.3; max-width: 60%; text-align: right; }
+  .quality-why {
+    display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;
+    margin: 4px 2px 4px;
+    padding: 5px 10px;
+    background: var(--bw-panel-bg);
+    border: 1px solid var(--bw-panel-border);
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .quality-why-label {
+    font-weight: 850; letter-spacing: 0.04em; text-transform: uppercase; font-size: 11px;
+    padding: 1px 6px; border-radius: 4px; white-space: nowrap;
+  }
+  .quality-why-great { background: rgba(60,170,110,0.20); color: #0f7a38; }
+  .quality-why-good { background: rgba(96,188,152,0.22); color: #157754; }
+  .quality-why-fair { background: rgba(232,184,75,0.24); color: #8a6a10; }
+  .quality-why-bad { background: rgba(192,80,48,0.20); color: #8a3018; }
+  .quality-why-reasons { color: var(--text); font-weight: 650; min-width: 0; flex: 1 1 auto; }
   .windows-section { margin: 10px 0 6px; }
   .windows-section .section-label { display: block; margin-bottom: 6px; }
   .windows-scroll {
@@ -599,7 +623,8 @@ const STYLES = `
     .window-card { min-width: 156px; padding: 7px 10px 8px; }
     .card-time { font-size: 14px; }
     .card-dur { font-size: 12px; }
-    .legend-reason { display: none; }
+    .quality-why { font-size: 11.5px; padding: 4px 8px; }
+    .quality-why-reasons { flex: 1 1 100%; }
   }
   @container (max-width: 390px) {
     .title { font-size: 22px; }
@@ -1319,7 +1344,9 @@ class BoatWiseCard extends HTMLElement {
     const pressureLabel = Number.isFinite(pressureHpa) ? `${pressureHpa.toFixed(0)} hPa` : "";
 
     const qualityClass = `quality-chip-${quality.label.toLowerCase()}`;
-    const qualityChipHtml = `<span class="quality-chip ${qualityClass}">${quality.label}</span>`;
+    const qualityReasonText = quality.reasons.length ? quality.reasons.join(" · ") : "";
+    const qualityChipTitle = qualityReasonText ? `${quality.label}: ${qualityReasonText}` : quality.label;
+    const qualityChipHtml = `<span class="quality-chip ${qualityClass}" title="${this._escape(qualityChipTitle)}">${quality.label}</span>`;
 
     const chartChipsHtml = [
       seasLabel ? `<span class="condition-chip">${seasLabel}</span>` : "",
@@ -1332,8 +1359,13 @@ class BoatWiseCard extends HTMLElement {
       <div class="band-legend">
         <span class="legend-item"><span class="legend-dot quality-${quality.label.toLowerCase()}"></span>${quality.label.charAt(0) + quality.label.slice(1).toLowerCase()}</span>
         <span class="legend-item"><span class="legend-dot shallow"></span>Too Shallow</span>
-        ${quality.reasons.length ? `<span class="legend-reason">${this._escape(quality.reasons.slice(0, 2).join(" · "))}</span>` : ""}
       </div>
+      ${qualityReasonText ? `
+        <div class="quality-why">
+          <span class="quality-why-label quality-why-${quality.label.toLowerCase()}">Why ${quality.label}:</span>
+          <span class="quality-why-reasons">${this._escape(qualityReasonText)}</span>
+        </div>
+      ` : ""}
     `;
 
     root.innerHTML = `

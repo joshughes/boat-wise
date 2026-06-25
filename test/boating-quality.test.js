@@ -65,6 +65,18 @@ test("reasons include the dominating factor", () => {
   assert.match(r.reasons.join(" "), /wind/i);
 });
 
+test("reasons include both wind and seas when both known", () => {
+  const r = boatingQualityScore({ windKt: 18, seasFt: 3, alerts: [], conditions: null });
+  const text = r.reasons.join(" ");
+  assert.match(text, /wind/i);
+  assert.match(text, /seas|chop/i);
+});
+
+test("worse component listed first", () => {
+  const r = boatingQualityScore({ windKt: 22, seasFt: 1, alerts: [], conditions: null });
+  assert.match(r.reasons[0], /wind/i);
+});
+
 test("score is 0..4 integer", () => {
   for (const wind of [0, 5, 12, 18, 22, 30]) {
     for (const seas of [0, 1, 2, 3, 5, 8]) {

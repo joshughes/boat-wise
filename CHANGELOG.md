@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.1 — 2026-06-24
+
+Always show why the quality chip says what it says.
+
+### Fixed
+- Quality reasoning was being hidden on narrower dashboards (`display: none` under 520px container width) and clipped to only the first 2 reasons even when shown. The "why" row is now a dedicated, always-visible panel under the legend that displays *all* contributing reasons.
+- When both wind and seas are known, both are listed (in worst-first order) instead of only the dominant factor — so a "FAIR" rating clearly shows whether it's wind, seas, or both.
+
+### Added
+- Quality chip now has a `title` attribute with the full reasoning, so desktop users get a hover tooltip too.
+- Quality-colored label tag (e.g., **WHY FAIR:**) on the why-row to visually tie it to the chip.
+
 ## 1.2.0 — 2026-06-15
 
 Daylight-only window filtering.
