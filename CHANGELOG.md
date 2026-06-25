@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.2 — 2026-06-24
+
+Fix CWF parser truncating period bodies at newlines.
+
+### Fixed
+- `parseCWFZonePeriods` was truncating each period block at the first newline because its lookahead used `|$` under the `m` flag, which matches end-of-line rather than end-of-string. As a result, periods whose seas value lived on a wrapped line (THU, FRI, FRI NIGHT, SAT, SAT NIGHT in NWS office BOX's product, for example) returned `seas: null` and the quality scorer reported "seas unknown" for those windows.
+- Replaced the regex with a chunk-split based on `\n.UPPERCASE` boundaries, so the full multi-line period body is preserved end-to-end.
+- Added regression tests pinning this behavior — every period in the fixture's ANZ250 zone must now return a parseable seas value.
+
 ## 1.3.1 — 2026-06-24
 
 Actually fetch marine forecasts.

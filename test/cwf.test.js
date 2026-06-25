@@ -85,3 +85,17 @@ test("unknown zone returns empty array", () => {
   const periods = parseCWFZonePeriods(cwfText, "XYZ999", ISSUANCE);
   assert.deepEqual(periods, []);
 });
+
+test("every period in ANZ250 parses seas (regression: multi-line bodies)", () => {
+  const periods = parseCWFZonePeriods(cwfText, "ANZ250", ISSUANCE);
+  for (const p of periods) {
+    assert.ok(p.parsed.seas, `seas missing for ${p.label}: ${JSON.stringify(p.text)}`);
+  }
+});
+
+test("multi-line period body is preserved through the chunk split", () => {
+  const periods = parseCWFZonePeriods(cwfText, "ANZ250", ISSUANCE);
+  const fri = periods.find((p) => p.label === "FRI");
+  // The fixture's FRI body wraps across multiple lines and mentions "Wave Detail"
+  assert.match(fri.text, /Wave Detail/i);
+});

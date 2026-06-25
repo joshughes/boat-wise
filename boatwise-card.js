@@ -1,10 +1,10 @@
 /*
- * BoatWise Card v1.3.1
+ * BoatWise Card v1.3.2
  * NOAA tides with depth-threshold boating windows and NWS marine alerts.
  * Forked from TideWise v0.9.5 (TheWillMiller/tide-wise).
  */
 
-const CARD_VERSION = "1.3.1";
+const CARD_VERSION = "1.3.2";
 
 export function extractSafeWindows(predictions, threshold) {
   const norm = (predictions || [])
@@ -196,8 +196,9 @@ export function parseCWFZonePeriods(productText, zone, issuanceTime) {
   const issuance = issuanceTime instanceof Date ? issuanceTime : new Date(issuanceTime || Date.now());
   const issuanceDay = new Date(issuance.getUTCFullYear(), issuance.getUTCMonth(), issuance.getUTCDate());
 
-  // Periods start with ".LABEL..." where LABEL is uppercase. Capture until next period or footer.
-  const periodRe = /^\.([A-Z][A-Z\s/]*?)\.\.\.([\s\S]*?)(?=^\.[A-Z]|\nSeas are reported|\n\$\$|$)/gm;
+  // Each period begins on its own line with ".LABEL...". Split by that boundary so we
+  // don't have to rely on a regex end-of-string anchor (JS has no \z).
+  const periodChunks = zoneText.split(/\n(?=\.[A-Z])/);
   const dayMap = { SUN: 0, MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6 };
 
   const labelToRange = (label) => {
@@ -250,11 +251,16 @@ export function parseCWFZonePeriods(productText, zone, issuanceTime) {
   };
 
   const periods = [];
-  let m;
-  while ((m = periodRe.exec(zoneText)) !== null) {
+  for (const chunk of periodChunks) {
+    const m = chunk.match(/^\.([A-Z][A-Z\s/]*?)\.\.\.([\s\S]*)/);
+    if (!m) continue;
     const label = m[1].trim();
-    const body = m[2].trim();
     if (!label || /^SYNOPSIS/i.test(label)) continue;
+    let body = m[2];
+    // Trim the "Seas are reported as significant wave height..." footer block.
+    const footerIdx = body.search(/\n\s*Seas are reported/i);
+    if (footerIdx >= 0) body = body.substring(0, footerIdx);
+    body = body.trim();
     const range = labelToRange(label);
     const parsed = parseMarineForecastPeriod(body);
     periods.push({ label, text: body, start: range.start, end: range.end, parsed });

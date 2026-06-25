@@ -1,6 +1,6 @@
 {
   "name": "boatwise-card",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "Tide-depth boating windows, NWS marine alerts and zone forecasts for Home Assistant.",
   "type": "module",
   "files": [
