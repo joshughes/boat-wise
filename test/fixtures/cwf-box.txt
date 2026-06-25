@@ -1,0 +1,566 @@
+
+000
+FZUS51 KBOX 242305
+CWFBOX
+
+Coastal Waters Forecast for Massachusetts and Rhode Island
+National Weather Service Boston/Norton MA
+704 PM EDT Wed Jun 24 2026
+
+Coastal waters from the Merrimack River MA to Watch Hill RI out
+to 60 NM
+
+ANZ200-251200-
+704 PM EDT Wed Jun 24 2026
+
+.Synopsis for Massachusetts and Rhode Island coastal waters...
+A ridge of high pres crosses the region tonight and shifts east of 
+the waters on Thu. A cold front with waves of low pres will bring a 
+risk for a round or two of scattered showers and a few thunderstorms 
+Thu night into Fri. A weak wave of low pres passes south of the 
+waters Sat followed by high pres building across the waters Sun into 
+Mon.
+
+$$
+
+ANZ250-251200-
+Coastal waters east of Ipswich Bay and the Stellwagen Bank
+National Marine Sanctuary-
+704 PM EDT Wed Jun 24 2026
+
+.TONIGHT...W winds 5 to 10 kt. Seas 2 to 3 ft. Wave Detail: E
+3 ft at 7 seconds and W 1 foot at 2 seconds. 
+.THU...W winds around 5 kt, becoming S in the afternoon. Seas
+2 to 3 ft. Wave Detail: SE 3 ft at 9 seconds and W 1 foot at
+2 seconds. 
+.THU NIGHT...S winds 10 to 15 kt. Seas 2 to 3 ft. Wave Detail: S
+2 ft at 3 seconds and SE 2 ft at 9 seconds. A chance of showers
+after midnight. 
+.FRI...S winds 5 to 10 kt, increasing to 10 to 15 kt with gusts
+up to 20 kt in the afternoon. Seas 2 to 3 ft. Wave Detail: SE
+2 ft at 8 seconds and SW 1 foot at 3 seconds. A chance of
+showers. 
+.FRI NIGHT...SW winds 5 to 10 kt with gusts up to 20 kt, becoming
+W after midnight. Seas around 2 ft. Wave Detail: S 2 ft at
+4 seconds and SE 1 foot at 12 seconds. A chance of showers after
+midnight. 
+.SAT...N winds around 5 kt, becoming E in the afternoon. Seas
+around 2 ft. Wave Detail: SE 2 ft at 6 seconds and W 1 foot at
+3 seconds. A chance of showers. 
+.SAT NIGHT...E winds around 5 kt, becoming N after midnight. Seas
+around 2 ft. 
+.SUN THROUGH MON NIGHT...S winds 5 to 10 kt. Seas around 2 ft.  
+
+Seas are reported as significant wave height, which is the
+average of the highest third of the waves. Individual wave
+heights may be more than twice the significant wave height.
+
+$$
+
+ANZ251-251200-
+Massachusetts Bay and Ipswich Bay-
+704 PM EDT Wed Jun 24 2026
+
+.TONIGHT...W winds 5 to 10 kt. Seas around 2 ft. Wave Detail: E
+2 ft at 7 seconds and W 1 foot at 2 seconds. 
+.THU...SW winds around 5 kt, becoming S in the afternoon. Seas
+around 2 ft. Wave Detail: W 1 foot at 2 seconds and E 1 foot at
+8 seconds. 
+.THU NIGHT...S winds 5 to 10 kt. Seas around 2 ft. Wave Detail:
+SE 2 ft at 6 seconds and S 1 foot at 3 seconds. A chance of
+showers after midnight. 
+.FRI...S winds 5 to 10 kt. Gusts up to 20 kt in the afternoon.
+Seas around 2 ft. Wave Detail: SE 2 ft at 8 seconds and S 1 foot
+at 2 seconds. Showers likely, mainly in the morning. 
+.FRI NIGHT...SW winds 5 to 10 kt, becoming W after midnight. Seas
+around 2 ft. Wave Detail: S 1 foot at 4 seconds and E 1 foot at
+12 seconds. A chance of showers after midnight. 
+.SAT AND SAT NIGHT...N winds 5 to 10 kt. Seas 1 foot or less.
+Wave Detail: W 1 foot at 2 seconds and SE 1 foot at 6 seconds. A
+chance of showers. 
+.SUN THROUGH MON NIGHT...S winds 5 to 10 kt. Seas around 2 ft.  
+
+Seas are reported as significant wave height, which is the
+average of the highest third of the waves. Individual wave
+heights may be more than twice the significant wave height.
+
+$$
+
+ANZ231-251200-
+Cape Cod Bay-
+704 PM EDT Wed Jun 24 2026
+
+.TONIGHT...W winds 5 to 10 kt. Seas 1 foot or less. Wave Detail:
+W 1 foot at 2 seconds and E 1 foot at 5 seconds. 
+.THU...SW winds around 5 kt, becoming S in the afternoon. Seas
+1 foot or less, then around 2 ft in the afternoon. Wave Detail: W
+1 foot at 2 seconds and E 1 foot at 9 seconds, becoming SW 1 foot
+at 2 seconds and E 1 foot at 8 seconds. 
+.THU NIGHT...S winds 5 to 10 kt. Seas around 2 ft in the evening,
+then 1 foot or less. Wave Detail: E 2 ft at 7 seconds and S 2 ft
+at 8 seconds, becoming SW 1 foot at 2 seconds and SE 1 foot at
+5 seconds. 
+.FRI...S winds 5 to 10 kt, becoming SW 10 to 15 kt in the
+afternoon. Gusts up to 20 kt. Seas around 2 ft. Wave Detail: SW
+1 foot at 2 seconds and SE 1 foot at 6 seconds. A chance of
+showers. 
+.FRI NIGHT...SW winds 5 to 10 kt. Seas around 2 ft in the
+evening, then 1 foot or less. Wave Detail: SW 1 foot at 3 seconds
+and SE 1 foot at 7 seconds, becoming W 1 foot at 2 seconds and SE
+1 foot at 7 seconds. A chance of showers after midnight. 
+.SAT AND SAT NIGHT...N winds around 5 kt. Seas 1 foot or less.
+Wave Detail: W 1 foot at 2 seconds and SW 1 foot at 6 seconds. A
+chance of showers. 
+.SUN THROUGH MON NIGHT...SW winds around 5 kt. Seas 1 foot or
+less.  
+
+Seas are reported as significant wave height, which is the
+average of the highest third of the waves. Individual wave
+heights may be more than twice the significant wave height.
+
+$$
+
+ANZ254-251200-
+Coastal waters from Provincetown MA to Chatham MA to Nantucket MA
+out 20 NM-
+704 PM EDT Wed Jun 24 2026
+
+.TONIGHT...W winds 5 to 10 kt. Gusts up to 20 kt this evening.
+Seas 2 to 4 ft. Wave Detail: SE 4 ft at 8 seconds and E 3 ft at
+8 seconds. 
+.THU...SW winds 5 to 10 kt. Seas 2 to 4 ft. Wave Detail: S 4 ft
+at 8 seconds and SE 2 ft at 10 seconds. 
+.THU NIGHT...S winds around 10 kt. Seas 2 to 3 ft. Wave Detail:
+SE 3 ft at 8 seconds and SW 1 foot at 3 seconds. Patchy fog after
+midnight with vsby 1 NM or less. 
+.FRI...S winds 5 to 10 kt, becoming SW 10 to 15 kt with gusts up
+to 20 kt in the afternoon. Seas 2 to 3 ft. Wave Detail: S 3 ft at
+7 seconds and SW 2 ft at 4 seconds. Patchy fog in the morning
+with vsby 1 NM or less. 
+.FRI NIGHT...SW winds 10 to 15 kt with gusts up to 20 kt,
+diminishing to 5 to 10 kt after midnight. Seas 2 to 3 ft. Wave
+Detail: SW 2 ft at 4 seconds and SE 2 ft at 7 seconds. A chance
+of showers after midnight. 
+.SAT...SW winds around 5 kt, becoming E in the afternoon. Seas
+around 2 ft. Wave Detail: SE 2 ft at 7 seconds and W 1 foot at
+3 seconds. A chance of showers in the morning, then showers
+likely in the afternoon. 
+.SAT NIGHT...NE winds around 5 kt. Seas 2 to 3 ft. A chance of
+showers in the evening. 
+.SUN THROUGH MON NIGHT...SW winds around 5 kt. Seas 2 to 3 ft.  
+
+Seas are reported as significant wave height, which is the
+average of the highest third of the waves. Individual wave
+heights may be more than twice the significant wave height.
+
+$$
+
+ANZ255-251200-
+Coastal Waters extending out to 25 NM South of Marthas Vineyard
+and Nantucket-
+704 PM EDT Wed Jun 24 2026
+
+.TONIGHT...W winds 10 to 15 kt. Gusts up to 20 kt this evening.
+Seas 3 to 5 ft. Wave Detail: S 5 ft at 8 seconds and W 2 ft at
+3 seconds. 
+.THU...SW winds 5 to 10 kt. Seas 2 to 4 ft. Wave Detail: SW 4 ft
+at 7 seconds and E 1 foot at 6 seconds. 
+.THU NIGHT...S winds around 10 kt. Seas 2 to 3 ft. Wave Detail: S
+3 ft at 7 seconds and SW 1 foot at 4 seconds. Patchy fog. Vsby
+1 NM or less. 
+.FRI...SW winds 10 to 15 kt. Gusts up to 20 kt in the afternoon.
+Seas 2 to 3 ft. Wave Detail: S 3 ft at 6 seconds and SE 1 foot at
+12 seconds. Patchy fog in the morning with vsby 1 NM or less. 
+.FRI NIGHT...SW winds 10 to 15 kt with gusts up to 20 kt,
+diminishing to 5 to 10 kt after midnight. Seas 2 to 3 ft. Wave
+Detail: SW 2 ft at 5 seconds and SE 2 ft at 7 seconds. A chance
+of showers after midnight. 
+.SAT...SE winds around 5 kt. Seas 2 to 3 ft. Wave Detail: SE 2 ft
+at 7 seconds and SW 1 foot at 5 seconds. Showers likely. 
+.SAT NIGHT...NE winds 5 to 10 kt. Seas 2 to 3 ft. A chance of
+showers. 
+.SUN THROUGH MON NIGHT...SW winds 5 to 10 kt. Seas 2 to 3 ft.  
+
+Seas are reported as significant wave height, which is the
+average of the highest third of the waves. Individual wave
+heights may be more than twice the significant wave height.
+
+$$
+
+ANZ256-251200-
+Coastal Waters from Montauk NY to Marthas Vineyard extending out
+to 20 NM South of Block Island-
+704 PM EDT Wed Jun 24 2026
+
+.TONIGHT...SW winds 10 to 15 kt with gusts up to 20 kt, becoming
+W 5 to 10 kt after midnight. Seas 3 to 4 ft. Wave Detail: S 4 ft
+at 8 seconds and W 2 ft at 3 seconds. 
+.THU...SW winds 5 to 10 kt. Seas 3 to 4 ft. Wave Detail: S 4 ft
+at 8 seconds and W 1 foot at 7 seconds. 
+.THU NIGHT...S winds 10 to 15 kt. Seas around 3 ft. Wave Detail:
+SE 3 ft at 7 seconds and SW 1 foot at 5 seconds. Patchy fog after
+midnight with vsby 1 NM or less. 
+.FRI...SW winds 10 to 15 kt. Seas around 3 ft. Wave Detail: S
+3 ft at 6 seconds. Patchy fog in the morning with vsby 1 NM or
+less. 
+.FRI NIGHT...SW winds 10 to 15 kt, diminishing to 5 to 10 kt
+after midnight. Seas 2 to 3 ft. Wave Detail: SE 3 ft at 7 seconds
+and SW 2 ft at 5 seconds. A chance of showers after midnight. 
+.SAT...SE winds 5 to 10 kt. Seas around 2 ft. Wave Detail: SE
+2 ft at 7 seconds and SW 1 foot at 5 seconds. Showers likely. 
+.SAT NIGHT...NE winds 5 to 10 kt. Seas 2 to 3 ft. A chance of
+showers in the evening. 
+.SUN THROUGH MON NIGHT...SW winds 5 to 10 kt. Seas 2 to 3 ft.  
+
+Seas are reported as significant wave height, which is the
+average of the highest third of the waves. Individual wave
+heights may be more than twice the significant wave height.
+
+$$
+
+ANZ232-251200-
+Nantucket Sound-
+704 PM EDT Wed Jun 24 2026
+
+.TONIGHT...W winds 5 to 10 kt. Gusts up to 20 kt this evening.
+Seas 2 to 3 ft. Wave Detail: W 2 ft at 3 seconds and S 1 foot at
+8 seconds. 
+.THU...W winds around 5 kt, becoming SW in the afternoon. Seas
+around 2 ft. Wave Detail: SW 1 foot at 4 seconds and E 1 foot at
+6 seconds. 
+.THU NIGHT...S winds 5 to 10 kt. Seas around 2 ft. Wave Detail:
+SW 1 foot at 3 seconds and SE 1 foot at 8 seconds. Patchy fog
+after midnight with vsby 1 NM or less. 
+.FRI...SW winds 10 to 15 kt. Gusts up to 20 kt in the afternoon.
+Seas around 2 ft. Wave Detail: SW 2 ft at 3 seconds and SE 1 foot
+at 7 seconds. Patchy fog in the morning with vsby 1 NM or less. 
+.FRI NIGHT...SW winds 10 to 15 kt with gusts up to 20 kt,
+diminishing to 5 to 10 kt after midnight. Seas around 2 ft. Wave
+Detail: SW 2 ft at 3 seconds and SE 1 foot at 7 seconds. A chance
+of showers after midnight. 
+.SAT...S winds around 5 kt, becoming E in the afternoon. Seas
+around 2 ft. Wave Detail: SW 1 foot at 4 seconds and SE 1 foot at
+7 seconds. Showers likely. 
+.SAT NIGHT...E winds 5 to 10 kt, becoming N after midnight. Seas
+around 2 ft. A chance of showers in the evening.
+.SUN THROUGH MON NIGHT...SW winds 5 to 10 kt. Seas around 2 ft.  
+
+Seas are reported as significant wave height, which is the
+average of the highest third of the waves. Individual wave
+heights may be more than twice the significant wave height.
+
+$$
+
+ANZ233-251200-
+Vineyard Sound-
+704 PM EDT Wed Jun 24 2026
+
+.TONIGHT...W winds 5 to 10 kt. Seas 2 to 3 ft. Wave Detail: SW
+2 ft at 4 seconds and S 2 ft at 8 seconds. 
+.THU...W winds around 5 kt, becoming SW in the afternoon. Seas
+around 2 ft. Wave Detail: SW 2 ft at 7 seconds and E 1 foot at
+5 seconds. 
+.THU NIGHT...S winds 5 to 10 kt. Seas around 2 ft. Wave Detail: S
+2 ft at 6 seconds and SE 1 foot at 8 seconds. 
+.FRI...SW winds 10 to 15 kt. Gusts up to 20 kt in the afternoon.
+Seas around 2 ft. Wave Detail: SW 2 ft at 6 seconds and S 2 ft at
+10 seconds. A chance of showers.
+.FRI NIGHT...SW winds 10 to 15 kt, diminishing to 5 to 10 kt
+after midnight. Seas around 2 ft. Wave Detail: S 2 ft at
+6 seconds and SE 1 foot at 12 seconds. A chance of showers after
+midnight. 
+.SAT...SE winds 5 to 10 kt. Seas around 2 ft. Wave Detail: S
+1 foot at 6 seconds and SE 1 foot at 13 seconds. Showers likely. 
+.SAT NIGHT...E winds 5 to 10 kt, becoming N after midnight. Seas
+around 2 ft. A chance of showers in the evening.
+.SUN THROUGH MON NIGHT...SW winds 5 to 10 kt. Seas around 2 ft.  
+
+Seas are reported as significant wave height, which is the
+average of the highest third of the waves. Individual wave
+heights may be more than twice the significant wave height.
+
+$$
+
+ANZ234-251200-
+Buzzards Bay-
+704 PM EDT Wed Jun 24 2026
+
+.TONIGHT...W winds 5 to 10 kt. Seas around 2 ft. Wave Detail: SW
+2 ft at 4 seconds and E 2 ft at 10 seconds. 
+.THU...W winds around 5 kt, becoming SW in the afternoon. Seas
+2 to 3 ft. Wave Detail: SE 2 ft at 9 seconds and SW 1 foot at
+4 seconds. 
+.THU NIGHT...S winds 5 to 10 kt. Seas around 2 ft. Wave Detail:
+SE 2 ft at 8 seconds and SW 1 foot at 4 seconds. Patchy fog after
+midnight with vsby 1 NM or less. 
+.FRI...SW winds 10 to 15 kt with gusts up to 20 kt. Seas 2 to
+3 ft. Wave Detail: SW 2 ft at 4 seconds and S 2 ft at 8 seconds.
+A chance of showers. Patchy fog in the morning with vsby 1 to
+3 NM. 
+.FRI NIGHT...SW winds 10 to 15 kt with gusts up to 20 kt,
+diminishing to 5 to 10 kt after midnight. Seas around 2 ft. Wave
+Detail: S 2 ft at 6 seconds and SE 1 foot at 13 seconds. A chance
+of showers after midnight. 
+.SAT...S winds around 5 kt, becoming SE in the afternoon. Seas
+1 foot or less. Wave Detail: SW 1 foot at 6 seconds and E 1 foot
+at 8 seconds. Showers likely. 
+.SAT NIGHT...E winds 5 to 10 kt, becoming N after midnight. Seas
+1 foot or less. A chance of showers in the evening. 
+.SUN THROUGH MON NIGHT...SW winds 5 to 10 kt. Seas around 2 ft.  
+
+Seas are reported as significant wave height, which is the
+average of the highest third of the waves. Individual wave
+heights may be more than twice the significant wave height.
+
+$$
+
+ANZ235-251200-
+Rhode Island Sound-
+704 PM EDT Wed Jun 24 2026
+
+.TONIGHT...W winds 10 to 15 kt, diminishing to 5 to 10 kt after
+midnight. Seas 2 to 4 ft. Wave Detail: S 4 ft at 8 seconds and W
+2 ft at 4 seconds. 
+.THU...W winds around 5 kt, becoming SW in the afternoon. Seas
+2 to 3 ft. Wave Detail: SE 3 ft at 8 seconds and SW 1 foot at
+7 seconds. 
+.THU NIGHT...S winds 5 to 10 kt. Seas 2 to 3 ft. Wave Detail: SE
+3 ft at 8 seconds and SW 2 ft at 4 seconds. Patchy fog after
+midnight with vsby 1 NM or less. 
+.FRI...SW winds 10 to 15 kt. Gusts up to 20 kt in the afternoon.
+Seas 2 to 3 ft. Wave Detail: SW 3 ft at 6 seconds and S 1 foot at
+10 seconds. A chance of showers. Patchy fog in the morning with
+vsby 1 to 3 NM. 
+.FRI NIGHT...SW winds 10 to 15 kt, diminishing to 5 to 10 kt
+after midnight. Seas 2 to 3 ft. Wave Detail: S 3 ft at 6 seconds
+and SE 1 foot at 12 seconds. A chance of showers after midnight. 
+.SAT...SE winds 5 to 10 kt. Seas around 2 ft. Wave Detail: S 2 ft
+at 6 seconds and SE 1 foot at 12 seconds. Showers likely. 
+.SAT NIGHT...E winds 5 to 10 kt, becoming N after midnight. Seas
+around 2 ft. A chance of showers in the evening.
+.SUN THROUGH MON NIGHT...SW winds 5 to 10 kt. Seas around 2 ft.  
+
+Seas are reported as significant wave height, which is the
+average of the highest third of the waves. Individual wave
+heights may be more than twice the significant wave height.
+
+$$
+
+ANZ237-251200-
+Block Island Sound-
+704 PM EDT Wed Jun 24 2026
+
+.TONIGHT...W winds 10 to 15 kt, diminishing to 5 to 10 kt after
+midnight. Seas 2 to 3 ft. Wave Detail: S 3 ft at 7 seconds and E
+2 ft at 9 seconds. 
+.THU...SW winds 5 to 10 kt. Seas 2 to 3 ft. Wave Detail: S 3 ft
+at 8 seconds and E 2 ft at 8 seconds. 
+.THU NIGHT...S winds 5 to 10 kt. Seas 2 to 3 ft. Wave Detail: SE
+2 ft at 8 seconds and SW 1 foot at 3 seconds. Patchy fog after
+midnight. A chance of showers after midnight with vsby 1 to 3 NM.
+.FRI...SW winds 5 to 10 kt. Seas 2 to 3 ft. Wave Detail: S 2 ft
+at 6 seconds. Patchy fog in the morning. A chance of showers in
+the morning with vsby 1 to 3 NM. 
+.FRI NIGHT...SW winds 5 to 10 kt. Seas 2 to 3 ft. Wave Detail: SE
+2 ft at 7 seconds and SW 1 foot at 5 seconds. A chance of showers
+after midnight. 
+.SAT...SE winds 5 to 10 kt. Seas around 2 ft. Wave Detail: S 2 ft
+at 6 seconds and SE 1 foot at 11 seconds. Showers likely. 
+.SAT NIGHT...E winds around 5 kt, becoming N after midnight. Seas
+around 2 ft. A chance of showers in the evening.
+.SUN THROUGH MON NIGHT...SW winds 5 to 10 kt. Seas around 2 ft.  
+
+Seas are reported as significant wave height, which is the
+average of the highest third of the waves. Individual wave
+heights may be more than twice the significant wave height.
+
+$$
+
+ANZ230-251200-
+Boston Harbor-
+704 PM EDT Wed Jun 24 2026
+
+.TONIGHT...W winds 5 to 10 kt. Waves around 2 ft this evening,
+then 1 foot or less. 
+.THU...SW winds around 5 kt, becoming SE in the afternoon. Waves
+1 foot or less, then around 2 ft in the afternoon. 
+.THU NIGHT...S winds 5 to 10 kt. Waves around 2 ft in the
+evening, then 1 foot or less. A chance of showers after midnight.
+.FRI...SW winds 5 to 10 kt. Waves 1 foot or less, then around
+2 ft in the afternoon. Showers likely. 
+.FRI NIGHT...SW winds 5 to 10 kt. Waves 1 foot or less. A chance
+of showers. 
+.SAT AND SAT NIGHT...N winds 5 to 10 kt. Waves 1 foot or less. A
+chance of showers. 
+.SUN THROUGH MON NIGHT...S winds 5 to 10 kt. Waves 1 foot or
+less.  
+
+Seas are reported as significant wave height, which is the
+average of the highest third of the waves. Individual wave
+heights may be more than twice the significant wave height.
+
+$$
+
+ANZ236-251200-
+Narragansett Bay-
+704 PM EDT Wed Jun 24 2026
+
+.TONIGHT...W winds 5 to 10 kt. Waves around 2 ft. 
+.THU...W winds around 5 kt, becoming S in the afternoon. Waves
+around 2 ft. 
+.THU NIGHT...S winds 5 to 10 kt. Waves around 2 ft. Patchy fog
+after midnight. A chance of showers after midnight with vsby 1 NM
+or less. 
+.FRI...S winds 5 to 10 kt, becoming SW 10 to 15 kt with gusts up
+to 20 kt in the afternoon. Waves around 2 ft. A chance of
+showers. Patchy fog in the morning with vsby 1 to 3 NM. 
+.FRI NIGHT...SW winds 5 to 10 kt. Waves around 2 ft. A chance of
+showers after midnight. 
+.SAT...E winds 5 to 10 kt. Waves 1 foot or less, then around 2 ft
+in the afternoon. Showers likely. 
+.SAT NIGHT...E winds 5 to 10 kt, becoming N after midnight. Waves
+around 2 ft. A chance of showers in the evening. 
+.SUN THROUGH MON NIGHT...SW winds 5 to 10 kt. Waves around 2 ft. 
+
+Seas are reported as significant wave height, which is the
+average of the highest third of the waves. Individual wave
+heights may be more than twice the significant wave height.
+
+$$
+
+ANZ280-251200-
+Ocean Waters from the Merrimack River to Plymouth from 40 to
+60 NM-
+704 PM EDT Wed Jun 24 2026
+
+.TONIGHT...W winds 5 to 10 kt. Seas 3 to 4 ft. Wave Detail: SE
+4 ft at 8 seconds and SW 1 foot at 2 seconds. 
+.THU...W winds 5 to 10 kt, becoming S in the afternoon. Seas 3 to
+4 ft. Wave Detail: S 4 ft at 8 seconds and E 2 ft at 8 seconds. 
+.THU NIGHT...S winds 10 to 15 kt. Seas around 3 ft. Wave Detail:
+S 3 ft at 8 seconds and S 2 ft at 4 seconds. 
+.FRI...S winds 10 to 15 kt. Gusts up to 20 kt in the afternoon.
+Seas around 3 ft. Wave Detail: S 3 ft at 7 seconds and SW 2 ft at
+4 seconds. A chance of showers.
+.FRI NIGHT...SW winds 10 to 15 kt with gusts up to 20 kt,
+becoming W 5 to 10 kt after midnight. Seas 2 to 3 ft. Wave
+Detail: S 3 ft at 5 seconds and SE 1 foot at 12 seconds. 
+.SAT...N winds 5 to 10 kt, becoming E in the afternoon. Seas
+around 2 ft. Wave Detail: S 2 ft at 7 seconds and W 1 foot at
+3 seconds. A chance of showers. 
+.SAT NIGHT...E winds around 5 kt, becoming N after midnight. Seas
+around 2 ft. 
+.SUN THROUGH MON NIGHT...S winds 5 to 10 kt. Seas 2 to 3 ft.  
+
+Seas are reported as significant wave height, which is the
+average of the highest third of the waves. Individual wave
+heights may be more than twice the significant wave height.
+
+$$
+
+ANZ281-251200-
+Ocean Waters from Provincetown to Nantucket from 20 to 60 NM-
+704 PM EDT Wed Jun 24 2026
+
+.TONIGHT...SW winds 5 to 10 kt with gusts up to 20 kt. Seas 3 to
+5 ft. Wave Detail: S 5 ft at 8 seconds and E 3 ft at 9 seconds.
+Patchy fog this evening with vsby 1 NM or less. 
+.THU...SW winds 5 to 10 kt. Seas 3 to 4 ft. Wave Detail: S 4 ft
+at 8 seconds and E 2 ft at 10 seconds. 
+.THU NIGHT...S winds around 10 kt. Seas around 3 ft. Wave Detail:
+SE 3 ft at 7 seconds and SW 1 foot at 3 seconds. Patchy fog. Vsby
+1 NM or less. 
+.FRI...S winds 5 to 10 kt, increasing to 10 to 15 kt with gusts
+up to 20 kt in the afternoon. Seas around 3 ft. Wave Detail: S
+3 ft at 7 seconds and SW 2 ft at 4 seconds. Patchy fog in the
+morning with vsby 1 NM or less. 
+.FRI NIGHT...SW winds 10 to 15 kt. Gusts up to 20 kt in the
+evening. Seas around 3 ft. Wave Detail: SW 2 ft at 4 seconds and
+SE 2 ft at 7 seconds. A chance of showers after midnight. 
+.SAT...SW winds 5 to 10 kt, becoming E in the afternoon. Seas
+2 to 3 ft. Wave Detail: SE 2 ft at 6 seconds and W 1 foot at
+5 seconds. A chance of showers in the morning, then showers
+likely in the afternoon. 
+.SAT NIGHT...NE winds 5 to 10 kt. Seas 2 to 3 ft. A chance of
+showers. 
+.SUN THROUGH MON NIGHT...SW winds 5 to 10 kt. Seas 2 to 4 ft.  
+
+Seas are reported as significant wave height, which is the
+average of the highest third of the waves. Individual wave
+heights may be more than twice the significant wave height.
+
+$$
+
+ANZ282-251200-
+Ocean Waters from Marthas Vineyard to Nantucket from 25 to 60 NM-
+704 PM EDT Wed Jun 24 2026
+
+.TONIGHT...SW winds 10 to 15 kt with gusts up to 20 kt, becoming
+W 5 to 10 kt after midnight. Seas 4 to 5 ft. Wave Detail: S 5 ft
+at 8 seconds and W 2 ft at 4 seconds. 
+.THU...SW winds 5 to 10 kt. Seas 3 to 4 ft. Wave Detail: S 4 ft
+at 8 seconds and W 1 foot at 4 seconds. 
+.THU NIGHT...S winds 5 to 10 kt. Seas around 3 ft. Wave Detail: S
+3 ft at 7 seconds and W 1 foot at 4 seconds. Patchy fog. Vsby
+1 NM or less. 
+.FRI...S winds 5 to 10 kt, becoming SW 10 to 15 kt in the
+afternoon. Seas around 3 ft. Wave Detail: S 3 ft at 7 seconds and
+SW 2 ft at 4 seconds. Patchy fog in the morning with vsby 1 NM or
+less. 
+.FRI NIGHT...SW winds 10 to 15 kt, diminishing to 5 to 10 kt
+after midnight. Seas around 3 ft. Wave Detail: SW 2 ft at
+5 seconds and SE 2 ft at 6 seconds. A chance of showers after
+midnight. 
+.SAT...S winds 5 to 10 kt. Seas 2 to 3 ft. Wave Detail: SE 2 ft
+at 7 seconds and W 1 foot at 5 seconds. Showers.
+.SAT NIGHT...NE winds 5 to 10 kt. Seas 2 to 4 ft. Showers likely,
+mainly in the evening. 
+.SUN THROUGH MON NIGHT...S winds 5 to 10 kt. Seas 2 to 4 ft.  
+
+Seas are reported as significant wave height, which is the
+average of the highest third of the waves. Individual wave
+heights may be more than twice the significant wave height.
+
+$$
+
+ANZ283-251200-
+Ocean Waters from Montauk NY to Marthas Vineyard from 25 to 60 NM-
+704 PM EDT Wed Jun 24 2026
+
+.TONIGHT...SW winds 10 to 15 kt with gusts up to 20 kt, becoming
+W 5 to 10 kt after midnight. Seas 4 to 5 ft. Wave Detail: S 4 ft
+at 8 seconds and W 2 ft at 4 seconds. 
+.THU...SW winds 5 to 10 kt. Seas 3 to 4 ft. Wave Detail: S 4 ft
+at 8 seconds and W 1 foot at 4 seconds. 
+.THU NIGHT...S winds around 10 kt. Seas around 3 ft. Wave Detail:
+SE 3 ft at 7 seconds and SW 2 ft at 4 seconds. Patchy fog after
+midnight with vsby 1 NM or less. 
+.FRI...SW winds 10 to 15 kt. Gusts up to 20 kt in the afternoon.
+Seas around 3 ft. Wave Detail: S 3 ft at 6 seconds and SE 1 foot
+at 12 seconds. Patchy fog in the morning with vsby 1 NM or less. 
+.FRI NIGHT...SW winds 10 to 15 kt with gusts up to 20 kt,
+diminishing to 5 to 10 kt after midnight. Seas 2 to 3 ft. Wave
+Detail: SW 2 ft at 5 seconds and SE 2 ft at 7 seconds. A chance
+of showers after midnight. 
+.SAT...SE winds 5 to 10 kt. Seas 2 to 3 ft. Wave Detail: S 2 ft
+at 6 seconds and SE 1 foot at 11 seconds. Showers.
+.SAT NIGHT...NE winds 5 to 10 kt. Seas around 3 ft. A chance of
+showers. 
+.SUN THROUGH MON NIGHT...S winds 5 to 10 kt. Seas 2 to 3 ft.  
+
+Seas are reported as significant wave height, which is the
+average of the highest third of the waves. Individual wave
+heights may be more than twice the significant wave height.
+
+$$
+
+For the latest updates...please visit our webpage at
+www.weather.gov/boston
+
+You can follow us on Facebook at
+www.facebook.com/us.nationalweatherservice.boston.gov
+
+You can follow us on Twitter at
+@NWSBoston
+
+

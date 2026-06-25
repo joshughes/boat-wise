@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.3.1 — 2026-06-24
+
+Actually fetch marine forecasts.
+
+### Fixed
+- The `api.weather.gov/zones/forecast/{zone}/forecast` endpoint doesn't support marine zones — it always returns `404 Marine Forecast Not Supported`. **Every prior version was silently failing to get seas data**, which is why the quality reason often said "seas unknown."
+- Switched to the NWS Coastal Waters Forecast (CWF) text product endpoint (`/products/types/CWF/locations/{office}`), which is the actual data source NWS publishes for marine areas.
+- The forecasting office is now auto-discovered from your `latitude` / `longitude` via the existing `/points/{lat},{lon}` lookup, then the CWF for that office is fetched, parsed by zone, and split into periods.
+- `parseMarineForecastPeriod` now handles real NWS phrasings that were previously unparsed: `"around N ft"`, `"near N ft"`, `"approximately N ft"`, singular `"N foot"`, and `"N foot or less"`.
+
+### Added
+- New top-level export `parseCWFZonePeriods(productText, zone, issuanceTime)` — splits a CWF text product into per-zone, per-period structured forecasts with start/end time ranges derived from period labels (TONIGHT, THU, THU NIGHT, FRI, etc.). 11 new unit tests using a real NWS fixture.
+
 ## 1.3.0 — 2026-06-24
 
 Per-hour quality from the hourly forecast.

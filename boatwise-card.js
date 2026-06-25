@@ -1,10 +1,10 @@
 /*
- * BoatWise Card v1.3.0
+ * BoatWise Card v1.3.1
  * NOAA tides with depth-threshold boating windows and NWS marine alerts.
  * Forked from TideWise v0.9.5 (TheWillMiller/tide-wise).
  */
 
-const CARD_VERSION = "1.3.0";
+const CARD_VERSION = "1.3.1";
 
 export function extractSafeWindows(predictions, threshold) {
   const norm = (predictions || [])
@@ -168,9 +168,10 @@ export function parseMarineForecastPeriod(text) {
   const gm = lower.match(/gust(?:s|ing)?\s+(?:up\s+)?to\s+(\d+)\s*kt/);
   if (gm) gusts = parseInt(gm[1], 10);
 
-  // Seas: "seas A to B ft" or "seas A ft"
+  // Seas: handles "seas 3 ft", "seas 2 to 4 ft", "seas around 2 ft", "seas 1 foot or less",
+  // "seas near 3 ft", "seas approximately 2 ft". Singular "foot" accepted.
   let seas = null;
-  const sm = lower.match(/seas\s+(\d+)(?:\s+to\s+(\d+))?\s*(?:ft|feet)/);
+  const sm = lower.match(/seas\s+(?:around|near|approximately|about|approx\.?)?\s*(\d+)(?:\s+to\s+(\d+))?\s*(?:ft|feet|foot)/);
   if (sm) {
     const min = parseInt(sm[1], 10);
     const max = sm[2] ? parseInt(sm[2], 10) : min;
@@ -180,6 +181,85 @@ export function parseMarineForecastPeriod(text) {
   }
 
   return { wind, gusts, seas, conditions: null, raw };
+}
+
+export function parseCWFZonePeriods(productText, zone, issuanceTime) {
+  if (typeof productText !== "string" || !zone) return [];
+  const upperZone = String(zone).toUpperCase();
+
+  // NWS Coastal Waters Forecast text uses "$$" on its own line as a zone delimiter.
+  // Split on it, then find the block whose header starts with this zone code.
+  const blocks = productText.split(/\n\$\$\n/);
+  const zoneText = blocks.find((b) => new RegExp(`^${upperZone}-`, "m").test(b));
+  if (!zoneText) return [];
+
+  const issuance = issuanceTime instanceof Date ? issuanceTime : new Date(issuanceTime || Date.now());
+  const issuanceDay = new Date(issuance.getUTCFullYear(), issuance.getUTCMonth(), issuance.getUTCDate());
+
+  // Periods start with ".LABEL..." where LABEL is uppercase. Capture until next period or footer.
+  const periodRe = /^\.([A-Z][A-Z\s/]*?)\.\.\.([\s\S]*?)(?=^\.[A-Z]|\nSeas are reported|\n\$\$|$)/gm;
+  const dayMap = { SUN: 0, MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6 };
+
+  const labelToRange = (label) => {
+    const upper = label.toUpperCase().trim();
+    const isNight = /NIGHT/.test(upper);
+    // collapse "MON THROUGH WED NIGHT" → take the first day token + isNight from last
+    const dayTokens = upper.match(/\b(SUN|MON|TUE|WED|THU|FRI|SAT)(?:DAY)?\b/g) || [];
+
+    if (upper === "TODAY" || upper === "REST OF TODAY" || upper === "THIS AFTERNOON" || upper === "TODAY AND TONIGHT") {
+      const s = new Date(issuanceDay); s.setHours(6, 0, 0, 0);
+      const e = new Date(issuanceDay); e.setHours(18, 0, 0, 0);
+      return { start: s, end: e };
+    }
+    if (upper === "TONIGHT") {
+      const s = new Date(issuanceDay); s.setHours(18, 0, 0, 0);
+      const e = new Date(issuanceDay); e.setDate(e.getDate() + 1); e.setHours(6, 0, 0, 0);
+      return { start: s, end: e };
+    }
+
+    if (dayTokens.length) {
+      const firstDayCode = dayTokens[0];
+      const targetDow = dayMap[firstDayCode];
+      const issuanceDow = issuance.getDay();
+      // Days ahead within the next 7 days (a label always refers to upcoming days)
+      let daysAhead = (targetDow - issuanceDow + 7) % 7;
+      // If the label is for "today" (same day) the CWF would use TONIGHT/TODAY, so dayName == today
+      // is most likely tomorrow's same name... but not always. Keep modulo behavior.
+      const dayStart = new Date(issuanceDay);
+      dayStart.setDate(dayStart.getDate() + daysAhead);
+      if (isNight) {
+        const s = new Date(dayStart); s.setHours(18, 0, 0, 0);
+        const e = new Date(dayStart); e.setDate(e.getDate() + 1); e.setHours(6, 0, 0, 0);
+        return { start: s, end: e };
+      }
+      const s = new Date(dayStart); s.setHours(6, 0, 0, 0);
+      const lastDayCode = dayTokens[dayTokens.length - 1];
+      const lastDow = dayMap[lastDayCode];
+      let endDaysAhead = (lastDow - issuanceDow + 7) % 7;
+      if (endDaysAhead < daysAhead) endDaysAhead += 7;
+      const e = new Date(issuanceDay);
+      e.setDate(e.getDate() + endDaysAhead);
+      e.setHours(18, 0, 0, 0);
+      return { start: s, end: e };
+    }
+
+    const s = new Date(issuance);
+    const e = new Date(issuance);
+    e.setDate(e.getDate() + 1);
+    return { start: s, end: e };
+  };
+
+  const periods = [];
+  let m;
+  while ((m = periodRe.exec(zoneText)) !== null) {
+    const label = m[1].trim();
+    const body = m[2].trim();
+    if (!label || /^SYNOPSIS/i.test(label)) continue;
+    const range = labelToRange(label);
+    const parsed = parseMarineForecastPeriod(body);
+    periods.push({ label, text: body, start: range.start, end: range.end, parsed });
+  }
+  return periods;
 }
 
 export function boatingQualityScore({ windKt, seasFt, alerts, conditions }) {
@@ -914,13 +994,69 @@ class BoatWiseCard extends HTMLElement {
     const cached = this._getCached(`forecast:${zone}`, 30 * 60 * 1000);
     if (cached) return cached;
     const headers = { Accept: "application/geo+json", "User-Agent": "boatwise-card (homeassistant)" };
-    const res = await fetch(`https://api.weather.gov/zones/forecast/${zone}/forecast`, { headers });
-    if (!res.ok) return null;
-    const json = await res.json();
-    const periods = json?.properties?.periods || [];
-    const current = periods[0] || null;
-    const parsed = current ? parseMarineForecastPeriod(current.detailedForecast || current.shortForecast || "") : null;
-    const result = { current, parsed, allPeriods: periods };
+
+    let office = this._autoData?.nws?.point?.cwa;
+    if (!office) {
+      try {
+        const { lat, lon } = this._getForecastLatLon();
+        if (Number.isFinite(lat) && Number.isFinite(lon)) {
+          const pointRes = await fetch(`https://api.weather.gov/points/${lat.toFixed(4)},${lon.toFixed(4)}`, { headers });
+          if (pointRes.ok) {
+            const pj = await pointRes.json();
+            office = pj?.properties?.cwa;
+          }
+        }
+      } catch (e) { /* fall through */ }
+    }
+    if (!office) return null;
+
+    let listRes;
+    try {
+      listRes = await fetch(`https://api.weather.gov/products/types/CWF/locations/${office}`, { headers });
+    } catch (e) { return null; }
+    if (!listRes.ok) {
+      if (listRes.status === 404) this._marineZoneError = `No CWF product available for office ${office}.`;
+      return null;
+    }
+    const list = await listRes.json();
+    const items = list?.["@graph"] || list?.features || [];
+    const firstId = items[0]?.["@id"] || items[0]?.id;
+    if (!firstId) return null;
+
+    let prodRes;
+    try {
+      prodRes = await fetch(firstId, { headers });
+    } catch (e) { return null; }
+    if (!prodRes.ok) return null;
+    const product = await prodRes.json();
+    const productText = product?.productText || product?.properties?.productText || "";
+    const issuanceTimeStr = product?.issuanceTime || product?.properties?.issuanceTime;
+    const issuanceTime = issuanceTimeStr ? new Date(issuanceTimeStr) : new Date();
+    if (!productText) return null;
+
+    const periods = parseCWFZonePeriods(productText, zone, issuanceTime);
+    if (!periods.length) {
+      this._marineZoneError = `Marine zone ${zone} not found in CWF for office ${office}.`;
+      return null;
+    }
+    this._marineZoneError = null;
+
+    const allPeriods = periods.map((p) => ({
+      name: p.label,
+      startTime: p.start.toISOString(),
+      endTime: p.end.toISOString(),
+      detailedForecast: p.text,
+      shortForecast: p.label
+    }));
+
+    const result = {
+      office,
+      issuanceTime,
+      current: allPeriods[0],
+      parsed: periods[0]?.parsed || null,
+      allPeriods,
+      productText
+    };
     this._setCached(`forecast:${zone}`, result);
     return result;
   }
