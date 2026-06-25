@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.3.0 — 2026-06-24
+
+Per-hour quality from the hourly forecast.
+
+### Added
+- Quality is now computed at each point in time using the NWS hourly forecast (wind, weather text) and the NWS marine zone forecast (seas). Each hour can have its own rating.
+- The tide chart now color-bands per segment: morning might fill GREAT while afternoon fills BAD if thunderstorms are coming in.
+- Each window card shows the **worst quality across the window's hours** with a colored left border, dot, and label — so an afternoon window during thunderstorms is visually distinct from a morning window in calm conditions.
+- A "heads up" line appears below the now-reasons whenever quality is forecast to get worse later: e.g. `Today 3:00 PM · BAD: thunderstorms — caps quality`.
+- Full color legend (Great / Good / Fair / Bad / Too Shallow) so the new banding is self-explanatory.
+
+### Changed
+- The hourly NWS forecast is now kept in full (all ~156 periods) instead of just the current hour.
+- Alert `onset` is now captured so a future-effective alert correctly degrades quality only at its onset time, not retroactively.
+- The single `quality.label` argument to `_drawChart` was replaced by a `qualityForTime(date)` callback with per-hour caching.
+
 ## 1.2.1 — 2026-06-24
 
 Always show why the quality chip says what it says.

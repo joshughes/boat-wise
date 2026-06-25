@@ -1,10 +1,10 @@
 /*
- * BoatWise Card v1.2.1
+ * BoatWise Card v1.3.0
  * NOAA tides with depth-threshold boating windows and NWS marine alerts.
  * Forked from TideWise v0.9.5 (TheWillMiller/tide-wise).
  */
 
-const CARD_VERSION = "1.2.1";
+const CARD_VERSION = "1.3.0";
 
 export function extractSafeWindows(predictions, threshold) {
   const norm = (predictions || [])
@@ -561,6 +561,21 @@ const STYLES = `
   .card-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 2px; }
   .card-dur { font-family: var(--font-mono); font-size: 13px; font-weight: 800; color: var(--wave-dark); }
   .card-arrive { font-size: 11px; color: var(--text-muted); font-weight: 650; }
+  .card-quality { display: flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 850; letter-spacing: 0.06em; text-transform: uppercase; margin-top: 2px; }
+  .card-quality-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06); }
+  .card-quality-dot.quality-great { background: #3caa6e; }
+  .card-quality-dot.quality-good { background: #60bc98; }
+  .card-quality-dot.quality-fair { background: #e8b84b; }
+  .card-quality-dot.quality-bad { background: #c05030; }
+  .card-quality-label { color: var(--text-muted); }
+  .window-card.quality-great .card-quality-label { color: #0f7a38; }
+  .window-card.quality-good .card-quality-label { color: #157754; }
+  .window-card.quality-fair .card-quality-label { color: #8a6a10; }
+  .window-card.quality-bad .card-quality-label { color: #8a3018; }
+  .window-card.quality-great { border-left-color: #3caa6e; }
+  .window-card.quality-good { border-left-color: #60bc98; }
+  .window-card.quality-fair { border-left-color: #e8b84b; background: linear-gradient(135deg, rgba(232,184,75,0.10), rgba(255,255,255,0.50)); }
+  .window-card.quality-bad { border-left-color: #c05030; background: linear-gradient(135deg, rgba(192,80,48,0.10), rgba(255,255,255,0.50)); }
   .windows-empty { padding: 8px 4px; }
   .windows-empty .empty-note { font-size: 12px; color: var(--text-muted); padding: 8px 12px; background: var(--bw-panel-bg); border: 1px dashed var(--bw-panel-border); border-radius: 10px; }
   .condition-spacer { flex: 1 1 auto; min-width: 12px; }
@@ -880,7 +895,8 @@ class BoatWiseCard extends HTMLElement {
         event: f?.properties?.event || "",
         severity: f?.properties?.severity || "Unknown",
         headline: f?.properties?.headline || "",
-        expires: f?.properties?.expires ? new Date(f.properties.expires) : null
+        expires: f?.properties?.expires ? new Date(f.properties.expires) : null,
+        onset: f?.properties?.onset ? new Date(f.properties.onset) : null
       }))
       .filter((a) => {
         const ev = a.event.toLowerCase();
@@ -941,8 +957,8 @@ class BoatWiseCard extends HTMLElement {
     const hourlyRes = await fetch(hourlyUrl, { headers });
     if (!hourlyRes.ok) return {};
     const hourly = await hourlyRes.json();
-    const period = hourly?.properties?.periods?.[0] || null;
-    return { point: point.properties || {}, period };
+    const periods = Array.isArray(hourly?.properties?.periods) ? hourly.properties.periods : [];
+    return { point: point.properties || {}, period: periods[0] || null, periods };
   }
 
   _parsePredictionTime(t) {
@@ -1104,6 +1120,68 @@ class BoatWiseCard extends HTMLElement {
   _compassToBearing(dir) {
     const map = { N: 0, NNE: 22.5, NE: 45, ENE: 67.5, E: 90, ESE: 112.5, SE: 135, SSE: 157.5, S: 180, SSW: 202.5, SW: 225, WSW: 247.5, W: 270, WNW: 292.5, NW: 315, NNW: 337.5 };
     return map[String(dir || "").toUpperCase()] ?? null;
+  }
+
+  _parseNwsHourlyWindKt(period) {
+    if (!period) return null;
+    const ws = String(period.windSpeed || "");
+    const m = ws.match(/(\d+)(?:\s+to\s+(\d+))?\s*mph/i);
+    if (!m) return null;
+    const maxMph = parseInt(m[2] || m[1], 10);
+    if (!Number.isFinite(maxMph)) return null;
+    return maxMph / 1.15078;
+  }
+
+  _seasFtFromMarinePeriod(period) {
+    if (!period) return null;
+    const parsed = parseMarineForecastPeriod(period.detailedForecast || period.shortForecast || "");
+    if (!parsed?.seas) return null;
+    return parsed.seas.max ?? parsed.seas.min;
+  }
+
+  _qualityForTimeBuilder(alerts) {
+    const hourly = this._autoData?.nws?.periods || [];
+    const marine = this._autoData?.marine?.allPeriods || [];
+    const cache = new Map();
+    const findPeriod = (periods, tMs) => {
+      for (const p of periods) {
+        const s = new Date(p.startTime).getTime();
+        const e = new Date(p.endTime).getTime();
+        if (Number.isFinite(s) && Number.isFinite(e) && tMs >= s && tMs < e) return p;
+      }
+      return null;
+    };
+    return (date) => {
+      const tMs = date.getTime();
+      const hourKey = Math.floor(tMs / 3600000);
+      if (cache.has(hourKey)) return cache.get(hourKey);
+      const nwsPeriod = findPeriod(hourly, tMs);
+      const marinePeriod = findPeriod(marine, tMs);
+      const windKt = nwsPeriod ? this._parseNwsHourlyWindKt(nwsPeriod) : null;
+      const seasFt = marinePeriod ? this._seasFtFromMarinePeriod(marinePeriod) : null;
+      const conditions = nwsPeriod?.shortForecast || marinePeriod?.shortForecast || null;
+      const activeAtT = (alerts || []).filter((a) => {
+        if (a.onset instanceof Date && a.onset.getTime() > tMs) return false;
+        if (a.expires instanceof Date && a.expires.getTime() <= tMs) return false;
+        return true;
+      });
+      const result = boatingQualityScore({ windKt, seasFt, alerts: activeAtT, conditions });
+      cache.set(hourKey, result);
+      return result;
+    };
+  }
+
+  _worstQualityInWindow(qualityForTime, window) {
+    const startMs = window.start.getTime();
+    const endMs = window.end.getTime();
+    let worst = qualityForTime(window.start);
+    for (let t = startMs + 3600000; t < endMs; t += 3600000) {
+      const q = qualityForTime(new Date(t));
+      if (q.score < worst.score) worst = q;
+    }
+    const last = qualityForTime(window.end);
+    if (last.score < worst.score) worst = last;
+    return worst;
   }
 
   _getPressureHpa(weather) {
@@ -1282,18 +1360,21 @@ class BoatWiseCard extends HTMLElement {
       TOO_SHALLOW: "TOO SHALLOW"
     }[chip.status] || "TOO SHALLOW";
 
-    // Quality assessment (Bad / Fair / Good / Great)
-    const windMph = this._getWindSpeedMph(weather);
-    const windKt = Number.isFinite(windMph) ? windMph / 1.15078 : null;
+    // Time-varying quality: each hour evaluated against its own forecast period.
+    const qualityForTime = this._qualityForTimeBuilder(alerts);
+    const quality = qualityForTime(now);
+
+    // Look ahead for a worse quality window so the why-row can warn about it
+    let worstAhead = quality;
+    let worstAheadTime = null;
+    for (let t = now.getTime() + 3600000; t < horizonCutoff.getTime(); t += 3600000) {
+      const q = qualityForTime(new Date(t));
+      if (q.score < worstAhead.score) {
+        worstAhead = q;
+        worstAheadTime = new Date(t);
+      }
+    }
     const seasObj = this._autoData?.marine?.parsed?.seas;
-    const seasFt = seasObj ? (seasObj.max ?? seasObj.min) : null;
-    const conditionText = weather?.state || this._autoData?.marine?.current?.shortForecast || null;
-    const quality = boatingQualityScore({
-      windKt,
-      seasFt,
-      alerts,
-      conditions: conditionText
-    });
 
     const windowsForPanel = windows
       .filter((w) => w.end.getTime() > now.getTime())
@@ -1314,16 +1395,22 @@ class BoatWiseCard extends HTMLElement {
               const endClock = this._formatClock(w.end);
               const arriveClock = this._formatClock(arriveBy);
               const isOpenNow = w.start.getTime() <= now.getTime() && now.getTime() < w.end.getTime();
-              const qualityClass = `quality-${(isOpenNow ? quality.label : "GOOD").toLowerCase()}`;
+              const winQuality = this._worstQualityInWindow(qualityForTime, w);
+              const qualityClass = `quality-${winQuality.label.toLowerCase()}`;
               const stateClass = hasActiveAlert ? "advisory" : isOpenNow ? "open-now" : "upcoming";
+              const winTitle = winQuality.reasons.length ? `${winQuality.label}: ${winQuality.reasons.join(" · ")}` : winQuality.label;
               return `
-                <div class="window-card ${stateClass} ${qualityClass}">
+                <div class="window-card ${stateClass} ${qualityClass}" title="${this._escape(winTitle)}">
                   ${hasActiveAlert ? `<span class="card-warn">&#9888;</span>` : ""}
                   <div class="card-day">${dateLabel}${isOpenNow ? ' <span class="card-open-badge">OPEN</span>' : ""}</div>
                   <div class="card-time">${startClock} <span class="card-arrow">&rarr;</span> ${endClock}</div>
                   <div class="card-meta">
                     <span class="card-dur">&#9201; ${durLabel}</span>
                     <span class="card-arrive">arrive ${arriveClock}</span>
+                  </div>
+                  <div class="card-quality">
+                    <span class="card-quality-dot quality-${winQuality.label.toLowerCase()}"></span>
+                    <span class="card-quality-label">${winQuality.label}</span>
                   </div>
                 </div>
               `;
@@ -1355,15 +1442,29 @@ class BoatWiseCard extends HTMLElement {
       qualityChipHtml
     ].filter(Boolean).join("");
 
+    const showHeadsUp = worstAhead.score < quality.score && worstAheadTime;
+    const headsUpReason = showHeadsUp ? worstAhead.reasons.join(" · ") : "";
+    const headsUpClock = showHeadsUp ? this._formatClock(worstAheadTime) : "";
+    const headsUpDay = showHeadsUp ? this._formatWindowDate(worstAheadTime) : "";
+
     const legendHtml = `
       <div class="band-legend">
-        <span class="legend-item"><span class="legend-dot quality-${quality.label.toLowerCase()}"></span>${quality.label.charAt(0) + quality.label.slice(1).toLowerCase()}</span>
+        <span class="legend-item"><span class="legend-dot quality-great"></span>Great</span>
+        <span class="legend-item"><span class="legend-dot quality-good"></span>Good</span>
+        <span class="legend-item"><span class="legend-dot quality-fair"></span>Fair</span>
+        <span class="legend-item"><span class="legend-dot quality-bad"></span>Bad</span>
         <span class="legend-item"><span class="legend-dot shallow"></span>Too Shallow</span>
       </div>
       ${qualityReasonText ? `
         <div class="quality-why">
-          <span class="quality-why-label quality-why-${quality.label.toLowerCase()}">Why ${quality.label}:</span>
+          <span class="quality-why-label quality-why-${quality.label.toLowerCase()}">Now · ${quality.label}:</span>
           <span class="quality-why-reasons">${this._escape(qualityReasonText)}</span>
+        </div>
+      ` : ""}
+      ${showHeadsUp ? `
+        <div class="quality-why">
+          <span class="quality-why-label quality-why-${worstAhead.label.toLowerCase()}">${headsUpDay} ${headsUpClock} · ${worstAhead.label}:</span>
+          <span class="quality-why-reasons">${this._escape(headsUpReason)}</span>
         </div>
       ` : ""}
     `;
@@ -1410,7 +1511,7 @@ class BoatWiseCard extends HTMLElement {
 
     requestAnimationFrame(() => {
       this._chartCanvas = this.shadowRoot.getElementById("tideCanvas");
-      this._drawChart(chartPredictions, now, cur, unitLabel, this._config.depth_threshold, [nextHigh, nextLow].filter(Boolean), quality.label);
+      this._drawChart(chartPredictions, now, cur, unitLabel, this._config.depth_threshold, [nextHigh, nextLow].filter(Boolean), qualityForTime);
     });
   }
 
@@ -1529,7 +1630,7 @@ class BoatWiseCard extends HTMLElement {
     };
   }
 
-  _drawChart(predictions, now, cur, unitLabel, threshold, tideEvents = [], qualityLabel = "GOOD") {
+  _drawChart(predictions, now, cur, unitLabel, threshold, tideEvents = [], qualityForTime = null) {
     const canvas = this._chartCanvas;
     if (!canvas) return;
     const theme = this._chartColors();
@@ -1570,13 +1671,13 @@ class BoatWiseCard extends HTMLElement {
       ctx.fillText(v.toFixed(1), padL - 3, y + 3);
     }
 
-    // Color bands: safe segments fill in quality color, shallow segments fill amber/gray.
-    const qualityFill = ({
+    // Color bands: safe segments fill in per-time quality color, shallow segments fill gray.
+    const QUALITY_COLORS = {
       GREAT: "rgba(60,170,110,0.55)",
       GOOD: "rgba(96,188,152,0.50)",
       FAIR: "rgba(232,184,75,0.55)",
       BAD: "rgba(192,80,48,0.50)"
-    })[qualityLabel] || "rgba(96,188,152,0.50)";
+    };
     const shallowFill = "rgba(140,140,140,0.36)";
     const baselineY = H - padB;
     const hasThreshold = Number.isFinite(threshold);
@@ -1592,6 +1693,13 @@ class BoatWiseCard extends HTMLElement {
       ctx.fill();
     };
 
+    const qualityFillAt = (timeA, timeB) => {
+      if (typeof qualityForTime !== "function") return QUALITY_COLORS.GOOD;
+      const mid = new Date((timeA + timeB) / 2);
+      const q = qualityForTime(mid);
+      return QUALITY_COLORS[q.label] || QUALITY_COLORS.GOOD;
+    };
+
     for (let i = 0; i < predictions.length - 1; i++) {
       const v1 = parseFloat(predictions[i].v);
       const v2 = parseFloat(predictions[i + 1].v);
@@ -1599,15 +1707,18 @@ class BoatWiseCard extends HTMLElement {
       const x2 = toX(predictions[i + 1]);
       const y1 = toY(v1);
       const y2 = toY(v2);
+      const tA = this._parsePredictionTime(predictions[i].t).getTime();
+      const tB = this._parsePredictionTime(predictions[i + 1].t).getTime();
+      const segFill = qualityFillAt(tA, tB);
 
       if (!hasThreshold) {
-        fillTrapezoid(x1, y1, x2, y2, qualityFill);
+        fillTrapezoid(x1, y1, x2, y2, segFill);
         continue;
       }
       const aSafe = v1 >= threshold;
       const bSafe = v2 >= threshold;
       if (aSafe && bSafe) {
-        fillTrapezoid(x1, y1, x2, y2, qualityFill);
+        fillTrapezoid(x1, y1, x2, y2, segFill);
       } else if (!aSafe && !bSafe) {
         fillTrapezoid(x1, y1, x2, y2, shallowFill);
       } else {
@@ -1616,11 +1727,11 @@ class BoatWiseCard extends HTMLElement {
         const xc = x1 + ratio * (x2 - x1);
         const yc = toY(threshold);
         if (aSafe) {
-          fillTrapezoid(x1, y1, xc, yc, qualityFill);
+          fillTrapezoid(x1, y1, xc, yc, segFill);
           fillTrapezoid(xc, yc, x2, y2, shallowFill);
         } else {
           fillTrapezoid(x1, y1, xc, yc, shallowFill);
-          fillTrapezoid(xc, yc, x2, y2, qualityFill);
+          fillTrapezoid(xc, yc, x2, y2, segFill);
         }
       }
     }
