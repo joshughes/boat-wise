@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.3 — 2026-09-06
+
+Make `theme_mode: auto` actually usable on dark themes.
+
+### Fixed
+- The boating-window quality tints hardcoded `rgba(255,255,255,0.50)` as the second stop of their background gradients. On a light theme that reads as an intended wash; on a dark theme it painted the card in near-white, so a BAD or FAIR window rendered as a light grey box with white text on it — effectively unreadable. All six gradients (`open-now`, `open-now.quality-fair`, `open-now.quality-bad`, `advisory`, `quality-fair`, `quality-bad`) now resolve through a new `--bw-tint-base` variable, which stays fixed white in `boatwise` mode and follows `--ha-card-background` in `auto` mode.
+- The per-quality label colors (`#0f7a38`, `#157754`, `#8a6a10`, `#8a3018`) and the `.card-open-badge` / `.card-warn` accents were picked against a light surface and went muddy on a dark one. In `auto` mode they are now blended toward the host theme's own `--text` with `color-mix()`, so they stay legible whichever way the theme leans instead of trading one hardcoded assumption for another.
+
+### Notes
+- Every change is scoped to `:host([theme-mode="auto"])`, and the `:host` default for `--bw-tint-base` is the same value the gradients hardcoded before. `theme_mode: "boatwise"` therefore renders byte-identically to 1.3.2.
+- `color-mix()` needs Firefox 113+ / Chrome 111+ / Safari 16.2+. Older browsers fall back to the inherited `.card-quality-label` color, which is legible in both themes.
+
 ## 1.3.2 — 2026-06-24
 
 Fix CWF parser truncating period bodies at newlines.

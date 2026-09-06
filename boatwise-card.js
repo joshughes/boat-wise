@@ -1,10 +1,10 @@
 /*
- * BoatWise Card v1.3.2
+ * BoatWise Card v1.3.3
  * NOAA tides with depth-threshold boating windows and NWS marine alerts.
  * Forked from TideWise v0.9.5 (TheWillMiller/tide-wise).
  */
 
-const CARD_VERSION = "1.3.2";
+const CARD_VERSION = "1.3.3";
 
 export function extractSafeWindows(predictions, threshold) {
   const norm = (predictions || [])
@@ -510,6 +510,9 @@ const STYLES = `
     --bw-chart-label-border: rgba(42,122,148,0.45); --bw-chart-now-label-border: rgba(42,122,148,0.55);
     --bw-chart-label-text: #0a1e28; --bw-tide-line: #2a7a94;
     --bw-marker-stroke: rgba(255,255,255,0.9); --bw-now-marker-stroke: rgba(255,255,255,0.92);
+    /* Second stop of the quality tint gradients on the boating-window cards.
+       Fixed white here; follows the HA card surface in auto mode. */
+    --bw-tint-base: rgba(255,255,255,0.50);
     --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Arial, sans-serif;
     --font-mono: "SF Mono", "Roboto Mono", "Courier New", monospace;
     display: block; font-family: var(--font-main); color: var(--text); container-type: inline-size;
@@ -530,6 +533,7 @@ const STYLES = `
     --bw-chart-now-label-border: var(--divider-color, rgba(42,122,148,0.55));
     --bw-chart-label-text: var(--primary-text-color, #0a1e28);
     --bw-tide-line: var(--accent-color, #2a7a94);
+    --bw-tint-base: var(--ha-card-background, var(--card-background-color, rgba(255,255,255,0.50)));
     --bw-marker-stroke: var(--card-background-color, rgba(255,255,255,0.9));
     --bw-now-marker-stroke: var(--card-background-color, rgba(255,255,255,0.92));
   }
@@ -629,15 +633,15 @@ const STYLES = `
   .window-card:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(10,50,70,0.10); }
   .window-card.open-now {
     border-left-color: #3caa6e;
-    background: linear-gradient(135deg, rgba(60,170,110,0.14), rgba(255,255,255,0.50));
+    background: linear-gradient(135deg, rgba(60,170,110,0.14), var(--bw-tint-base));
   }
   .window-card.open-now.quality-great { border-left-color: #3caa6e; }
   .window-card.open-now.quality-good { border-left-color: #60bc98; }
-  .window-card.open-now.quality-fair { border-left-color: #e8b84b; background: linear-gradient(135deg, rgba(232,184,75,0.18), rgba(255,255,255,0.50)); }
-  .window-card.open-now.quality-bad { border-left-color: #c05030; background: linear-gradient(135deg, rgba(192,80,48,0.16), rgba(255,255,255,0.50)); }
+  .window-card.open-now.quality-fair { border-left-color: #e8b84b; background: linear-gradient(135deg, rgba(232,184,75,0.18), var(--bw-tint-base)); }
+  .window-card.open-now.quality-bad { border-left-color: #c05030; background: linear-gradient(135deg, rgba(192,80,48,0.16), var(--bw-tint-base)); }
   .window-card.advisory {
     border-left-color: #a51f1f;
-    background: linear-gradient(135deg, rgba(192,80,48,0.14), rgba(255,255,255,0.45));
+    background: linear-gradient(135deg, rgba(192,80,48,0.14), var(--bw-tint-base));
   }
   .card-warn { position: absolute; top: 6px; right: 8px; color: #a51f1f; font-weight: 900; font-size: 14px; }
   .card-day { font-size: 11px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--wave-dark); font-weight: 800; display: flex; align-items: center; gap: 6px; }
@@ -660,8 +664,14 @@ const STYLES = `
   .window-card.quality-bad .card-quality-label { color: #8a3018; }
   .window-card.quality-great { border-left-color: #3caa6e; }
   .window-card.quality-good { border-left-color: #60bc98; }
-  .window-card.quality-fair { border-left-color: #e8b84b; background: linear-gradient(135deg, rgba(232,184,75,0.10), rgba(255,255,255,0.50)); }
-  .window-card.quality-bad { border-left-color: #c05030; background: linear-gradient(135deg, rgba(192,80,48,0.10), rgba(255,255,255,0.50)); }
+  .window-card.quality-fair { border-left-color: #e8b84b; background: linear-gradient(135deg, rgba(232,184,75,0.10), var(--bw-tint-base)); }
+  .window-card.quality-bad { border-left-color: #c05030; background: linear-gradient(135deg, rgba(192,80,48,0.10), var(--bw-tint-base)); }
+  :host([theme-mode="auto"]) .window-card.quality-great .card-quality-label { color: color-mix(in srgb, #3caa6e 60%, var(--text)); }
+  :host([theme-mode="auto"]) .window-card.quality-good .card-quality-label { color: color-mix(in srgb, #60bc98 60%, var(--text)); }
+  :host([theme-mode="auto"]) .window-card.quality-fair .card-quality-label { color: color-mix(in srgb, #e8b84b 60%, var(--text)); }
+  :host([theme-mode="auto"]) .window-card.quality-bad .card-quality-label { color: color-mix(in srgb, #c05030 60%, var(--text)); }
+  :host([theme-mode="auto"]) .card-open-badge { color: color-mix(in srgb, #3caa6e 55%, var(--text)); }
+  :host([theme-mode="auto"]) .card-warn { color: color-mix(in srgb, #c05030 55%, var(--text)); }
   .windows-empty { padding: 8px 4px; }
   .windows-empty .empty-note { font-size: 12px; color: var(--text-muted); padding: 8px 12px; background: var(--bw-panel-bg); border: 1px dashed var(--bw-panel-border); border-radius: 10px; }
   .condition-spacer { flex: 1 1 auto; min-width: 12px; }
